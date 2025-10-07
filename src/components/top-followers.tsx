@@ -49,7 +49,6 @@ export function TopFollowers({ userId }: TopFollowersProps) {
 
       const decoder = new TextDecoder();
       let friendsReceived = 0;
-      const existingIds = new Set(friends.map(f => f.id));
 
       while (true) {
         const { done, value } = await reader.read();
@@ -64,10 +63,15 @@ export function TopFollowers({ userId }: TopFollowersProps) {
             
             if (message.type === 'friend') {
               friendsReceived++;
-              // Only add friends after startFrom index AND not already in list
-              if (friendsReceived > startFrom && !existingIds.has(message.data.id)) {
-                setFriends(prev => [...prev, message.data]);
-                existingIds.add(message.data.id);
+              // Only add friends after startFrom index
+              if (friendsReceived > startFrom) {
+                setFriends(prev => {
+                  // Prevent duplicates
+                  if (prev.some(f => f.id === message.data.id)) {
+                    return prev;
+                  }
+                  return [...prev, message.data];
+                });
               }
             } else if (message.type === 'complete') {
               setHasMore(message.data.hasMore);
