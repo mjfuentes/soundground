@@ -40,10 +40,7 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
         "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git add -A'"
       },
       {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git commit -m \"Update via Cursor Agent\"'"
-      },
-      {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git push'"
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && ./scripts/git-commit.sh'"
       },
       {
         "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run deploy:fly'"
@@ -61,8 +58,7 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
 2. When completing a task, the following steps run sequentially:
    - **Validation**: Run type-check, linting, build, and Fly.io checks
    - **Stage**: Git add all changes
-   - **Commit**: Create commit with automated message
-   - **Push**: Push to remote repository
+   - **Commit & Push**: Create commit and push to remote repository
    - **Deploy**: Deploy to Fly.io
    - **Verify**: Health check deployment with curl
 3. Each step must succeed before proceeding to the next. If any step fails, the workflow stops.
