@@ -3,12 +3,12 @@
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "./.cursor/hooks/format.sh"
+        "command": "/Users/matifuentes/Workspace/cloudmate/.cursor/hooks/format.sh"
       }
     ],
     "stop": [
       {
-        "command": "./.cursor/hooks/deploy.sh"
+        "command": "/Users/matifuentes/Workspace/cloudmate/.cursor/hooks/deploy.sh"
       }
     ]
   }

@@ -1,31 +1,32 @@
 #!/bin/bash
 
-# Set up PATH to include Homebrew and common Node.js locations
-export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.nvm/versions/node/$(ls -1 $HOME/.nvm/versions/node 2>/dev/null | tail -1)/bin:$PATH"
+# Set up PATH to include Homebrew and npm binaries
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 # Read hook input from stdin
 input=$(cat)
 
 # Change to project directory
-cd /Users/matifuentes/Workspace/cloudmate
+cd /Users/matifuentes/Workspace/cloudmate || exit 1
 
-# Run deployment pipeline
-echo "Running pre-deployment checks..."
-npm run deploy:check || exit 1
+# Run deployment pipeline using full path to npm
+# Redirect output to stderr so it doesn't interfere with hook JSON output
+echo "Running pre-deployment checks..." >&2
+/opt/homebrew/bin/npm run deploy:check >&2 || exit 1
 
-echo "Staging changes..."
-git add -A || exit 1
+echo "Staging changes..." >&2
+git add -A >&2 || exit 1
 
-echo "Creating commit..."
-./scripts/git-commit.sh || exit 1
+echo "Creating commit..." >&2
+./scripts/git-commit.sh >&2 || exit 1
 
-echo "Deploying to Fly.io..."
-npm run deploy:fly || exit 1
+echo "Deploying to Fly.io..." >&2
+/opt/homebrew/bin/npm run deploy:fly >&2 || exit 1
 
-echo "Validating deployment..."
-npm run validate:deployment || exit 1
+echo "Validating deployment..." >&2
+/opt/homebrew/bin/npm run validate:deployment >&2 || exit 1
 
-echo "Deployment complete!"
+echo "Deployment complete!" >&2
 exit 0
 
 

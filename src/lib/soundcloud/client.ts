@@ -79,14 +79,21 @@ export async function resolveProfile(url: string): Promise<SoundCloudUser> {
   return response;
 }
 
-export async function getSpotlight(userId: number): Promise<{ collection: SoundCloudTrack[] }> {
+export type SpotlightItem = SoundCloudTrack | SoundCloudPlaylist;
+
+export async function getSpotlight(userId: number): Promise<{ collection: SpotlightItem[] }> {
   const response = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/spotlight`, {
     searchParams: {
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<{ collection: SoundCloudTrack[] }>();
+  }).json<{ collection: SpotlightItem[] }>();
 
   return response;
+}
+
+// Type guard to check if an item is a playlist
+export function isPlaylist(item: SpotlightItem): item is SoundCloudPlaylist {
+  return 'track_count' in item && 'is_album' in item;
 }
 
 export async function getPlaylists(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {

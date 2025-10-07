@@ -1,5 +1,6 @@
 import type { SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
+// Profile statistics component
 interface ProfileStatsProps {
   tracks: SoundCloudTrack[];
   playlists: SoundCloudPlaylist[];
