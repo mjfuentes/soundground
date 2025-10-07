@@ -13,8 +13,15 @@ interface SoundcloudProfileViewProps {
 export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewProps) {
   const url = profile.startsWith("http") ? profile : `https://soundcloud.com/${profile}`;
 
+  // Use full URL for external deployment, relative URL for localhost
+  const apiUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.FLY_APP_NAME
+    ? `https://${process.env.FLY_APP_NAME}.fly.dev`
+    : 'http://localhost:3000';
+    
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/soundcloud/profile?url=${encodeURIComponent(url)}`,
+    `${apiUrl}/api/soundcloud/profile?url=${encodeURIComponent(url)}`,
     { next: { revalidate: 300 } }
   );
 
