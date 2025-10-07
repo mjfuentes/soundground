@@ -29,11 +29,6 @@ export function ProfileStats({ tracks, playlists, albums }: ProfileStatsProps) {
 
   const totalComments = tracks.reduce((sum, track) => sum + (track.comment_count || 0), 0);
 
-  // Find most popular track
-  const mostPopularTrack = tracks.reduce((prev, current) => {
-    return (current.playback_count || 0) > (prev.playback_count || 0) ? current : prev;
-  }, tracks[0]);
-
   const stats = [
     { label: "Total Plays", value: totalPlays, icon: "▶" },
     { label: "Total Likes", value: totalLikes, icon: "♥" },
@@ -54,15 +49,6 @@ export function ProfileStats({ tracks, playlists, albums }: ProfileStatsProps) {
           </div>
         ))}
       </div>
-      {mostPopularTrack && mostPopularTrack.playback_count && (
-        <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
-          <div className="mb-1 text-xs text-zinc-400">Most Popular Track</div>
-          <div className="truncate text-sm font-medium text-white">{mostPopularTrack.title}</div>
-          <div className="text-xs text-purple-400">
-            {formatNumber(mostPopularTrack.playback_count)} plays
-          </div>
-        </div>
-      )}
     </div>
   );
 }
