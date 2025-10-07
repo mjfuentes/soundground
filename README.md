@@ -122,6 +122,22 @@ CACHE_DB_PATH=/path/to/cache.db npm run dev
 
 The project uses Husky for pre-commit validation and Cursor Agent Hooks for automated deployment (see `.cursorrules` for configuration).
 
+### Automated Deployment Pipeline
+
+When the Cursor agent completes a task, it automatically runs:
+1. **Pre-deployment checks** - TypeScript, ESLint, build verification, Fly.io checks
+2. **UI Validation** - Chrome DevTools checks to verify interface integrity
+3. **Git staging** - Stage all changes
+4. **Commit** - Create commit with AI-generated message
+5. **Deploy** - Deploy to Fly.io
+6. **Post-deployment validation** - Health check the deployment
+
+The UI validation step uses Chrome DevTools to:
+- Verify the homepage loads correctly
+- Test profile pages render without errors
+- Check for JavaScript console errors
+- Validate key UI components are present
+
 ## Deployment
 
 Currently deployed at: https://cloudmate.fly.dev
@@ -145,6 +161,7 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
 - `npm run test:watch` - Run tests in watch mode
 - `npm run test:ci` - Run tests in CI mode
 - `npm run validate:env` - Validate environment variables
+- `npm run validate:ui` - Validate UI with Chrome DevTools
 - `npm run validate:deployment` - Validate deployment is running correctly
 - `npm run deploy:check` - Run pre-deployment checks
 - `npm run deploy:fly` - Deploy to Fly.io

@@ -15,6 +15,7 @@
     "prepare": "husky",
     "validate:env": "node scripts/validate-env.js",
     "validate:deployment": "node scripts/validate-deployment.js",
+    "validate:ui": ".cursor/hooks/validate-ui.sh",
     "deploy:check": "node scripts/pre-deploy-check.js",
     "deploy:fly": "flyctl deploy --remote-only",
     "deploy": "npm run deploy:check && npm run deploy:fly"
