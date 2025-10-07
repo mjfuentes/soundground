@@ -10,6 +10,10 @@ npx lint-staged
 echo "📝 Type checking..."
 npm run type-check
 
+# Run tests
+echo "🧪 Running tests..."
+npm test -- --passWithNoTests --bail
+
 # Build check
 echo "🏗️  Testing build..."
 npm run build

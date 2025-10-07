@@ -8,8 +8,15 @@ interface SpotlightPlaylistProps {
 }
 
 export async function SpotlightPlaylist({ playlist }: SpotlightPlaylistProps) {
-  // Fetch the full playlist with tracks
-  const playlistWithTracks = await getPlaylistWithTracks(playlist.id);
+  // Fetch the full playlist with tracks, with error handling
+  let playlistWithTracks = playlist;
+  
+  try {
+    playlistWithTracks = await getPlaylistWithTracks(playlist.id);
+  } catch (error) {
+    console.error(`Failed to fetch tracks for playlist ${playlist.id}:`, error);
+    // Fall back to showing just the playlist card
+  }
   
   return (
     <div className="flex flex-col gap-2">

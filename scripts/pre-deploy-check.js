@@ -48,6 +48,13 @@ const checks = [
     },
   },
   {
+    name: 'Test suite',
+    fn: () => {
+      log('  Running tests...', colors.yellow);
+      execSync('npm test -- --passWithNoTests', { stdio: 'inherit' });
+    },
+  },
+  {
     name: 'Build verification',
     fn: () => {
       log('  Building project...', colors.yellow);
