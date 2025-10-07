@@ -15,6 +15,9 @@ export const soundcloudUserSchema = z.object({
   track_count: z.number(),
   username: z.string(),
   verified: z.boolean(),
+  public_favorites_count: z.number().optional(), // User's likes given
+  reposts_count: z.number().optional(), // User's reposts made
+  comments_count: z.number().optional(), // User's comments made
   visuals: z
     .object({
       urn: z.string(),

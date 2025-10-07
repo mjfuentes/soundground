@@ -69,9 +69,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
               <RichDescription text={user.description} />
             </ExpandableSection>
           ) : null}
-          {tracks.length > 0 && (
-            <ProfileStats tracks={tracks} playlists={playlists} albums={albums} />
-          )}
+          <ProfileStats user={user} />
           {topFollowers && topFollowers.length > 0 && (
             <TopFollowers initialFollowers={topFollowers} />
           )}

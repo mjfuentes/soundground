@@ -18,6 +18,9 @@ export interface SoundCloudUser {
   city?: string;
   country_code?: string;
   full_name?: string;
+  public_favorites_count?: number; // User's likes given
+  reposts_count?: number; // User's reposts made
+  comments_count?: number; // User's comments made
   visuals?: {
     urn: string;
     visual_url: string;
