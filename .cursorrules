@@ -126,6 +126,12 @@ The pre-deployment script automatically checks:
 - Production: Managed via Fly.io secrets
 - Use `process.env.VERCEL_URL` or `process.env.FLY_APP_NAME` for API URL detection
 
+## Development Server
+- **Always use port 3000** for local development
+- Before starting dev server, kill any process using port 3000: `lsof -ti:3000 | xargs kill -9`
+- Start dev server with `npm run dev` (runs on http://localhost:3000)
+- If port 3000 is blocked, kill the process and restart rather than using alternative ports
+
 ## Testing & Validation
 - Always run `npm run type-check` before major changes
 - Use `npm run lint:fix` to auto-fix linting issues

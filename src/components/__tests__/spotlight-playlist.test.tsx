@@ -3,9 +3,15 @@ import '@testing-library/jest-dom';
 import { SpotlightPlaylist } from '../spotlight-playlist';
 import * as cachedClient from '@/lib/soundcloud/cached-client';
 import type { SoundCloudPlaylist } from '@/lib/soundcloud/client';
+import { PlayerProvider } from '@/contexts/player-context';
 
 // Mock the cached client
 jest.mock('@/lib/soundcloud/cached-client');
+
+// Helper to render with PlayerProvider
+const renderWithProvider = (component: React.ReactElement) => {
+  return render(<PlayerProvider>{component}</PlayerProvider>);
+};
 
 const mockPlaylist: SoundCloudPlaylist = {
   id: 123,
@@ -64,7 +70,7 @@ describe('SpotlightPlaylist', () => {
   it('should render playlist card', async () => {
     jest.spyOn(cachedClient, 'getPlaylistWithTracks').mockResolvedValue(mockPlaylistWithTracks);
 
-    render(await SpotlightPlaylist({ playlist: mockPlaylist }));
+    renderWithProvider(await SpotlightPlaylist({ playlist: mockPlaylist }));
     
     expect(await screen.findByText('Test Playlist')).toBeDefined();
   });
@@ -72,7 +78,7 @@ describe('SpotlightPlaylist', () => {
   it('should render playlist tracks when available', async () => {
     jest.spyOn(cachedClient, 'getPlaylistWithTracks').mockResolvedValue(mockPlaylistWithTracks);
 
-    render(await SpotlightPlaylist({ playlist: mockPlaylist }));
+    renderWithProvider(await SpotlightPlaylist({ playlist: mockPlaylist }));
     
     expect(await screen.findByText('Track 1')).toBeDefined();
     expect(await screen.findByText('Track 2')).toBeDefined();
@@ -82,7 +88,7 @@ describe('SpotlightPlaylist', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     jest.spyOn(cachedClient, 'getPlaylistWithTracks').mockRejectedValue(new Error('API Error'));
 
-    render(await SpotlightPlaylist({ playlist: mockPlaylist }));
+    renderWithProvider(await SpotlightPlaylist({ playlist: mockPlaylist }));
     
     // Playlist card should still render
     expect(await screen.findByText('Test Playlist')).toBeDefined();
@@ -99,7 +105,7 @@ describe('SpotlightPlaylist', () => {
   it('should not render tracks section when playlist has no tracks', async () => {
     jest.spyOn(cachedClient, 'getPlaylistWithTracks').mockResolvedValue(mockPlaylist);
 
-    const { container } = render(await SpotlightPlaylist({ playlist: mockPlaylist }));
+    const { container } = renderWithProvider(await SpotlightPlaylist({ playlist: mockPlaylist }));
     
     // Playlist card should render
     expect(await screen.findByText('Test Playlist')).toBeDefined();

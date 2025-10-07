@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
+import { usePlayer } from "@/contexts/player-context";
 
 interface PlaylistCardProps {
   playlist: SoundCloudPlaylist;
@@ -26,12 +28,21 @@ function formatDuration(ms: number): string {
 }
 
 export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) {
+  const { play } = usePlayer();
+
+  const handleClick = () => {
+    play({
+      url: playlist.permalink_url,
+      title: playlist.title,
+      artwork: playlist.artwork_url?.replace("large.jpg", "t200x200.jpg"),
+      type: "playlist",
+    });
+  };
+
   return (
-    <Link
-      href={playlist.permalink_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3 transition hover:border-purple-500/50 hover:bg-purple-500/10"
+    <button
+      onClick={handleClick}
+      className="group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
     >
       {/* Artwork */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
@@ -93,7 +104,7 @@ export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) 
           </div>
         )}
       </div>
-    </Link>
+    </button>
   );
 }
 

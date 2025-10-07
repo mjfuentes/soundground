@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
 import type { SoundCloudTrack } from "@/lib/soundcloud/client";
+import { usePlayer } from "@/contexts/player-context";
 
 interface TrackCardProps {
   track: SoundCloudTrack;
@@ -22,6 +24,19 @@ function formatDuration(ms: number): string {
 }
 
 export function TrackCard({ track, showStats = true }: TrackCardProps) {
+  const { play } = usePlayer();
+
+  const handleClick = () => {
+    if (track.permalink_url) {
+      play({
+        url: track.permalink_url,
+        title: track.title,
+        artwork: track.artwork_url?.replace("large.jpg", "t200x200.jpg"),
+        type: "track",
+      });
+    }
+  };
+
   const content = (
     <>
       {/* Album Art */}
@@ -104,14 +119,12 @@ export function TrackCard({ track, showStats = true }: TrackCardProps) {
   }
 
   return (
-    <Link
-      href={track.permalink_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3 transition hover:border-purple-500/50 hover:bg-purple-500/10"
+    <button
+      onClick={handleClick}
+      className="group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
     >
       {content}
-    </Link>
+    </button>
   );
 }
 

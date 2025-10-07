@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
+import { usePlayer } from "@/contexts/player-context";
 
 interface AlbumCardProps {
   album: SoundCloudPlaylist;
@@ -15,12 +17,21 @@ function formatNumber(num?: number): string {
 }
 
 export function AlbumCard({ album, showStats = true }: AlbumCardProps) {
+  const { play } = usePlayer();
+
+  const handleClick = () => {
+    play({
+      url: album.permalink_url,
+      title: album.title,
+      artwork: album.artwork_url?.replace("large.jpg", "t500x500.jpg"),
+      type: "album",
+    });
+  };
+
   return (
-    <Link
-      href={album.permalink_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex flex-col gap-2"
+    <button
+      onClick={handleClick}
+      className="group flex w-full flex-col gap-2 text-left"
     >
       <div className="relative aspect-square overflow-hidden rounded-lg bg-white/5 transition">
         {album.artwork_url ? (
@@ -73,7 +84,7 @@ export function AlbumCard({ album, showStats = true }: AlbumCardProps) {
           </div>
         )}
       </div>
-    </Link>
+    </button>
   );
 }
 
