@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set up PATH to include Homebrew and common Node.js locations
+export PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.nvm/versions/node/$(ls -1 $HOME/.nvm/versions/node 2>/dev/null | tail -1)/bin:$PATH"
+
 # Read hook input from stdin
 input=$(cat)
 
