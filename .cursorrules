@@ -31,7 +31,7 @@ When running commands (especially for deployment pipelines, slash commands, or a
 ## Deployment Automation with Cursor Hooks
 
 ### Hook Configuration
-This project uses Cursor Agent Hooks for automated deployment. Configuration is in `.cursor/hooks.json`:
+This project uses **global** Cursor Agent Hooks for automated deployment. Configuration is in `~/.cursor/hooks.json`:
 
 ```json
 {
@@ -39,21 +39,22 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "./.cursor/hooks/format.sh"
+        "command": "~/.cursor/hooks/format.sh"
       }
     ],
     "stop": [
       {
-        "command": "./.cursor/hooks/deploy.sh"
+        "command": "~/.cursor/hooks/deploy.sh"
       }
     ]
   }
 }
 ```
 
-Hook scripts are located in `.cursor/hooks/`:
+Hook scripts are located globally in `~/.cursor/hooks/`:
 - `format.sh` - Runs linting for TypeScript/TSX files after edits
 - `deploy.sh` - Runs the full deployment pipeline when agent completes
+- Scripts automatically detect the current workspace and run commands in the correct project directory
 
 ### Deployment Workflow
 1. After editing TypeScript files, linting auto-fixes
