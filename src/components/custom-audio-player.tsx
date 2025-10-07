@@ -1,18 +1,18 @@
 "use client";
 
 import { usePlayer } from "@/contexts/player-context";
-import Image from "next/image";
 
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds)) return "0:00";
+function formatTimeDetailed(seconds: number): string {
+  if (!isFinite(seconds)) return "00:00.000";
   const hours = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
+  const ms = Math.floor((seconds % 1) * 1000);
   
   if (hours > 0) {
-    return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
   }
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
 }
 
 export function CustomAudioPlayer() {
@@ -28,6 +28,9 @@ export function CustomAudioPlayer() {
     resume,
     seek,
     setVolume,
+    queue,
+    next,
+    previous,
   } = usePlayer();
 
   if (!currentItem) {
@@ -41,7 +44,7 @@ export function CustomAudioPlayer() {
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume); // Expects 0-1
+    setVolume(newVolume);
   };
 
   const togglePlayPause = () => {
@@ -53,20 +56,23 @@ export function CustomAudioPlayer() {
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const bitrate = 128; // SoundCloud typical
+  const sampleRate = "44.1 kHz";
+  const codec = "MP3";
 
   return (
-    <div className="w-full">
-      {/* Error message */}
+    <div className="w-full font-mono">
+      {/* Error message - foobar2000 style */}
       {error && (
-        <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2">
+        <div className="mb-2 border border-red-800 bg-red-950/80 px-3 py-2">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-xs text-red-300">{error}</p>
             {error.includes("SoundCloud") && currentItem && (
               <a
                 href={currentItem.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 rounded bg-orange-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-orange-600"
+                className="flex-shrink-0 border border-orange-600 bg-orange-900/50 px-2 py-1 text-xs text-orange-300 hover:bg-orange-900"
               >
                 Open in SoundCloud
               </a>
@@ -75,128 +81,110 @@ export function CustomAudioPlayer() {
         </div>
       )}
 
-      {/* Main player container */}
-      <div className="relative overflow-hidden rounded-lg border border-purple-500/20 bg-gradient-to-br from-zinc-900/95 to-black/95 shadow-2xl shadow-purple-500/10">
-        {/* Background artwork blur */}
-        {currentItem.artwork && (
-          <div className="absolute inset-0 overflow-hidden opacity-20">
-            <Image
-              src={currentItem.artwork}
-              alt=""
-              fill
-              className="scale-110 object-cover blur-2xl"
-              priority
-            />
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="relative p-4">
-          {/* Track info with artwork */}
-          <div className="mb-4 flex items-center gap-4">
-            {/* Artwork */}
-            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 shadow-lg">
-              {currentItem.artwork ? (
-                <Image
-                  src={currentItem.artwork}
-                  alt={currentItem.title}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                  priority
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <svg className="h-8 w-8 text-purple-400/50" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-
-            {/* Track details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="truncate text-base font-semibold text-white">
+      {/* Main player container - foobar2000 style */}
+      <div className="border border-neutral-700 bg-neutral-900 shadow-lg">
+        {/* Top info bar */}
+        <div className="border-b border-neutral-700 bg-neutral-800 px-3 py-2">
+          <div className="flex items-center justify-between text-[11px] text-neutral-300">
+            <div className="flex items-center gap-3">
+              <span className="text-neutral-400">
+                {isLoading ? "⏳" : isPaused ? "⏸" : "▶"}
+              </span>
+              <span className="font-semibold text-white">
                 {currentItem.title}
-              </h3>
+              </span>
+              <span className="text-neutral-500">•</span>
               <a
                 href={currentItem.artistUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-purple-400 hover:text-purple-300 hover:underline"
+                className="text-neutral-400 hover:text-white hover:underline"
               >
                 {currentItem.artist}
               </a>
             </div>
-
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-500/30 border-t-purple-500" />
-              </div>
-            )}
-          </div>
-
-          {/* Progress bar */}
-          <div className="mb-3">
-            <div className="group relative">
-              <input
-                type="range"
-                min="0"
-                max={duration || 0}
-                value={currentTime}
-                onChange={handleSeek}
-                disabled={!duration || isLoading}
-                className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:transition-all group-hover:[&::-webkit-slider-thumb]:h-4 group-hover:[&::-webkit-slider-thumb]:w-4 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:transition-all group-hover:[&::-moz-range-thumb]:h-4 group-hover:[&::-moz-range-thumb]:w-4"
-                style={{
-                  background: `linear-gradient(to right, rgb(168 85 247) 0%, rgb(168 85 247) ${progressPercent}%, rgba(255,255,255,0.1) ${progressPercent}%, rgba(255,255,255,0.1) 100%)`,
-                }}
-              />
-            </div>
-            <div className="mt-1 flex justify-between text-xs text-zinc-400">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
+            <div className="flex items-center gap-2 text-neutral-500">
+              <span>{codec}</span>
+              <span>|</span>
+              <span>{bitrate} kbps</span>
+              <span>|</span>
+              <span>{sampleRate}</span>
             </div>
           </div>
+        </div>
 
-          {/* Controls */}
-          <div className="flex items-center gap-4">
-            {/* Play/Pause button */}
+        {/* Controls section */}
+        <div className="border-b border-neutral-700 bg-neutral-900 px-3 py-3">
+          <div className="mb-3 flex items-center gap-2">
+            {/* Transport controls */}
+            <button
+              onClick={previous}
+              disabled={isLoading}
+              className="flex h-7 w-8 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Previous"
+              title="Previous track"
+            >
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+              </svg>
+            </button>
+            
             <button
               onClick={togglePlayPause}
               disabled={isLoading || !!error}
-              className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-purple-500 text-white shadow-lg shadow-purple-500/30 transition-all hover:scale-105 hover:bg-purple-600 hover:shadow-purple-500/50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label={isPaused ? "Resume" : "Pause"}
+              className="flex h-7 w-12 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={isPaused ? "Play" : "Pause"}
             >
               {isPaused ? (
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               ) : (
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                 </svg>
               )}
             </button>
 
-            {/* Volume control */}
-            <div className="flex flex-1 items-center gap-2">
+            <button
+              onClick={next}
+              disabled={queue.length === 0 || isLoading}
+              className="flex h-7 w-8 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Next"
+              title={queue.length === 0 ? "No tracks in queue" : "Next track"}
+            >
+              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+              </svg>
+            </button>
+
+            {/* Time display */}
+            <div className="ml-4 flex items-center gap-2 text-[11px] text-neutral-400">
+              <span className="w-[72px] text-right tabular-nums">{formatTimeDetailed(currentTime)}</span>
+              <span className="text-neutral-600">/</span>
+              <span className="w-[72px] tabular-nums">{formatTimeDetailed(duration)}</span>
+            </div>
+
+            {/* Volume */}
+            <div className="ml-auto flex items-center gap-2">
               <button
                 onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
-                className="flex-shrink-0 text-zinc-400 transition hover:text-white"
+                className="text-neutral-400 hover:text-neutral-200"
                 aria-label={volume > 0 ? "Mute" : "Unmute"}
+                title={`Volume: ${Math.round(volume * 100)}%`}
               >
                 {volume > 0.5 ? (
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
                   </svg>
                 ) : volume > 0 ? (
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z" />
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 9v6h4l5 5V4L9 9H5z" />
                   </svg>
                 ) : (
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 9v6h4l5 5V4L9 9H5z" />
+                    <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2" />
                   </svg>
                 )}
               </button>
@@ -207,42 +195,87 @@ export function CustomAudioPlayer() {
                 step="0.01"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-white/10 transition-all hover:bg-white/20 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:h-3.5 hover:[&::-webkit-slider-thumb]:w-3.5 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-lg [&::-moz-range-thumb]:transition-all hover:[&::-moz-range-thumb]:h-3.5 hover:[&::-moz-range-thumb]:w-3.5"
+                className="h-1 w-20 cursor-pointer appearance-none bg-neutral-700 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-1.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-neutral-400 [&::-webkit-slider-thumb]:hover:bg-neutral-200 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-1.5 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-neutral-400 [&::-moz-range-thumb]:hover:bg-neutral-200"
                 style={{
-                  background: `linear-gradient(to right, white 0%, white ${volume * 100}%, rgba(255,255,255,0.1) ${volume * 100}%, rgba(255,255,255,0.1) 100%)`,
+                  background: `linear-gradient(to right, rgb(163 163 163) 0%, rgb(163 163 163) ${volume * 100}%, rgb(64 64 64) ${volume * 100}%, rgb(64 64 64) 100%)`,
                 }}
                 aria-label="Volume"
               />
-              <span className="w-10 flex-shrink-0 text-right text-xs text-zinc-400">
+              <span className="w-8 text-right text-[11px] text-neutral-500 tabular-nums">
                 {Math.round(volume * 100)}%
               </span>
             </div>
           </div>
 
-          {/* SoundCloud attribution - Required by API Terms */}
-          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span>Powered by</span>
+          {/* Seekbar */}
+          <div className="relative">
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleSeek}
+              disabled={!duration || isLoading}
+              className="h-5 w-full cursor-pointer appearance-none bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-neutral-500 [&::-webkit-slider-thumb]:bg-neutral-600 [&::-webkit-slider-thumb]:hover:bg-neutral-500 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-2 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-neutral-500 [&::-moz-range-thumb]:bg-neutral-600 [&::-moz-range-thumb]:hover:bg-neutral-500"
+              style={{
+                background: `linear-gradient(to right, rgb(82 82 82) 0%, rgb(82 82 82) ${progressPercent}%, rgb(38 38 38) ${progressPercent}%, rgb(38 38 38) 100%)`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Queue section */}
+        {queue.length > 0 && (
+          <div className="border-b border-neutral-700 bg-neutral-900 px-3 py-2">
+            <div className="mb-1 text-[11px] font-semibold text-neutral-400">
+              QUEUE ({queue.length} {queue.length === 1 ? "track" : "tracks"})
+            </div>
+            <div className="max-h-24 space-y-1 overflow-y-auto text-[11px] text-neutral-500">
+              {queue.slice(0, 5).map((item, idx) => (
+                <div key={item.id} className="flex items-center gap-2 truncate hover:text-neutral-300">
+                  <span className="w-6 text-right text-neutral-600 tabular-nums">{idx + 1}.</span>
+                  <span className="flex-1 truncate">{item.title}</span>
+                  <span className="text-neutral-600">-</span>
+                  <span className="text-neutral-600">{item.artist}</span>
+                </div>
+              ))}
+              {queue.length > 5 && (
+                <div className="text-neutral-600">
+                  ... and {queue.length - 5} more
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Status bar */}
+        <div className="bg-neutral-800 px-3 py-1.5">
+          <div className="flex items-center justify-between text-[10px] text-neutral-500">
+            <div className="flex items-center gap-3">
+              <span>Status: {isLoading ? "Loading..." : error ? "Error" : isPaused ? "Paused" : "Playing"}</span>
+              <span className="text-neutral-700">|</span>
+              <span>Type: {currentItem.type}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-neutral-600">Powered by</span>
               <a
                 href="https://soundcloud.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-orange-400 transition hover:text-orange-300"
+                className="text-orange-500/70 hover:text-orange-400"
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 17.939h-1v-8.068c.308-.231.639-.429 1-.566v8.634zm3 0h1v-9.224c-.229.265-.443.548-.621.857l-.379-.184v8.551zm-2 0h1v-8.848c-.508-.079-.623-.05-1-.01v8.858zm-4 0h1v-7.02c-.312.458-.555.971-.692 1.535l-.308-.182v5.667zm-3-5.25c-.606.547-1 1.354-1 2.268 0 .914.394 1.721 1 2.268v-4.536zm18.879-.671c-.204-2.837-2.404-5.079-5.117-5.079-1.022 0-1.964.328-2.762.877v10.123h9.089c1.607 0 2.911-1.393 2.911-3.106 0-1.712-1.304-3.106-2.911-3.106-.384 0-.751.072-1.092.201l-.118.09zm-9.879.696v8.285h1v-9.533c-.298.548-.568 1.174-.684 1.856l-.316-.608z" />
-                </svg>
                 SoundCloud
               </a>
+              <span className="text-neutral-700">|</span>
+              <a
+                href={currentItem.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-neutral-400 hover:underline"
+              >
+                View Original
+              </a>
             </div>
-            <a
-              href={currentItem.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-purple-400 transition hover:text-purple-300 hover:underline"
-            >
-              View on SoundCloud →
-            </a>
           </div>
         </div>
       </div>
