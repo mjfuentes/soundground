@@ -54,44 +54,29 @@ export function FloatingPlayer() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-      {/* Main player container - foobar2000 style */}
       <div className="border-t-2 border-neutral-700 bg-neutral-900 shadow-2xl">
         <div className="mx-auto max-w-7xl px-4 py-3">
-          {/* Header bar */}
-          <div className="mb-3 flex items-center justify-between border-b border-neutral-800 pb-2">
-            <div className="flex items-center gap-2 font-mono text-xs text-neutral-400">
-              <span className="font-semibold text-neutral-300">foobar2000</span>
-              <span className="text-neutral-700">|</span>
-              <span>CloudMate Player</span>
-            </div>
-            
-            {/* Window controls */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setIsMinimized(true)}
-                className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-white"
-                title="Minimize"
-              >
-                _
-              </button>
-              <button
-                onClick={stop}
-                className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-red-900 hover:text-red-300"
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
+          {/* Window controls */}
+          <div className="mb-2 flex items-center justify-end gap-1">
+            <button
+              onClick={() => setIsMinimized(true)}
+              className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-white"
+              title="Minimize (ESC)"
+            >
+              _
+            </button>
+            <button
+              onClick={stop}
+              className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-red-900 hover:text-red-300"
+              title="Close"
+            >
+              ✕
+            </button>
           </div>
 
           {/* Audio Player */}
           <div className="w-full">
             <CustomAudioPlayer />
-          </div>
-
-          {/* Footer hint */}
-          <div className="mt-2 border-t border-neutral-800 pt-2 text-center font-mono text-[10px] text-neutral-600">
-            Press <kbd className="border border-neutral-700 bg-neutral-800 px-1 py-0.5 text-neutral-500">ESC</kbd> to close player
           </div>
         </div>
       </div>
