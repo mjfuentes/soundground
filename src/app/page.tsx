@@ -36,7 +36,7 @@ export default function Home() {
         setOauthMode(false);
         setLoading(false);
       });
-  }, [router]);
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
