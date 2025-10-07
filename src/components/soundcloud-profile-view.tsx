@@ -34,7 +34,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   }
 
   const data = await response.json();
-  const { profile: user, spotlight = [], playlists = [], albums = [], topFollowers = [], tracks = [] } = data ?? {};
+  const { profile: user, spotlight = [], playlists = [], albums = [], tracks = [] } = data ?? {};
 
   if (!user) {
     return (
@@ -77,9 +77,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
           {tracks.length > 0 && (
             <ProfileStats tracks={tracks} playlists={playlists} albums={albums} />
           )}
-          {topFollowers && topFollowers.length > 0 && (
-            <TopFollowers initialFollowers={topFollowers} />
-          )}
+          <TopFollowers userId={user.id} />
         </div>
       </section>
       <section className="flex flex-col gap-6">
