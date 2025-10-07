@@ -93,13 +93,20 @@ describe('/api/soundcloud/profile', () => {
       permalink_url: 'https://soundcloud.com/test-user',
     };
 
-    const mockFollowers = {
+    const mockFollowersPage1 = {
       collection: [
         { id: 1, permalink: 'user1', username: 'User 1', followers_count: 100 },
         { id: 2, permalink: 'user2', username: 'User 2', followers_count: 500 },
+      ],
+      next_href: 'https://api-v2.soundcloud.com/users/123/followers?offset=200',
+    };
+
+    const mockFollowersPage2 = {
+      collection: [
         { id: 3, permalink: 'user3', username: 'User 3', followers_count: 300 },
         { id: 4, permalink: 'user4', username: 'User 4', followers_count: 200 },
       ],
+      next_href: undefined,
     };
 
     // Artist follows back user 2 and user 3 (mutual follows = friends)
@@ -108,13 +115,19 @@ describe('/api/soundcloud/profile', () => {
         { id: 2, permalink: 'user2', username: 'User 2', followers_count: 500 },
         { id: 3, permalink: 'user3', username: 'User 3', followers_count: 300 },
       ],
+      next_href: undefined,
     };
 
     (smartClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
     (smartClient.getSpotlight as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
-    (smartClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    
+    // Mock pagination for followers
+    (smartClient.getFollowers as jest.Mock)
+      .mockResolvedValueOnce(mockFollowersPage1)
+      .mockResolvedValueOnce(mockFollowersPage2);
+    
     (smartClient.getFollowings as jest.Mock).mockResolvedValue(mockFollowings);
     (smartClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
@@ -128,6 +141,9 @@ describe('/api/soundcloud/profile', () => {
     expect(data.topFollowers[0].followers_count).toBe(500);
     expect(data.topFollowers[1].id).toBe(3); // User 3 with 300 followers
     expect(data.topFollowers[1].followers_count).toBe(300);
+    
+    // Verify getFollowers was called twice (pagination)
+    expect(smartClient.getFollowers).toHaveBeenCalledTimes(2);
   });
 
   it('should handle errors gracefully', async () => {
