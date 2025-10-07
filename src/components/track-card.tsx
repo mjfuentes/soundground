@@ -22,13 +22,8 @@ function formatDuration(ms: number): string {
 }
 
 export function TrackCard({ track, showStats = true }: TrackCardProps) {
-  return (
-    <Link
-      href={track.permalink_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3 transition hover:border-purple-500/50 hover:bg-purple-500/10"
-    >
+  const content = (
+    <>
       {/* Album Art */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
         {track.artwork_url ? (
@@ -97,6 +92,25 @@ export function TrackCard({ track, showStats = true }: TrackCardProps) {
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (!track.permalink_url) {
+    return (
+      <div className="group flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3 opacity-75">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={track.permalink_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3 transition hover:border-purple-500/50 hover:bg-purple-500/10"
+    >
+      {content}
     </Link>
   );
 }

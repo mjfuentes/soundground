@@ -8,6 +8,7 @@ import { TrackCard } from "./track-card";
 import { SpotlightPlaylist } from "./spotlight-playlist";
 import { AlbumCard } from "./album-card";
 import { isPlaylist } from "@/lib/soundcloud/client";
+import { getServerBaseUrl } from "@/lib/server-base-url";
 import type { SoundCloudTrack, SoundCloudPlaylist, SpotlightItem } from "@/lib/soundcloud/client";
 
 interface SoundcloudProfileViewProps {
@@ -17,12 +18,7 @@ interface SoundcloudProfileViewProps {
 export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewProps) {
   const url = profile.startsWith("http") ? profile : `https://soundcloud.com/${profile}`;
 
-  // Use full URL for external deployment, relative URL for localhost
-  const apiUrl = process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.FLY_APP_NAME
-    ? `https://${process.env.FLY_APP_NAME}.fly.dev`
-    : 'http://localhost:3000';
+  const apiUrl = getServerBaseUrl();
     
   const response = await fetch(
     `${apiUrl}/api/soundcloud/profile?url=${encodeURIComponent(url)}`,
@@ -38,7 +34,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   }
 
   const data = await response.json();
-  const { profile: user, spotlight, playlists, albums, topFollowers, tracks = [] } = data;
+  const { profile: user, spotlight = [], playlists = [], albums = [], topFollowers = [], tracks = [] } = data ?? {};
 
   if (!user) {
     return (
