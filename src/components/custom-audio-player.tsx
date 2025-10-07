@@ -76,18 +76,17 @@ export function CustomAudioPlayer() {
 
       {/* Main player container */}
       <div className="border border-neutral-700 bg-neutral-900 shadow-lg">
-        {/* Top section: Controls + Track Info */}
-        <div className="flex items-center gap-4 border-b border-neutral-700 bg-neutral-800 px-4 py-3">
-          {/* Transport controls - bigger and at the top */}
-          <div className="flex items-center gap-1">
+        {/* Transport controls - centered at the very top, spanning full width */}
+        <div className="border-b border-neutral-700 bg-neutral-800 px-4 py-4">
+          <div className="flex items-center justify-center gap-2">
             <button
               onClick={previous}
               disabled={isLoading}
-              className="flex h-10 w-10 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-12 w-12 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="Previous"
               title="Previous track"
             >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
               </svg>
             </button>
@@ -95,15 +94,15 @@ export function CustomAudioPlayer() {
             <button
               onClick={togglePlayPause}
               disabled={isLoading || !!error}
-              className="flex h-10 w-14 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-12 w-16 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={isPaused ? "Play" : "Pause"}
             >
               {isPaused ? (
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               ) : (
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                 </svg>
               )}
@@ -112,30 +111,33 @@ export function CustomAudioPlayer() {
             <button
               onClick={next}
               disabled={queue.length === 0 || isLoading}
-              className="flex h-10 w-10 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-12 w-12 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="Next"
               title={queue.length === 0 ? "No tracks in queue" : "Next track"}
             >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
               </svg>
             </button>
           </div>
+        </div>
 
-          {/* Album Art */}
-          <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
+        {/* Album Art + Track Info */}
+        <div className="flex items-center gap-4 border-b border-neutral-700 bg-neutral-900 px-4 py-3">
+          {/* Album Art - 80px */}
+          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
             {currentItem.artwork ? (
               <Image
                 src={currentItem.artwork}
                 alt={currentItem.title}
                 fill
                 className="object-cover"
-                sizes="48px"
+                sizes="80px"
                 priority
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <svg className="h-6 w-6 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-10 w-10 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
               </div>
@@ -143,20 +145,39 @@ export function CustomAudioPlayer() {
           </div>
 
           {/* Track info */}
-          <div className="min-w-0 flex-1 text-[11px]">
-            <div className="truncate font-semibold text-white">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold text-white">
               {currentItem.title}
             </div>
             <a
               href={currentItem.artistUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate text-neutral-400 hover:text-white hover:underline"
+              className="mt-1 block truncate text-xs text-neutral-400 hover:text-white hover:underline"
             >
               {currentItem.artist}
             </a>
           </div>
+        </div>
 
+        {/* Seekbar */}
+        <div className="border-b border-neutral-700 bg-neutral-900 px-4 py-2">
+          <input
+            type="range"
+            min="0"
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleSeek}
+            disabled={!duration || isLoading}
+            className="h-5 w-full cursor-pointer appearance-none bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-neutral-500 [&::-webkit-slider-thumb]:bg-neutral-600 [&::-webkit-slider-thumb]:hover:bg-neutral-500 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-2 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-neutral-500 [&::-moz-range-thumb]:bg-neutral-600 [&::-moz-range-thumb]:hover:bg-neutral-500"
+            style={{
+              background: `linear-gradient(to right, rgb(82 82 82) 0%, rgb(82 82 82) ${progressPercent}%, rgb(38 38 38) ${progressPercent}%, rgb(38 38 38) 100%)`,
+            }}
+          />
+        </div>
+
+        {/* Time and Volume */}
+        <div className="flex items-center justify-between border-b border-neutral-700 bg-neutral-900 px-4 py-2">
           {/* Time display */}
           <div className="flex items-center gap-2 text-xs text-neutral-400 tabular-nums">
             <span>{formatTime(currentTime)}</span>
@@ -200,56 +221,32 @@ export function CustomAudioPlayer() {
               }}
               aria-label="Volume"
             />
-            <span className="w-8 text-right text-[11px] text-neutral-500 tabular-nums">
+            <span className="w-8 text-right text-[10px] text-neutral-500 tabular-nums">
               {Math.round(volume * 100)}%
             </span>
           </div>
         </div>
 
-        {/* Seekbar */}
-        <div className="border-b border-neutral-700 bg-neutral-900 px-4 py-3">
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleSeek}
-            disabled={!duration || isLoading}
-            className="h-5 w-full cursor-pointer appearance-none bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-neutral-500 [&::-webkit-slider-thumb]:bg-neutral-600 [&::-webkit-slider-thumb]:hover:bg-neutral-500 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-2 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-neutral-500 [&::-moz-range-thumb]:bg-neutral-600 [&::-moz-range-thumb]:hover:bg-neutral-500"
-            style={{
-              background: `linear-gradient(to right, rgb(82 82 82) 0%, rgb(82 82 82) ${progressPercent}%, rgb(38 38 38) ${progressPercent}%, rgb(38 38 38) 100%)`,
-            }}
-          />
-        </div>
-
-        {/* Queue/Next Track section */}
+        {/* Next Track section */}
         {queue.length > 0 && (
           <div className="bg-neutral-900 px-4 py-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-                <span className="text-neutral-400">Playlist:</span>
-                <span>{queue.length + 1} {queue.length + 1 === 1 ? "track" : "tracks"}</span>
-              </div>
-              
-              {/* Next track with small album art */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-neutral-500">Next:</span>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-neutral-500">Next:</span>
-                <div className="flex items-center gap-2">
-                  {queue[0].artwork && (
-                    <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
-                      <Image
-                        src={queue[0].artwork}
-                        alt={queue[0].title}
-                        fill
-                        className="object-cover"
-                        sizes="32px"
-                      />
-                    </div>
-                  )}
-                  <div className="max-w-[300px] text-[11px]">
-                    <div className="truncate text-neutral-300">{queue[0].title}</div>
-                    <div className="truncate text-neutral-600">{queue[0].artist}</div>
+                {queue[0].artwork && (
+                  <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
+                    <Image
+                      src={queue[0].artwork}
+                      alt={queue[0].title}
+                      fill
+                      className="object-cover"
+                      sizes="32px"
+                    />
                   </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs text-neutral-300">{queue[0].title}</div>
+                  <div className="truncate text-[10px] text-neutral-600">{queue[0].artist}</div>
                 </div>
               </div>
             </div>
