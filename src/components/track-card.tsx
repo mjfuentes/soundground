@@ -7,6 +7,7 @@ import { usePlayer } from "@/contexts/player-context";
 interface TrackCardProps {
   track: SoundCloudTrack;
   showStats?: boolean;
+  playlistTracks?: SoundCloudTrack[]; // All tracks from the playlist for queue
 }
 
 function formatNumber(num?: number): string {
@@ -23,8 +24,8 @@ function formatDuration(ms: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
-export function TrackCard({ track, showStats = true }: TrackCardProps) {
-  const { play } = usePlayer();
+export function TrackCard({ track, showStats = true, playlistTracks }: TrackCardProps) {
+  const { play, playTrackWithQueue } = usePlayer();
 
   // Check if track is playable
   const isPlayable = track.streamable !== false && 
@@ -40,15 +41,35 @@ export function TrackCard({ track, showStats = true }: TrackCardProps) {
     }
     
     if (track.permalink_url && track.id) {
-      play({
+      const currentTrackItem = {
         id: track.id,
         url: track.permalink_url,
         title: track.title,
         artist: track.user?.username || "Unknown Artist",
         artistUrl: track.user?.permalink_url || "https://soundcloud.com",
         artwork: track.artwork_url?.replace("large.jpg", "t200x200.jpg"),
-        type: "track",
-      });
+        type: "track" as const,
+      };
+
+      // If we have playlist context, add other tracks to queue
+      if (playlistTracks && playlistTracks.length > 1) {
+        const otherTracks = playlistTracks
+          .filter(t => t.id !== track.id && (t.streamable !== false || t.access === "preview"))
+          .map(t => ({
+            id: t.id,
+            url: t.permalink_url,
+            title: t.title,
+            artist: t.user?.username || "Unknown Artist",
+            artistUrl: t.user?.permalink_url || "https://soundcloud.com",
+            artwork: t.artwork_url?.replace("large.jpg", "t200x200.jpg"),
+            type: "track" as const,
+          }));
+
+        playTrackWithQueue(currentTrackItem, otherTracks, true); // true = shuffle others
+      } else {
+        // No playlist context, just play the track
+        play(currentTrackItem);
+      }
     }
   };
 

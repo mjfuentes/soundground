@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
+import type { SoundCloudPlaylist, SoundCloudTrack } from "@/lib/soundcloud/client";
 import { usePlayer } from "@/contexts/player-context";
 
 interface PlaylistCardProps {
@@ -27,25 +28,64 @@ function formatDuration(ms: number): string {
   return `${minutes}m`;
 }
 
-export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) {
-  const { play } = usePlayer();
+function isValidTrack(track: unknown): track is SoundCloudTrack {
+  if (!track || typeof track !== 'object') return false;
+  const t = track as Record<string, unknown>;
+  return !!(
+    t.id &&
+    t.title &&
+    t.permalink_url &&
+    typeof t.duration === 'number' &&
+    t.duration > 0 &&
+    (t.streamable !== false || t.access === "preview")
+  );
+}
 
-  const handleClick = () => {
-    play({
-      id: playlist.id,
-      url: playlist.permalink_url,
-      title: playlist.title,
-      artist: playlist.user?.username || "Unknown Artist",
-      artistUrl: playlist.user?.permalink_url || "https://soundcloud.com",
-      artwork: playlist.artwork_url?.replace("large.jpg", "t200x200.jpg"),
-      type: "playlist",
-    });
+export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) {
+  const { playQueue } = usePlayer();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleClick = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch full playlist with tracks
+      const response = await fetch(`/api/soundcloud/playlist-tracks?id=${playlist.id}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch playlist tracks");
+      }
+      
+      const playlistData: SoundCloudPlaylist = await response.json();
+      const tracks = playlistData.tracks?.filter(isValidTrack) || [];
+      
+      if (tracks.length === 0) {
+        throw new Error("No playable tracks in playlist");
+      }
+      
+      // Convert tracks to PlayableItems and shuffle
+      const playableItems = tracks.map(track => ({
+        id: track.id,
+        url: track.permalink_url,
+        title: track.title,
+        artist: track.user?.username || "Unknown Artist",
+        artistUrl: track.user?.permalink_url || "https://soundcloud.com",
+        artwork: track.artwork_url?.replace("large.jpg", "t200x200.jpg"),
+        type: "track" as const,
+      }));
+      
+      playQueue(playableItems, true); // true = shuffle
+    } catch (error) {
+      console.error("Error playing playlist:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <button
       onClick={handleClick}
-      className="group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
+      disabled={isLoading}
+      className="group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {/* Artwork */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">

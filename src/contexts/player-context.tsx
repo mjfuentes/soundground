@@ -21,12 +21,28 @@ interface PlayerContextValue {
   duration: number;
   volume: number;
   error: string | null;
+  queue: PlayableItem[];
   play: (item: PlayableItem) => void;
+  playQueue: (items: PlayableItem[], shuffle?: boolean) => void;
+  playTrackWithQueue: (track: PlayableItem, otherTracks: PlayableItem[], shuffle?: boolean) => void;
+  next: () => void;
+  previous: () => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
   seek: (time: number) => void;
   setVolume: (volume: number) => void;
+  clearQueue: () => void;
+}
+
+// Fisher-Yates shuffle algorithm for true randomness
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -40,6 +56,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.8); // 0-1 for HTML5 Audio
   const [error, setError] = useState<string | null>(null);
+  const [queue, setQueue] = useState<PlayableItem[]>([]);
+  const [history, setHistory] = useState<PlayableItem[]>([]);
+  const [shouldPlayNext, setShouldPlayNext] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -63,6 +82,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIsPlaying(false);
       setIsPaused(false);
       setCurrentTime(0);
+      setShouldPlayNext(true);
     };
     const handleError = () => {
       setError("Failed to load audio stream");
@@ -101,6 +121,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount/unmount - volume is updated via audioRef.current in setVolume
+
+  // Auto-play next track in queue when current track ends
+  useEffect(() => {
+    if (shouldPlayNext && queue.length > 0) {
+      const [nextTrack, ...remainingQueue] = queue;
+      setQueue(remainingQueue);
+      
+      if (currentItem) {
+        setHistory(prev => [...prev, currentItem]);
+      }
+      
+      setShouldPlayNext(false);
+      play(nextTrack);
+    } else if (shouldPlayNext) {
+      setShouldPlayNext(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldPlayNext]); // Only depend on shouldPlayNext to avoid circular dependencies
 
   const play = async (item: PlayableItem) => {
     if (!audioRef.current) return;
@@ -182,6 +220,52 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const playQueue = (items: PlayableItem[], shuffle = true) => {
+    if (items.length === 0) return;
+    
+    const processedItems = shuffle ? shuffleArray(items) : items;
+    const [firstTrack, ...restOfQueue] = processedItems;
+    
+    setQueue(restOfQueue);
+    play(firstTrack);
+  };
+
+  const playTrackWithQueue = (track: PlayableItem, otherTracks: PlayableItem[], shuffle = true) => {
+    const processedOtherTracks = shuffle ? shuffleArray(otherTracks) : otherTracks;
+    setQueue(processedOtherTracks);
+    play(track);
+  };
+
+  const next = () => {
+    if (queue.length === 0) return;
+    
+    const [nextTrack, ...remainingQueue] = queue;
+    setQueue(remainingQueue);
+    
+    if (currentItem) {
+      setHistory(prev => [...prev, currentItem]);
+    }
+    
+    play(nextTrack);
+  };
+
+  const previous = () => {
+    if (history.length === 0) return;
+    
+    const previousTrack = history[history.length - 1];
+    setHistory(prev => prev.slice(0, -1));
+    
+    if (currentItem) {
+      setQueue(prev => [currentItem, ...prev]);
+    }
+    
+    play(previousTrack);
+  };
+
+  const clearQueue = () => {
+    setQueue([]);
+  };
+
   return (
     <PlayerContext.Provider
       value={{
@@ -193,12 +277,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         duration,
         volume,
         error,
+        queue,
         play,
+        playQueue,
+        playTrackWithQueue,
+        next,
+        previous,
         pause,
         resume,
         stop,
         seek,
         setVolume,
+        clearQueue,
       }}
     >
       {children}

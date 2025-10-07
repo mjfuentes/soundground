@@ -50,7 +50,7 @@ export async function SpotlightPlaylist({ playlist }: SpotlightPlaylistProps) {
       {validTracks.length > 0 && (
         <div className="ml-4 flex flex-col gap-2 border-l-2 border-white/10 pl-4">
           {validTracks.map((track) => (
-            <TrackCard key={track.id} track={track} showStats={true} />
+            <TrackCard key={track.id} track={track} showStats={true} playlistTracks={validTracks} />
           ))}
         </div>
       )}
