@@ -5,7 +5,7 @@ import { ExpandableSection } from "./expandable-section";
 import { TopFollowers } from "./top-followers";
 import { ProfileStats } from "./profile-stats";
 import { TrackCard } from "./track-card";
-import { PlaylistCard } from "./playlist-card";
+import { SpotlightPlaylist } from "./spotlight-playlist";
 import { AlbumCard } from "./album-card";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import type { SoundCloudTrack, SoundCloudPlaylist, SpotlightItem } from "@/lib/soundcloud/client";
@@ -82,10 +82,10 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
         {spotlight.length > 0 && (
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-semibold text-white">Spotlight</h3>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               {spotlight.map((item: SpotlightItem) => 
                 isPlaylist(item) ? (
-                  <PlaylistCard key={item.id} playlist={item} showStats={true} />
+                  <SpotlightPlaylist key={item.id} playlist={item} />
                 ) : (
                   <TrackCard key={item.id} track={item} showStats={true} />
                 )

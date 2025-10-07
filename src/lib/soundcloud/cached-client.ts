@@ -37,7 +37,7 @@ export async function resolveProfile(url: string): Promise<client.SoundCloudUser
 /**
  * Cached version of getSpotlight
  */
-export async function getSpotlight(userId: number): Promise<{ collection: client.SoundCloudTrack[] }> {
+export async function getSpotlight(userId: number): Promise<{ collection: client.SpotlightItem[] }> {
   const cache = getCacheService();
   const cacheKey = `spotlight:${userId}`;
   return cache.getOrSet(
@@ -108,6 +108,19 @@ export async function getFollowers(
 }
 
 /**
+ * Cached version of getPlaylistWithTracks
+ */
+export async function getPlaylistWithTracks(playlistId: number): Promise<client.SoundCloudPlaylist> {
+  const cache = getCacheService();
+  const cacheKey = `playlist:${playlistId}:tracks`;
+  return cache.getOrSet(
+    cacheKey,
+    () => client.getPlaylistWithTracks(playlistId),
+    { ttl: CACHE_TTL.PLAYLISTS, type: CACHE_TYPE.PLAYLISTS }
+  );
+}
+
+/**
  * Invalidate all cache for a specific user
  * Note: Currently clears all cache entries of SoundCloud types
  * In a production system, you would implement pattern-based deletion for the specific userId
@@ -140,11 +153,14 @@ export function getCacheStats() {
   };
 }
 
-// Re-export types from the original client
+// Re-export types and functions from the original client
 export type {
   SoundCloudUser,
   SoundCloudTrack,
   SoundCloudPlaylist,
   SoundCloudFollower,
+  SpotlightItem,
 } from './client';
+
+export { isPlaylist } from './client';
 

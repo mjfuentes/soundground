@@ -61,6 +61,7 @@ export interface SoundCloudPlaylist {
   playback_count?: number;
   is_album: boolean;
   created_at?: string;
+  tracks?: SoundCloudTrack[];
   user: {
     id: number;
     username: string;
@@ -153,6 +154,16 @@ export async function getFollowers(userId: number, limit = 200, nextHref?: strin
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
   }).json<{ collection: SoundCloudFollower[]; next_href?: string }>();
+
+  return response;
+}
+
+export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCloudPlaylist> {
+  const response = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
+    searchParams: {
+      client_id: SOUNDCLOUD_CLIENT_ID,
+    },
+  }).json<SoundCloudPlaylist>();
 
   return response;
 }
