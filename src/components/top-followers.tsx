@@ -16,6 +16,8 @@ interface TopFollowersProps {
   userId: number;
 }
 
+const FRIENDS_PER_PAGE = 48; // 6 rows of 8
+
 export function TopFollowers({ userId }: TopFollowersProps) {
   const [friends, setFriends] = useState<Follower[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,17 +25,18 @@ export function TopFollowers({ userId }: TopFollowersProps) {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [totalFollowings, setTotalFollowings] = useState<number | null>(null);
+  const [currentLimit, setCurrentLimit] = useState(FRIENDS_PER_PAGE);
 
-  const fetchFriends = useCallback(async (currentLimit: number) => {
+  const fetchFriends = useCallback(async (limit: number, startFrom: number = 0) => {
     try {
-      const isInitial = currentLimit === 48;
+      const isInitial = startFrom === 0;
       if (isInitial) {
         setLoading(true);
       } else {
         setLoadingMore(true);
       }
 
-      const response = await fetch(`/api/soundcloud/friends?userId=${userId}&limit=${currentLimit}`);
+      const response = await fetch(`/api/soundcloud/friends?userId=${userId}&limit=${limit}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch friends');
@@ -45,7 +48,8 @@ export function TopFollowers({ userId }: TopFollowersProps) {
       }
 
       const decoder = new TextDecoder();
-      const newFriends: Follower[] = [];
+      let friendsReceived = 0;
+      const existingIds = new Set(friends.map(f => f.id));
 
       while (true) {
         const { done, value } = await reader.read();
@@ -59,15 +63,12 @@ export function TopFollowers({ userId }: TopFollowersProps) {
             const message = JSON.parse(line);
             
             if (message.type === 'friend') {
-              newFriends.push(message.data);
-              // Update state immediately as each friend arrives
-              setFriends(prev => {
-                // Avoid duplicates
-                if (prev.some(f => f.id === message.data.id)) {
-                  return prev;
-                }
-                return [...prev, message.data];
-              });
+              friendsReceived++;
+              // Only add friends after startFrom index AND not already in list
+              if (friendsReceived > startFrom && !existingIds.has(message.data.id)) {
+                setFriends(prev => [...prev, message.data]);
+                existingIds.add(message.data.id);
+              }
             } else if (message.type === 'complete') {
               setHasMore(message.data.hasMore);
               setTotalFollowings(message.data.totalFollowings);
@@ -90,13 +91,14 @@ export function TopFollowers({ userId }: TopFollowersProps) {
 
   useEffect(() => {
     setFriends([]);
-    fetchFriends(48);
+    setCurrentLimit(FRIENDS_PER_PAGE);
+    fetchFriends(FRIENDS_PER_PAGE, 0);
   }, [userId, fetchFriends]);
 
   const loadMore = () => {
-    const newLimit = friends.length + 48;
-    setFriends([]); // Clear to avoid duplicates
-    fetchFriends(newLimit);
+    const newLimit = currentLimit + FRIENDS_PER_PAGE;
+    setCurrentLimit(newLimit);
+    fetchFriends(newLimit, friends.length);
   };
 
   if (loading && friends.length === 0) {
