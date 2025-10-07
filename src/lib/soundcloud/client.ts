@@ -70,6 +70,9 @@ export interface SoundCloudTrack {
   description?: string;
   genre?: string;
   created_at?: string;
+  streamable?: boolean; // Whether track has streaming enabled
+  access?: "playable" | "preview" | "blocked"; // Track access level
+  policy?: string; // Monetization/licensing policy
   user: {
     id: number;
     username: string;

@@ -6,11 +6,81 @@
 import * as authCachedClient from "./authenticated-cached-client";
 import * as publicCachedClient from "./cached-client";
 import { getSession } from "@/lib/auth/session";
+import { NextRequest } from "next/server";
+import got from "got";
+import { getClientCredentialsToken, hasClientCredentials } from "./client-credentials";
+
+const SOUNDCLOUD_API_BASE = "https://api-v2.soundcloud.com";
+const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID || "REMOVED_CLIENT_ID";
 
 const hasOAuthSecret = () => {
   return process.env.SOUNDCLOUD_CLIENT_SECRET && 
     process.env.SOUNDCLOUD_CLIENT_SECRET !== "your_client_secret_here";
 };
+
+/**
+ * Get authorization headers - prefers user OAuth token, then client credentials, then client_id
+ */
+async function getAuthHeaders(accessToken?: string): Promise<Record<string, string>> {
+  // If we have a user access token, use it
+  if (accessToken) {
+    return { Authorization: `OAuth ${accessToken}` };
+  }
+  
+  // Try to use Client Credentials token if available
+  if (hasClientCredentials()) {
+    try {
+      const token = await getClientCredentialsToken();
+      return { Authorization: `OAuth ${token}` };
+    } catch (error) {
+      console.warn("Failed to get client credentials token, falling back to client_id:", error);
+    }
+  }
+  
+  // Fallback to no auth header (will use client_id in query params)
+  return {};
+}
+
+/**
+ * Get a smart client instance that works with the request context
+ * Returns an object with a get method for making authenticated or public requests
+ */
+export async function getSmartClient(request?: NextRequest) {
+  const session = request ? await getSession() : null;
+  const accessToken = session?.accessToken;
+  
+  return {
+    async get(endpoint: string) {
+      const url = endpoint.startsWith("http") 
+        ? endpoint 
+        : `${SOUNDCLOUD_API_BASE}${endpoint}`;
+      
+      const headers = await getAuthHeaders(accessToken);
+      
+      // Add client_id to query params if we're not using OAuth
+      const needsClientId = !headers.Authorization && !hasClientCredentials();
+      
+      try {
+        const response = await got(url, {
+          headers,
+          searchParams: needsClientId ? { client_id: SOUNDCLOUD_CLIENT_ID } : {},
+        });
+        
+        return JSON.parse(response.body);
+      } catch (error) {
+        // Re-throw with better error info
+        if (error && typeof error === 'object' && 'response' in error) {
+          const gotError = error as { response: { statusCode: number; body: string } };
+          throw Object.assign(
+            new Error(`SoundCloud API error: ${gotError.response.body || 'Unknown error'}`),
+            { response: { statusCode: gotError.response.statusCode } }
+          );
+        }
+        throw error;
+      }
+    },
+  };
+}
 
 export async function resolveProfile(url: string) {
   if (!hasOAuthSecret()) {

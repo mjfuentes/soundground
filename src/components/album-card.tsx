@@ -21,8 +21,11 @@ export function AlbumCard({ album, showStats = true }: AlbumCardProps) {
 
   const handleClick = () => {
     play({
+      id: album.id,
       url: album.permalink_url,
       title: album.title,
+      artist: album.user?.username || "Unknown Artist",
+      artistUrl: album.user?.permalink_url || "https://soundcloud.com",
       artwork: album.artwork_url?.replace("large.jpg", "t500x500.jpg"),
       type: "album",
     });

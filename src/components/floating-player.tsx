@@ -1,7 +1,7 @@
 "use client";
 
 import { usePlayer } from "@/contexts/player-context";
-import { SoundcloudEmbed } from "./soundcloud-embed";
+import { CustomAudioPlayer } from "./custom-audio-player";
 import { useState, useEffect } from "react";
 
 export function FloatingPlayer() {
@@ -113,9 +113,9 @@ export function FloatingPlayer() {
               </div>
             </div>
 
-            {/* Embedded Player */}
+            {/* Custom Audio Player */}
             <div className="w-full">
-              <SoundcloudEmbed url={currentItem.url} autoPlay={true} />
+              <CustomAudioPlayer />
             </div>
 
             {/* Keyboard shortcuts hint */}

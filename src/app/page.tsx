@@ -3,11 +3,6 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const hasOAuthConfigured = () => {
-  // This will be replaced at build time
-  return typeof window !== "undefined" && document.cookie.includes("session");
-};
-
 export default function Home() {
   const [value, setValue] = useState("");
   const [user, setUser] = useState<{ username: string } | null>(null);

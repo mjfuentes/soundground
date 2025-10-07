@@ -32,8 +32,11 @@ export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) 
 
   const handleClick = () => {
     play({
+      id: playlist.id,
       url: playlist.permalink_url,
       title: playlist.title,
+      artist: playlist.user?.username || "Unknown Artist",
+      artistUrl: playlist.user?.permalink_url || "https://soundcloud.com",
       artwork: playlist.artwork_url?.replace("large.jpg", "t200x200.jpg"),
       type: "playlist",
     });

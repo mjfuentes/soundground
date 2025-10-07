@@ -26,11 +26,26 @@ function formatDuration(ms: number): string {
 export function TrackCard({ track, showStats = true }: TrackCardProps) {
   const { play } = usePlayer();
 
+  // Check if track is playable
+  const isPlayable = track.streamable !== false && 
+                     (!track.access || track.access === "playable");
+  
+  const isPreviewOnly = track.access === "preview";
+
   const handleClick = () => {
-    if (track.permalink_url) {
+    if (!isPlayable && !isPreviewOnly) {
+      // Open in SoundCloud if not playable
+      window.open(track.permalink_url, '_blank');
+      return;
+    }
+    
+    if (track.permalink_url && track.id) {
       play({
+        id: track.id,
         url: track.permalink_url,
         title: track.title,
+        artist: track.user?.username || "Unknown Artist",
+        artistUrl: track.user?.permalink_url || "https://soundcloud.com",
         artwork: track.artwork_url?.replace("large.jpg", "t200x200.jpg"),
         type: "track",
       });
@@ -61,9 +76,23 @@ export function TrackCard({ track, showStats = true }: TrackCardProps) {
       {/* Track Info */}
       <div className="flex flex-1 flex-col justify-between overflow-hidden">
         <div>
-          <h4 className="truncate text-sm font-medium text-white group-hover:text-purple-400">
-            {track.title}
-          </h4>
+          <div className="flex items-center gap-2">
+            <h4 className="truncate text-sm font-medium text-white group-hover:text-purple-400">
+              {track.title}
+            </h4>
+            {!isPlayable && !isPreviewOnly && (
+              <span className="flex-shrink-0 text-xs text-zinc-500" title="Not streamable - click to open in SoundCloud">
+                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+              </span>
+            )}
+            {isPreviewOnly && (
+              <span className="flex-shrink-0 rounded bg-purple-500/20 px-1.5 py-0.5 text-xs text-purple-400" title="Preview only">
+                Preview
+              </span>
+            )}
+          </div>
           <p className="text-xs text-zinc-400">
             {formatDuration(track.duration)}
             {track.genre && ` • ${track.genre}`}
@@ -118,10 +147,19 @@ export function TrackCard({ track, showStats = true }: TrackCardProps) {
     );
   }
 
+  const buttonClasses = isPlayable || isPreviewOnly
+    ? "group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
+    : "group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-orange-500/50 hover:bg-orange-500/10 opacity-75";
+
+  const buttonTitle = isPlayable || isPreviewOnly
+    ? "Play track"
+    : "Not streamable - click to open in SoundCloud";
+
   return (
     <button
       onClick={handleClick}
-      className="group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
+      className={buttonClasses}
+      title={buttonTitle}
     >
       {content}
     </button>
