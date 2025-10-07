@@ -154,14 +154,7 @@ export function TopFollowers({ userId }: TopFollowersProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-zinc-400">Friends</h3>
-        {totalFollowings !== null && (
-          <span className="text-xs text-zinc-500">
-            {friends.length} mutual follows
-          </span>
-        )}
-      </div>
+      <h3 className="text-sm font-medium text-zinc-400">Friends</h3>
       <div className="grid grid-cols-8 gap-2">
         {friends.map((follower) => (
           <FollowerCard key={follower.id} follower={follower} />

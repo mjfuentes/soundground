@@ -1,189 +1,190 @@
 # Cursor AI Agent Rules for CloudMate
 
+## 🚨 MANDATORY: Task Completion Requirements
+
+**BEFORE MARKING ANY TASK AS COMPLETE, YOU MUST:**
+
+1. **✅ Type Check**: Run `npm run type-check` - must pass with zero errors
+2. **🏗️ Build**: Run `npm run build` - must complete successfully  
+3. **🚀 Local Server**: Start dev server on port 3000
+   - Kill existing processes: `lsof -ti:3000 | xargs kill -9`
+   - Start server: `npm run dev`
+   - Verify server is running
+4. **🌐 Browser Testing**: Use browser tools to test the changes
+   - Navigate to `http://localhost:3000`
+   - Take snapshot of the page
+   - Test basic navigation and user interactions
+   - Verify the specific feature/change works correctly
+   - Test error states if applicable
+5. **📋 Report**: Provide brief test results summary
+
+**NO EXCEPTIONS.** If any step fails, fix the issue before completing the task.
+
+---
+
 ## Project Context
-This is a Next.js 15 SoundCloud profile viewer app deployed on Fly.io. The app fetches and displays artist profiles, playlists, albums, and followers with a modern UI.
+Next.js 15 SoundCloud profile viewer app deployed on Fly.io. Fetches and displays artist profiles, playlists, albums, and followers.
 
 ## Agent Behavior
 
 ### Command Execution Style
-When running commands (especially for deployment pipelines, slash commands, or automated workflows):
-- **ZERO VERBOSE**: Execute tool calls silently without commentary
-- Only report errors or final success/failure status
-- No step-by-step narration or explanatory text between commands
-- Let the command output speak for itself
-- Summarize results only at the end
+For deployment pipelines, slash commands, and automated workflows:
+- **ZERO VERBOSE**: Execute silently without commentary
+- Report only errors or final status
+- No step-by-step narration between commands
+- Let command output speak for itself
+- Summarize only at the end
 
-## Code Style & Standards
-- Use TypeScript with strict type checking
-- Follow Next.js 15 App Router conventions
-- Use Tailwind CSS for styling
-- Prefer async/await over promises
-- Use server components by default, client components only when needed
-- Keep components small and focused
-- Use proper semantic HTML and accessibility attributes
+## Code Standards
 
-## Project Structure
-- `/src/app/` - Next.js App Router pages and API routes
+### TypeScript & React
+- Strict type checking, no `any` types
+- Next.js 15 App Router conventions
+- Server components by default, client only when needed (`'use client'`)
+- Async/await over promises
+- Small, focused components
+- Semantic HTML + accessibility attributes
+
+### Styling
+- Tailwind CSS exclusively
+- Responsive design (mobile-first)
+- Dark mode support where applicable
+
+### Structure
+- `/src/app/` - Pages and API routes (App Router)
 - `/src/components/` - React components
-- `/src/lib/` - Utility functions and API clients
+- `/src/lib/` - Utilities and API clients
 - `/scripts/` - Deployment and validation scripts
 
-## Deployment Automation with Cursor Hooks
+## Automated Workflows
 
-### Hook Configuration
-This project uses **global** Cursor Agent Hooks for automated deployment. Configuration is in `~/.cursor/hooks.json`:
+### Cursor Hooks (Global: `~/.cursor/hooks.json`)
+- **After file edit**: `format.sh` - Auto-lint TypeScript/TSX files
+- **On agent stop**: `deploy.sh` - Full deployment pipeline
 
-```json
-{
-  "version": 1,
-  "hooks": {
-    "afterFileEdit": [
-      {
-        "command": "~/.cursor/hooks/format.sh"
-      }
-    ],
-    "stop": [
-      {
-        "command": "~/.cursor/hooks/deploy.sh"
-      }
-    ]
-  }
-}
+### Deployment Pipeline
+Sequential steps (failure stops workflow):
+1. **Validation** - Type-check, lint, build, Fly.io checks
+2. **Stage** - `git add -A`
+3. **Commit & Push** - Semantic commit message
+4. **Deploy** - `flyctl deploy --remote-only`
+5. **Verify** - Health check with curl
+
+### NPM Scripts
+```bash
+npm run dev              # Start dev server (port 3000)
+npm run build            # Production build
+npm run type-check       # TypeScript validation
+npm run lint:fix         # Auto-fix linting issues
+npm run test             # Run test suite with coverage
+
+npm run deploy           # Full validation + deploy
+npm run deploy:check     # Validation only
+npm run deploy:fly       # Deploy to Fly.io
+npm run validate:env     # Check environment variables
+npm run validate:deployment  # Verify deployment health
 ```
 
-Hook scripts are located globally in `~/.cursor/hooks/`:
-- `format.sh` - Runs linting for TypeScript/TSX files after edits
-- `deploy.sh` - Runs the full deployment pipeline when agent completes
-- Scripts automatically detect the current workspace and run commands in the correct project directory
+## Slash Commands
 
-### Deployment Workflow
-1. After editing TypeScript files, linting auto-fixes
-2. When completing a task, the following steps run sequentially:
-   - **Validation**: Run type-check, linting, build, and Fly.io checks
-   - **Stage**: Git add all changes
-   - **Commit & Push**: Create commit and push to remote repository
-   - **Deploy**: Deploy to Fly.io
-   - **Verify**: Health check deployment with curl
-3. Each step must succeed before proceeding to the next. If any step fails, the workflow stops.
+Custom commands in `.cursor/commands/` - trigger with `/commandname`
 
-### Deployment Commands
-- `npm run deploy` - Full validation + deploy
-- `npm run deploy:check` - Run validation only
-- `npm run deploy:fly` - Deploy to Fly.io
-- `npm run validate:env` - Check environment variables
-- `npm run validate:deployment` - Validate deployment is running correctly
+### `/push` - Full Deployment Pipeline
+test → commit → push → deploy → verify
 
-### Validation Scripts
-- `scripts/pre-deploy-check.js` - Comprehensive checks before deployment (TypeScript, ESLint, build, Fly.io)
-- `scripts/validate-env.js` - Validates required environment variables
-- `scripts/validate-deployment.js` - Validates deployment is running correctly (HTTP status, content, headers, response time)
-  - Configurable URL via command line argument or `DEPLOYMENT_URL` environment variable
-  - Default: `https://cloudmate.fly.dev/`
+Stops on first failure.
 
-## Cursor Slash Commands
+## Development Guidelines
 
-Custom slash commands are stored in `.cursor/commands/` and can be triggered by typing `/` in the Agent input.
-
-### `/push` - Complete Deployment Pipeline
-
-Runs the full deployment pipeline: test → commit → push → deploy → verify
-
-This command executes sequentially:
-1. **Tests** - Run full test suite with coverage (`npm test`)
-2. **Pre-deployment checks** - TypeScript, ESLint, and build verification (`npm run deploy:check`)
-3. **Git staging** - Stage all changes (`git add -A`)
-4. **Commit** - Create commit with descriptive message (`./scripts/git-commit.sh`)
-5. **Push** - Push to remote repository (`git push`)
-6. **Deploy** - Deploy to Fly.io (`npm run deploy:fly`)
-7. **Verify** - Validate deployment health (`npm run validate:deployment`)
-
-If any step fails, the pipeline stops and reports the error.
-
-## When Making Changes
-
-### API Routes
-- Keep API routes in `/src/app/api/soundcloud/`
-- Use proper error handling and status codes
-- Add caching with `next: { revalidate: 300 }` where appropriate
+### API Routes (`/src/app/api/soundcloud/`)
+- Proper error handling and HTTP status codes
+- Cache with `next: { revalidate: 300 }` where applicable
 - Validate inputs with Zod schemas
+- Use TypeScript types
 
 ### Components
-- Use TypeScript interfaces for props
-- Add proper loading and error states
-- Optimize images with Next.js Image component
-- Use proper semantic HTML
+- TypeScript interfaces for props
+- Loading and error states
+- Next.js Image component for images
+- Semantic HTML and ARIA labels
 
-### Before Deployment
-The pre-deployment script automatically checks:
-- No TypeScript errors
-- No ESLint errors
-- Build succeeds
-- Fly.io authentication is valid
-- Target app exists
+### Pre-Deployment Checks
+Automated validation ensures:
+- ✅ TypeScript compiles
+- ✅ ESLint passes
+- ✅ Build succeeds
+- ✅ Fly.io auth valid
+- ✅ Target app exists
 
-## Environment Variables
-- Development: `.env.local` (not committed)
-- Production: Managed via Fly.io secrets
-- Use `process.env.VERCEL_URL` or `process.env.FLY_APP_NAME` for API URL detection
+## Environment & Configuration
 
-## Development Server
-- **Always use port 3000** for local development
-- Before starting dev server, kill any process using port 3000: `lsof -ti:3000 | xargs kill -9`
-- Start dev server with `npm run dev` (runs on http://localhost:3000)
-- If port 3000 is blocked, kill the process and restart rather than using alternative ports
+### Environment Variables
+- **Development**: `.env.local` (not committed)
+- **Production**: Fly.io secrets (`flyctl secrets set KEY=value -a cloudmate`)
+- Auto-detect URL: `process.env.FLY_APP_NAME` or `process.env.VERCEL_URL`
 
-## Testing & Validation
-- Always run `npm run type-check` before major changes
-- Use `npm run lint:fix` to auto-fix linting issues
-- Test builds with `npm run build`
-- Use `npm run deploy:check` to validate deployment readiness
+### Development Server
+- **Port 3000 ONLY** - no alternatives
+- Kill existing: `lsof -ti:3000 | xargs kill -9`
+- Start: `npm run dev` → http://localhost:3000
 
-## Common Tasks
+## Quick Reference
 
-### Adding a new API endpoint
-1. Create route file in `/src/app/api/soundcloud/[endpoint]/route.ts`
-2. Use proper TypeScript types
-3. Add error handling
-4. Add caching if appropriate
+### Adding API Endpoint
+1. Create `/src/app/api/soundcloud/[endpoint]/route.ts`
+2. TypeScript types + error handling
+3. Add caching if appropriate
 
-### Adding a new component
-1. Create in `/src/components/[component-name].tsx`
-2. Use TypeScript interface for props
-3. Add proper accessibility attributes
-4. Use Tailwind for styling
+### Adding Component
+1. Create `/src/components/[name].tsx`
+2. TypeScript interface for props
+3. Accessibility attributes
+4. Tailwind styling
 
-### Deploying changes
-1. Make your changes
-2. Let the agent complete the task
-3. Approve deployment when prompted
-4. Or manually run `npm run deploy`
-
-## Best Practices
-- Keep README.md as the single source of documentation
-- Use semantic commit messages
+### Best Practices
+- Semantic commit messages
 - Test locally before deploying
-- Keep dependencies up to date
-- Use environment variables for secrets
-- Add proper error boundaries
-- Optimize images and assets
-- Use proper TypeScript types (avoid `any`)
+- README.md = single source of truth
+- Environment variables for secrets
+- Proper error boundaries
+- Optimize images/assets
+- No `any` types
 
 ## Fly.io Deployment
-- App name: `cloudmate`
-- Region: `iad` (US East)
-- Memory: 1GB
-- Auto-scaling: enabled (min 0, auto-stop)
-- Deploy command: `flyctl deploy --remote-only`
 
-## Prerequisites for Deployment
-1. Fly.io CLI installed: `curl -L https://fly.io/install.sh | sh`
-2. Authenticated: `flyctl auth login`
-3. Secrets set: `flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate`
+### Configuration
+- **App**: `cloudmate`
+- **Region**: `iad` (US East)
+- **Memory**: 1GB
+- **Scaling**: Auto (min 0, auto-stop)
+- **Deploy**: `flyctl deploy --remote-only`
+
+### Setup
+```bash
+# Install Fly CLI
+curl -L https://fly.io/install.sh | sh
+
+# Authenticate
+flyctl auth login
+
+# Set secrets
+flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
+```
 
 ## Troubleshooting
-- If hooks don't trigger: Restart Cursor
-- If validation fails: Run checks individually (type-check, lint, build)
-- If deployment fails: Check Fly.io status with `flyctl status -a cloudmate`
-- If linting issues: Run `npm run lint:fix`
-- Check logs: Always use `flyctl logs -n -a cloudmate` (use -n/--no-tail flag to avoid getting stuck in streaming mode)
+
+| Issue | Solution |
+|-------|----------|
+| Hooks don't trigger | Restart Cursor |
+| Validation fails | Run `npm run type-check`, `npm run lint:fix`, `npm run build` individually |
+| Deployment fails | Check `flyctl status -a cloudmate` |
+| Linting errors | Run `npm run lint:fix` |
+| Check logs | `flyctl logs -n -a cloudmate` (use `-n` flag to avoid streaming) |
+| Port 3000 blocked | `lsof -ti:3000 \| xargs kill -9` |
+
+---
+
+## Summary
+
+**Remember**: Follow the mandatory task completion requirements at the top of this file for EVERY task. No shortcuts.
 

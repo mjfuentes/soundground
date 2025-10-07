@@ -3,7 +3,6 @@ import Link from "next/link";
 import { RichDescription } from "./rich-description";
 import { ExpandableSection } from "./expandable-section";
 import { TopFollowers } from "./top-followers";
-import { ProfileStats } from "./profile-stats";
 import { TrackCard } from "./track-card";
 import { SpotlightPlaylist } from "./spotlight-playlist";
 import { AlbumCard } from "./album-card";
@@ -74,9 +73,6 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
               <RichDescription text={user.description} />
             </ExpandableSection>
           ) : null}
-          {tracks.length > 0 && (
-            <ProfileStats tracks={tracks} playlists={playlists} albums={albums} />
-          )}
           <TopFollowers userId={user.id} />
         </div>
       </section>
