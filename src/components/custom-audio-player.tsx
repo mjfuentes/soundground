@@ -1,18 +1,14 @@
 "use client";
 
 import { usePlayer } from "@/contexts/player-context";
+import Image from "next/image";
 
-function formatTimeDetailed(seconds: number): string {
-  if (!isFinite(seconds)) return "00:00.000";
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
   
-  if (hours > 0) {
-    return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
-  }
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 export function CustomAudioPlayer() {
@@ -83,25 +79,47 @@ export function CustomAudioPlayer() {
 
       {/* Main player container - foobar2000 style */}
       <div className="border border-neutral-700 bg-neutral-900 shadow-lg">
-        {/* Top info bar */}
-        <div className="border-b border-neutral-700 bg-neutral-800 px-3 py-2">
-          <div className="flex items-center justify-between text-[11px] text-neutral-300">
-            <div className="flex items-center gap-3">
+        {/* Top info bar with album art */}
+        <div className="flex items-center gap-3 border-b border-neutral-700 bg-neutral-800 px-3 py-2">
+          {/* Album Art */}
+          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
+            {currentItem.artwork ? (
+              <Image
+                src={currentItem.artwork}
+                alt={currentItem.title}
+                fill
+                className="object-cover"
+                sizes="64px"
+                priority
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <svg className="h-8 w-8 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Track info */}
+          <div className="flex flex-1 items-center justify-between text-[11px] text-neutral-300">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <span className="text-neutral-400">
                 {isLoading ? "⏳" : isPaused ? "⏸" : "▶"}
               </span>
-              <span className="font-semibold text-white">
-                {currentItem.title}
-              </span>
-              <span className="text-neutral-500">•</span>
-              <a
-                href={currentItem.artistUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-neutral-400 hover:text-white hover:underline"
-              >
-                {currentItem.artist}
-              </a>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold text-white">
+                  {currentItem.title}
+                </div>
+                <a
+                  href={currentItem.artistUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate text-neutral-400 hover:text-white hover:underline"
+                >
+                  {currentItem.artist}
+                </a>
+              </div>
             </div>
             <div className="flex items-center gap-2 text-neutral-500">
               <span>{codec}</span>
@@ -160,9 +178,9 @@ export function CustomAudioPlayer() {
 
             {/* Time display */}
             <div className="ml-4 flex items-center gap-2 text-[11px] text-neutral-400">
-              <span className="w-[72px] text-right tabular-nums">{formatTimeDetailed(currentTime)}</span>
+              <span className="w-[40px] text-right tabular-nums">{formatTime(currentTime)}</span>
               <span className="text-neutral-600">/</span>
-              <span className="w-[72px] tabular-nums">{formatTimeDetailed(duration)}</span>
+              <span className="w-[40px] tabular-nums">{formatTime(duration)}</span>
             </div>
 
             {/* Volume */}
@@ -224,26 +242,36 @@ export function CustomAudioPlayer() {
           </div>
         </div>
 
-        {/* Queue section */}
+        {/* Queue/Next Track section */}
         {queue.length > 0 && (
           <div className="border-b border-neutral-700 bg-neutral-900 px-3 py-2">
-            <div className="mb-1 text-[11px] font-semibold text-neutral-400">
-              QUEUE ({queue.length} {queue.length === 1 ? "track" : "tracks"})
-            </div>
-            <div className="max-h-24 space-y-1 overflow-y-auto text-[11px] text-neutral-500">
-              {queue.slice(0, 5).map((item, idx) => (
-                <div key={item.id} className="flex items-center gap-2 truncate hover:text-neutral-300">
-                  <span className="w-6 text-right text-neutral-600 tabular-nums">{idx + 1}.</span>
-                  <span className="flex-1 truncate">{item.title}</span>
-                  <span className="text-neutral-600">-</span>
-                  <span className="text-neutral-600">{item.artist}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+                <span className="text-neutral-400">Playlist:</span>
+                <span>{queue.length + 1} {queue.length + 1 === 1 ? "track" : "tracks"}</span>
+              </div>
+              
+              {/* Next track with small album art */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-neutral-500">Next:</span>
+                <div className="flex items-center gap-2">
+                  {queue[0].artwork && (
+                    <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
+                      <Image
+                        src={queue[0].artwork}
+                        alt={queue[0].title}
+                        fill
+                        className="object-cover"
+                        sizes="32px"
+                      />
+                    </div>
+                  )}
+                  <div className="max-w-[300px] text-[11px]">
+                    <div className="truncate text-neutral-300">{queue[0].title}</div>
+                    <div className="truncate text-neutral-600">{queue[0].artist}</div>
+                  </div>
                 </div>
-              ))}
-              {queue.length > 5 && (
-                <div className="text-neutral-600">
-                  ... and {queue.length - 5} more
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}
