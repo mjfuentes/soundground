@@ -17,7 +17,12 @@ export const metadata: Metadata = {
   title: "CloudMate",
   description: "View SoundCloud artist profiles with enhanced features",
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/logo.png" },
+      { url: "/logo.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/logo.png",
+    shortcut: "/logo.png",
   },
 };
 
@@ -32,7 +37,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header />
-        <div className="pt-14">{children}</div>
+        <div className="pt-16">{children}</div>
       </body>
     </html>
   );
