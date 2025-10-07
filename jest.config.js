@@ -25,7 +25,7 @@ const customJestConfig = {
   ],
   testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   transformIgnorePatterns: [
-    'node_modules/(?!(got|@sindresorhus|@szmarczak|cacheable-request|normalize-url|responselike|cacheable-lookup|lowercase-keys|form-data-encoder|p-cancelable|resolve-alpn)/)',
+    'node_modules/(?!(got|@sindresorhus|@szmarczak|cacheable-request|normalize-url|responselike|cacheable-lookup|lowercase-keys|form-data-encoder|p-cancelable|resolve-alpn|jose)/)',
     '^.+\\.module\\.(css|sass|scss)$',
   ],
   testEnvironmentOptions: {

@@ -1,11 +1,47 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+const hasOAuthConfigured = () => {
+  // This will be replaced at build time
+  return typeof window !== "undefined" && document.cookie.includes("session");
+};
 
 export default function Home() {
   const [value, setValue] = useState("");
+  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [oauthMode, setOauthMode] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Check if OAuth is configured by trying to fetch user info
+    fetch("/api/auth/me")
+      .then((res) => {
+        if (res.status === 401) {
+          // OAuth not configured or not logged in
+          setOauthMode(false);
+          setLoading(false);
+          return null;
+        }
+        if (res.ok) {
+          setOauthMode(true);
+          return res.json();
+        }
+        return null;
+      })
+      .then((data) => {
+        if (data) {
+          setUser(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        setOauthMode(false);
+        setLoading(false);
+      });
+  }, [router]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -15,11 +51,46 @@ export default function Home() {
     router.push(`/${encodeURIComponent(query)}`);
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-black text-white">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
+          <span className="text-zinc-300">Loading...</span>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-black text-white">
       <div className="mx-auto flex max-w-2xl flex-col gap-8 px-6">
         <div className="text-center">
-          <h1 className="text-5xl font-semibold sm:text-6xl">Cloudmate</h1>
+          <div className="mb-4 flex items-center justify-center gap-4">
+            <h1 className="text-5xl font-semibold sm:text-6xl">Cloudmate</h1>
+            {oauthMode && user && (
+              <button
+                onClick={handleLogout}
+                className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10"
+              >
+                Logout
+              </button>
+            )}
+          </div>
+          {oauthMode && user && (
+            <p className="mb-2 text-sm text-zinc-400">
+              Signed in as <span className="text-amber-500">@{user.username}</span>
+            </p>
+          )}
           <p className="mt-4 text-lg text-zinc-300 sm:text-xl">
             Enter a SoundCloud artist handle
           </p>

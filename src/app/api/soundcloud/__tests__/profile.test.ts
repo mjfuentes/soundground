@@ -3,11 +3,11 @@
  */
 import { NextRequest } from 'next/server';
 import { GET } from '../profile/route';
-import * as cachedClient from '@/lib/soundcloud/cached-client';
+import * as smartClient from '@/lib/soundcloud/smart-client';
 import { getCacheService, resetCacheService } from '@/lib/cache';
 import { closeDatabase } from '@/lib/cache/database';
 
-jest.mock('@/lib/soundcloud/cached-client');
+jest.mock('@/lib/soundcloud/smart-client');
 
 describe('/api/soundcloud/profile', () => {
   let cache: ReturnType<typeof getCacheService>;
@@ -59,12 +59,12 @@ describe('/api/soundcloud/profile', () => {
     const mockFollowers = { collection: [], next_href: undefined };
     const mockTracks = { collection: [] };
 
-    (cachedClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
-    (cachedClient.getSpotlight as jest.Mock).mockResolvedValue(mockSpotlight);
-    (cachedClient.getPlaylists as jest.Mock).mockResolvedValue(mockPlaylists);
-    (cachedClient.getAlbums as jest.Mock).mockResolvedValue(mockAlbums);
-    (cachedClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
-    (cachedClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
+    (smartClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
+    (smartClient.getSpotlight as jest.Mock).mockResolvedValue(mockSpotlight);
+    (smartClient.getPlaylists as jest.Mock).mockResolvedValue(mockPlaylists);
+    (smartClient.getAlbums as jest.Mock).mockResolvedValue(mockAlbums);
+    (smartClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    (smartClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);
@@ -99,12 +99,12 @@ describe('/api/soundcloud/profile', () => {
       ],
     };
 
-    (cachedClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
-    (cachedClient.getSpotlight as jest.Mock).mockResolvedValue({ collection: [] });
-    (cachedClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
-    (cachedClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
-    (cachedClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
-    (cachedClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
+    (smartClient.getSpotlight as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    (smartClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);
@@ -117,7 +117,7 @@ describe('/api/soundcloud/profile', () => {
   });
 
   it('should handle errors gracefully', async () => {
-    (cachedClient.resolveProfile as jest.Mock).mockRejectedValue(new Error('API Error'));
+    (smartClient.resolveProfile as jest.Mock).mockRejectedValue(new Error('API Error'));
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);
@@ -140,12 +140,12 @@ describe('/api/soundcloud/profile', () => {
       permalink_url: 'https://soundcloud.com/test-user',
     };
 
-    (cachedClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
-    (cachedClient.getSpotlight as jest.Mock).mockRejectedValue(new Error('Spotlight error'));
-    (cachedClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
-    (cachedClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
-    (cachedClient.getFollowers as jest.Mock).mockResolvedValue({ collection: [] });
-    (cachedClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
+    (smartClient.getSpotlight as jest.Mock).mockRejectedValue(new Error('Spotlight error'));
+    (smartClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getFollowers as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);

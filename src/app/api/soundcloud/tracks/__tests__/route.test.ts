@@ -3,9 +3,9 @@
  */
 import { GET } from "../route";
 import { NextRequest } from "next/server";
-import * as cachedClient from "@/lib/soundcloud/cached-client";
+import * as smartClient from "@/lib/soundcloud/smart-client";
 
-jest.mock("@/lib/soundcloud/cached-client");
+jest.mock("@/lib/soundcloud/smart-client");
 
 describe("/api/soundcloud/tracks", () => {
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe("/api/soundcloud/tracks", () => {
       ],
     };
 
-    (cachedClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
+    (smartClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
 
     const request = new NextRequest("http://localhost:3000/api/soundcloud/tracks?userId=456");
     const response = await GET(request);
@@ -41,7 +41,7 @@ describe("/api/soundcloud/tracks", () => {
 
     expect(response.status).toBe(200);
     expect(data).toEqual(mockTracks);
-    expect(cachedClient.getTracks).toHaveBeenCalledWith(456, 200);
+    expect(smartClient.getTracks).toHaveBeenCalledWith(456, 200);
   });
 
   it("should return 400 if userId is missing", async () => {
@@ -55,16 +55,16 @@ describe("/api/soundcloud/tracks", () => {
 
   it("should handle limit parameter", async () => {
     const mockTracks = { collection: [] };
-    (cachedClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
+    (smartClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
 
     const request = new NextRequest("http://localhost:3000/api/soundcloud/tracks?userId=456&limit=50");
     await GET(request);
 
-    expect(cachedClient.getTracks).toHaveBeenCalledWith(456, 50);
+    expect(smartClient.getTracks).toHaveBeenCalledWith(456, 50);
   });
 
   it("should return 500 on error", async () => {
-    (cachedClient.getTracks as jest.Mock).mockRejectedValue(new Error("API error"));
+    (smartClient.getTracks as jest.Mock).mockRejectedValue(new Error("API error"));
 
     const request = new NextRequest("http://localhost:3000/api/soundcloud/tracks?userId=456");
     const response = await GET(request);

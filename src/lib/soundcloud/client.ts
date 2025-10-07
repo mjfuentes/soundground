@@ -1,7 +1,36 @@
 import got from "got";
+import { getClientCredentialsToken, hasClientCredentials } from "./client-credentials";
 
 const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID || "REMOVED_CLIENT_ID";
 const SOUNDCLOUD_API_BASE = "https://api-v2.soundcloud.com";
+
+/**
+ * Get authorization headers - prefers OAuth token over client_id
+ */
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  // Try to use Client Credentials token if available
+  if (hasClientCredentials()) {
+    try {
+      const token = await getClientCredentialsToken();
+      return { Authorization: `OAuth ${token}` };
+    } catch (error) {
+      console.warn("Failed to get client credentials token, falling back to client_id:", error);
+    }
+  }
+  
+  // Fallback to client_id in query params (deprecated but works)
+  return {};
+}
+
+/**
+ * Get search params with auth - either empty (for OAuth header) or client_id
+ */
+function getAuthParams(params: Record<string, string | number> = {}): Record<string, string | number> {
+  if (!hasClientCredentials()) {
+    return { ...params, client_id: SOUNDCLOUD_CLIENT_ID };
+  }
+  return params;
+}
 
 export interface SoundCloudUser {
   id: number;
@@ -70,11 +99,12 @@ export interface SoundCloudPlaylist {
 }
 
 export async function resolveProfile(url: string): Promise<SoundCloudUser> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams({ url });
+  
   const text = await got(`${SOUNDCLOUD_API_BASE}/resolve`, {
-    searchParams: {
-      url,
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as SoundCloudUser;
@@ -83,10 +113,12 @@ export async function resolveProfile(url: string): Promise<SoundCloudUser> {
 export type SpotlightItem = SoundCloudTrack | SoundCloudPlaylist;
 
 export async function getSpotlight(userId: number): Promise<{ collection: SpotlightItem[] }> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams();
+  
   const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/spotlight`, {
-    searchParams: {
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as { collection: SpotlightItem[] };
@@ -98,33 +130,36 @@ export function isPlaylist(item: SpotlightItem): item is SoundCloudPlaylist {
 }
 
 export async function getPlaylists(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams({ limit });
+  
   const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/playlists_without_albums`, {
-    searchParams: {
-      limit,
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as { collection: SoundCloudPlaylist[] };
 }
 
 export async function getAlbums(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams({ limit });
+  
   const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/albums`, {
-    searchParams: {
-      limit,
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as { collection: SoundCloudPlaylist[] };
 }
 
 export async function getTracks(userId: number, limit = 200): Promise<{ collection: SoundCloudTrack[] }> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams({ limit });
+  
   const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/tracks`, {
-    searchParams: {
-      limit,
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as { collection: SoundCloudTrack[] };
@@ -140,29 +175,32 @@ export interface SoundCloudFollower {
 }
 
 export async function getFollowers(userId: number, limit = 200, nextHref?: string): Promise<{ collection: SoundCloudFollower[]; next_href?: string }> {
+  const headers = await getAuthHeaders();
+  
   if (nextHref) {
-    // Use the nextHref directly with client_id appended
-    const url = `${nextHref}&client_id=${SOUNDCLOUD_CLIENT_ID}`;
-    const text = await got(url).text();
+    // Use the nextHref directly
+    const url = hasClientCredentials() ? nextHref : `${nextHref}&client_id=${SOUNDCLOUD_CLIENT_ID}`;
+    const text = await got(url, { headers }).text();
     return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
   }
   
   // Initial request
+  const searchParams = getAuthParams({ limit });
   const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followers`, {
-    searchParams: {
-      limit,
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
 }
 
 export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCloudPlaylist> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams();
+  
   const text = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
-    searchParams: {
-      client_id: SOUNDCLOUD_CLIENT_ID,
-    },
+    searchParams,
+    headers,
   }).text();
 
   return JSON.parse(text) as SoundCloudPlaylist;
