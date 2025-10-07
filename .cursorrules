@@ -3,6 +3,16 @@
 ## Project Context
 This is a Next.js 15 SoundCloud profile viewer app deployed on Fly.io. The app fetches and displays artist profiles, playlists, albums, and followers with a modern UI.
 
+## Agent Behavior
+
+### Command Execution Style
+When running commands (especially for deployment pipelines, slash commands, or automated workflows):
+- **ZERO VERBOSE**: Execute tool calls silently without commentary
+- Only report errors or final success/failure status
+- No step-by-step narration or explanatory text between commands
+- Let the command output speak for itself
+- Summarize results only at the end
+
 ## Code Style & Standards
 - Use TypeScript with strict type checking
 - Follow Next.js 15 App Router conventions
@@ -168,4 +178,5 @@ The pre-deployment script automatically checks:
 - If validation fails: Run checks individually (type-check, lint, build)
 - If deployment fails: Check Fly.io status with `flyctl status -a cloudmate`
 - If linting issues: Run `npm run lint:fix`
+- Check logs: Always use `flyctl logs -n -a cloudmate` (use -n/--no-tail flag to avoid getting stuck in streaming mode)
 

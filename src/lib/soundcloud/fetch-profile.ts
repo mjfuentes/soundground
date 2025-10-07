@@ -38,16 +38,16 @@ function extractHydrationPayload(html: string) {
 export async function fetchSoundcloudProfile(permalink: string): Promise<SoundcloudProfileResponse> {
   const targetUrl = permalink.startsWith("http") ? permalink : `${SOUND_CLOUD_BASE}/${permalink}`;
 
-  const response = await got(targetUrl, {
+  const html = await got(targetUrl, {
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
       Accept: "text/html,application/xhtml+xml",
       "Accept-Language": "en-US,en;q=0.9",
     },
-  });
+  }).text();
 
-  const payload = extractHydrationPayload(response.body);
+  const payload = extractHydrationPayload(html);
   if (!payload) {
     return { user: null };
   }
