@@ -76,87 +76,88 @@ export function CustomAudioPlayer() {
 
       {/* Main player container */}
       <div className="border border-neutral-700 bg-neutral-900 shadow-lg">
-        {/* Transport controls - centered at the very top, spanning full width */}
-        <div className="border-b border-neutral-700 bg-neutral-800 px-4 py-4">
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={previous}
-              disabled={isLoading}
-              className="flex h-12 w-12 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label="Previous"
-              title="Previous track"
-            >
-              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-              </svg>
-            </button>
-            
-            <button
-              onClick={togglePlayPause}
-              disabled={isLoading || !!error}
-              className="flex h-12 w-16 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
-              aria-label={isPaused ? "Play" : "Pause"}
-            >
-              {isPaused ? (
-                <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              ) : (
-                <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-              )}
-            </button>
-
-            <button
-              onClick={next}
-              disabled={queue.length === 0 || isLoading}
-              className="flex h-12 w-12 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label="Next"
-              title={queue.length === 0 ? "No tracks in queue" : "Next track"}
-            >
-              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Album Art + Track Info */}
-        <div className="flex items-center gap-4 border-b border-neutral-700 bg-neutral-900 px-4 py-3">
-          {/* Album Art - 80px */}
-          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
+        {/* Album Art + Controls + Track Info */}
+        <div className="flex items-start gap-3 border-b border-neutral-700 bg-neutral-900 px-3 py-3">
+          {/* Large Album Art - 160px */}
+          <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
             {currentItem.artwork ? (
               <Image
                 src={currentItem.artwork}
                 alt={currentItem.title}
                 fill
                 className="object-cover"
-                sizes="80px"
+                sizes="160px"
                 priority
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <svg className="h-10 w-10 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="h-16 w-16 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                 </svg>
               </div>
             )}
           </div>
 
-          {/* Track info */}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-white">
-              {currentItem.title}
+          {/* Right side: Track info + controls */}
+          <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
+            {/* Track info at top */}
+            <div className="min-w-0">
+              <div className="truncate text-base font-semibold text-white">
+                {currentItem.title}
+              </div>
+              <a
+                href={currentItem.artistUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 block truncate text-sm text-neutral-400 hover:text-white hover:underline"
+              >
+                {currentItem.artist}
+              </a>
             </div>
-            <a
-              href={currentItem.artistUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 block truncate text-xs text-neutral-400 hover:text-white hover:underline"
-            >
-              {currentItem.artist}
-            </a>
+
+            {/* Transport controls at bottom - small */}
+            <div className="mt-4 flex items-center gap-1">
+              <button
+                onClick={previous}
+                disabled={isLoading}
+                className="flex h-7 w-7 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Previous"
+                title="Previous track"
+              >
+                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                </svg>
+              </button>
+              
+              <button
+                onClick={togglePlayPause}
+                disabled={isLoading || !!error}
+                className="flex h-7 w-9 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label={isPaused ? "Play" : "Pause"}
+              >
+                {isPaused ? (
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                onClick={next}
+                disabled={queue.length === 0 || isLoading}
+                className="flex h-7 w-7 items-center justify-center border border-neutral-600 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Next"
+                title={queue.length === 0 ? "No tracks in queue" : "Next track"}
+              >
+                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
