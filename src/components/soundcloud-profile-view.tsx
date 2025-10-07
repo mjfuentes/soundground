@@ -40,6 +40,14 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   const data = await response.json();
   const { profile: user, spotlight, playlists, albums, topFollowers, tracks = [] } = data;
 
+  if (!user) {
+    return (
+      <div className="rounded-xl border border-red-500/50 bg-red-500/10 p-6 text-red-200">
+        Unable to load SoundCloud profile. Profile data not available.
+      </div>
+    );
+  }
+
   const avatar = user.avatar_url?.replace("large.jpg", "t500x500.jpg") ?? "";
 
   return (

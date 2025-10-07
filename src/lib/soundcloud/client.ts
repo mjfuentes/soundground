@@ -70,26 +70,26 @@ export interface SoundCloudPlaylist {
 }
 
 export async function resolveProfile(url: string): Promise<SoundCloudUser> {
-  const response = await got(`${SOUNDCLOUD_API_BASE}/resolve`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/resolve`, {
     searchParams: {
       url,
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<SoundCloudUser>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as SoundCloudUser;
 }
 
 export type SpotlightItem = SoundCloudTrack | SoundCloudPlaylist;
 
 export async function getSpotlight(userId: number): Promise<{ collection: SpotlightItem[] }> {
-  const response = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/spotlight`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/spotlight`, {
     searchParams: {
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<{ collection: SpotlightItem[] }>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as { collection: SpotlightItem[] };
 }
 
 // Type guard to check if an item is a playlist
@@ -98,36 +98,36 @@ export function isPlaylist(item: SpotlightItem): item is SoundCloudPlaylist {
 }
 
 export async function getPlaylists(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {
-  const response = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/playlists_without_albums`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/playlists_without_albums`, {
     searchParams: {
       limit,
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<{ collection: SoundCloudPlaylist[] }>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as { collection: SoundCloudPlaylist[] };
 }
 
 export async function getAlbums(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {
-  const response = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/albums`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/albums`, {
     searchParams: {
       limit,
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<{ collection: SoundCloudPlaylist[] }>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as { collection: SoundCloudPlaylist[] };
 }
 
 export async function getTracks(userId: number, limit = 200): Promise<{ collection: SoundCloudTrack[] }> {
-  const response = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/tracks`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/tracks`, {
     searchParams: {
       limit,
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<{ collection: SoundCloudTrack[] }>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as { collection: SoundCloudTrack[] };
 }
 
 export interface SoundCloudFollower {
@@ -143,28 +143,28 @@ export async function getFollowers(userId: number, limit = 200, nextHref?: strin
   if (nextHref) {
     // Use the nextHref directly with client_id appended
     const url = `${nextHref}&client_id=${SOUNDCLOUD_CLIENT_ID}`;
-    const response = await got(url).json<{ collection: SoundCloudFollower[]; next_href?: string }>();
-    return response;
+    const text = await got(url).text();
+    return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
   }
   
   // Initial request
-  const response = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followers`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followers`, {
     searchParams: {
       limit,
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<{ collection: SoundCloudFollower[]; next_href?: string }>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
 }
 
 export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCloudPlaylist> {
-  const response = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
+  const text = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
     searchParams: {
       client_id: SOUNDCLOUD_CLIENT_ID,
     },
-  }).json<SoundCloudPlaylist>();
+  }).text();
 
-  return response;
+  return JSON.parse(text) as SoundCloudPlaylist;
 }
 
