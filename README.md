@@ -67,14 +67,44 @@ The app includes backend API routes to proxy SoundCloud requests:
 - `/api/soundcloud/playlists` - Get artist playlists
 - `/api/soundcloud/albums` - Get artist albums
 
+## CI/CD
+
+### Pre-commit Hooks
+
+The project uses Husky for pre-commit hooks. When you commit, it automatically:
+- Runs ESLint and auto-fixes issues
+- Runs TypeScript type checking
+- Tests the build
+
+### Auto-Deployment
+
+Every push to `main` automatically deploys to Fly.io via GitHub Actions.
+
+**Setup:**
+1. Add `FLY_API_TOKEN` to GitHub repository secrets (Settings > Secrets and variables > Actions)
+2. Push to main branch
+
 ## Deployment
 
-This is a Next.js application and can be deployed to:
+Currently deployed at: **https://cloudmate.fly.dev/**
 
-- **Vercel** (recommended, zero-config)
-- **Netlify**
-- **Railway**
-- Any Node.js hosting platform
+### Manual Deployment
+```bash
+flyctl deploy -a cloudmate
+```
+
+### Environment Variables
+Production secrets are managed via Fly.io:
+```bash
+flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
+```
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript check
 
 ## License
 
