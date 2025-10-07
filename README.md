@@ -90,7 +90,32 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript type check
-- `npm run deploy` - Deploy to Fly.io
+- `npm run validate:env` - Validate environment variables
+- `npm run validate:deployment` - Validate deployment is running correctly
+- `npm run deploy:check` - Run pre-deployment checks
+- `npm run deploy:fly` - Deploy to Fly.io
+- `npm run deploy` - Full deployment workflow
+
+### Deployment Validation
+
+Validate that your deployment is running correctly:
+
+```bash
+# Validate default URL (https://cloudmate.fly.dev/)
+npm run validate:deployment
+
+# Validate custom URL
+node scripts/validate-deployment.js https://your-app.fly.dev/
+
+# Or use environment variable
+DEPLOYMENT_URL=https://your-app.fly.dev/ npm run validate:deployment
+```
+
+The validation script checks:
+- HTTP response status (200 OK)
+- Content validation (HTML structure, page title)
+- Response headers (Content-Type)
+- Response time performance
 
 ## License
 

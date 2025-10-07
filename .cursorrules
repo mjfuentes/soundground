@@ -46,7 +46,7 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
         "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run deploy:fly'"
       },
       {
-        "command": "sh -lc 'curl -f https://cloudmate.fly.dev'"
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run validate:deployment'"
       }
     ]
   }
@@ -68,12 +68,14 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
 - `npm run deploy:check` - Run validation only
 - `npm run deploy:fly` - Deploy to Fly.io
 - `npm run validate:env` - Check environment variables
+- `npm run validate:deployment` - Validate deployment is running correctly
 
-### Pre-Deployment Validation Script
-Located at `scripts/pre-deploy-check.js` - comprehensive checks before deployment.
-
-### Environment Validation Script
-Located at `scripts/validate-env.js` - validates required environment variables.
+### Validation Scripts
+- `scripts/pre-deploy-check.js` - Comprehensive checks before deployment (TypeScript, ESLint, build, Fly.io)
+- `scripts/validate-env.js` - Validates required environment variables
+- `scripts/validate-deployment.js` - Validates deployment is running correctly (HTTP status, content, headers, response time)
+  - Configurable URL via command line argument or `DEPLOYMENT_URL` environment variable
+  - Default: `https://cloudmate.fly.dev/`
 
 ## When Making Changes
 
