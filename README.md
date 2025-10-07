@@ -122,6 +122,25 @@ CACHE_DB_PATH=/path/to/cache.db npm run dev
 
 The project uses Husky for pre-commit validation and Cursor Agent Hooks for automated deployment (see `.cursorrules` for configuration).
 
+### Cursor Slash Commands
+
+Custom slash commands are available in the Cursor Agent to streamline development:
+
+#### `/push` - Complete Deployment Pipeline
+
+Runs the full deployment pipeline: test → commit → push → deploy → verify
+
+This command executes:
+1. **Tests** - Run full test suite with coverage
+2. **Pre-deployment checks** - TypeScript, ESLint, and build verification
+3. **Git staging** - Stage all changes
+4. **Commit** - Create commit with descriptive message
+5. **Push** - Push to remote repository
+6. **Deploy** - Deploy to Fly.io
+7. **Verify** - Validate deployment health
+
+To use: Type `/push` in the Cursor Agent input and select it from the dropdown.
+
 ### Automated Deployment Pipeline
 
 When the Cursor agent completes a task, it automatically runs:

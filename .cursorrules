@@ -69,6 +69,25 @@ Hook scripts are located in `.cursor/hooks/`:
   - Configurable URL via command line argument or `DEPLOYMENT_URL` environment variable
   - Default: `https://cloudmate.fly.dev/`
 
+## Cursor Slash Commands
+
+Custom slash commands are stored in `.cursor/commands/` and can be triggered by typing `/` in the Agent input.
+
+### `/push` - Complete Deployment Pipeline
+
+Runs the full deployment pipeline: test → commit → push → deploy → verify
+
+This command executes sequentially:
+1. **Tests** - Run full test suite with coverage (`npm test`)
+2. **Pre-deployment checks** - TypeScript, ESLint, and build verification (`npm run deploy:check`)
+3. **Git staging** - Stage all changes (`git add -A`)
+4. **Commit** - Create commit with descriptive message (`./scripts/git-commit.sh`)
+5. **Push** - Push to remote repository (`git push`)
+6. **Deploy** - Deploy to Fly.io (`npm run deploy:fly`)
+7. **Verify** - Validate deployment health (`npm run validate:deployment`)
+
+If any step fails, the pipeline stops and reports the error.
+
 ## When Making Changes
 
 ### API Routes
