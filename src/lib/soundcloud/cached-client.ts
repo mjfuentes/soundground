@@ -112,7 +112,8 @@ export async function getFollowers(
  * Note: Currently clears all cache entries of SoundCloud types
  * In a production system, you would implement pattern-based deletion for the specific userId
  */
-export function invalidateUserCache(_userId: number): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function invalidateUserCache(userId: number): void {
   const cache = getCacheService();
   // For simplicity, we clear all entries of each type
   // In a production system, you would filter by userId

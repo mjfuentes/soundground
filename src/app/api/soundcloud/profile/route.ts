@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveProfile, getSpotlight, getPlaylists, getAlbums, getFollowers } from "@/lib/soundcloud/cached-client";
+import { resolveProfile, getSpotlight, getPlaylists, getAlbums, getFollowers, getTracks } from "@/lib/soundcloud/cached-client";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -12,11 +12,12 @@ export async function GET(request: NextRequest) {
   try {
     const profile = await resolveProfile(url);
 
-    const [spotlight, playlists, albums, followers] = await Promise.all([
+    const [spotlight, playlists, albums, followers, tracks] = await Promise.all([
       getSpotlight(profile.id).catch(() => ({ collection: [] })),
       getPlaylists(profile.id).catch(() => ({ collection: [] })),
       getAlbums(profile.id).catch(() => ({ collection: [] })),
       getFollowers(profile.id, 200).catch(() => ({ collection: [], next_href: undefined })),
+      getTracks(profile.id, 50).catch(() => ({ collection: [] })), // Limit to 50 tracks for performance
     ]);
 
     // Sort all followers by follower count (descending) and take top results
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
       spotlight: spotlight.collection,
       playlists: playlists.collection,
       albums: albums.collection,
+      tracks: tracks.collection,
       topFollowers: sortedFollowers,
       followersNextHref: followers.next_href,
     });

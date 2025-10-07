@@ -4,6 +4,9 @@ import { SoundcloudEmbed } from "./soundcloud-embed";
 import { RichDescription } from "./rich-description";
 import { ExpandableSection } from "./expandable-section";
 import { TopFollowers } from "./top-followers";
+import { ProfileStats } from "./profile-stats";
+import { TrackCard } from "./track-card";
+import { AlbumCard } from "./album-card";
 import type { SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 interface SoundcloudProfileViewProps {
@@ -34,7 +37,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   }
 
   const data = await response.json();
-  const { profile: user, spotlight, playlists, albums, topFollowers } = data;
+  const { profile: user, spotlight, playlists, albums, topFollowers, tracks = [] } = data;
 
   const avatar = user.avatar_url?.replace("large.jpg", "t500x500.jpg") ?? "";
 
@@ -61,15 +64,18 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
               </svg>
             </Link>
           </div>
-                  {user.description ? (
-                    <ExpandableSection maxHeight="12rem">
-                      <RichDescription text={user.description} />
-                    </ExpandableSection>
-                  ) : null}
-                  {topFollowers && topFollowers.length > 0 && (
-                    <TopFollowers initialFollowers={topFollowers} />
-                  )}
-                </div>
+          {user.description ? (
+            <ExpandableSection maxHeight="12rem">
+              <RichDescription text={user.description} />
+            </ExpandableSection>
+          ) : null}
+          {tracks.length > 0 && (
+            <ProfileStats tracks={tracks} playlists={playlists} albums={albums} />
+          )}
+          {topFollowers && topFollowers.length > 0 && (
+            <TopFollowers initialFollowers={topFollowers} />
+          )}
+        </div>
       </section>
       <section className="flex flex-col gap-6">
         {spotlight.length > 0 && (
@@ -88,35 +94,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
             <h3 className="text-xl font-semibold text-white">Playlists</h3>
             <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
               {playlists.map((playlist: SoundCloudPlaylist) => (
-                <Link
-                  key={playlist.id}
-                  href={playlist.permalink_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex flex-col gap-2"
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-lg bg-white/5">
-                    {playlist.artwork_url ? (
-                      <Image
-                        src={playlist.artwork_url.replace("large.jpg", "t500x500.jpg")}
-                        alt={playlist.title}
-                        fill
-                        className="object-cover transition group-hover:scale-105"
-                        sizes="(min-width: 768px) 33vw, 50vw"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/20 to-purple-600/20">
-                        <svg className="h-12 w-12 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <h4 className="text-sm font-medium text-white line-clamp-1 group-hover:text-purple-400">{playlist.title}</h4>
-                    <p className="text-xs text-zinc-400">{playlist.track_count} tracks</p>
-                  </div>
-                </Link>
+                <AlbumCard key={playlist.id} album={playlist} showStats={true} />
               ))}
             </div>
           </div>
@@ -127,41 +105,24 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
             <h3 className="text-xl font-semibold text-white">Albums</h3>
             <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
               {albums.map((album: SoundCloudPlaylist) => (
-                <Link
-                  key={album.id}
-                  href={album.permalink_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex flex-col gap-2"
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-lg bg-white/5">
-                    {album.artwork_url ? (
-                      <Image
-                        src={album.artwork_url.replace("large.jpg", "t500x500.jpg")}
-                        alt={album.title}
-                        fill
-                        className="object-cover transition group-hover:scale-105"
-                        sizes="(min-width: 768px) 33vw, 50vw"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/20 to-purple-600/20">
-                        <svg className="h-12 w-12 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <h4 className="text-sm font-medium text-white line-clamp-1 group-hover:text-purple-400">{album.title}</h4>
-                    <p className="text-xs text-zinc-400">{album.track_count} tracks</p>
-                  </div>
-                </Link>
+                <AlbumCard key={album.id} album={album} showStats={true} />
               ))}
             </div>
           </div>
         )}
 
-        {spotlight.length === 0 && playlists.length === 0 && albums.length === 0 && (
+        {tracks.length > 0 && (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-xl font-semibold text-white">Recent Tracks</h3>
+            <div className="flex flex-col gap-2">
+              {tracks.slice(0, 10).map((track: SoundCloudTrack) => (
+                <TrackCard key={track.id} track={track} showStats={true} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {spotlight.length === 0 && playlists.length === 0 && albums.length === 0 && tracks.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-sm text-zinc-400">
             No tracks, playlists, or albums found for this artist.
           </div>

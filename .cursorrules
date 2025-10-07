@@ -21,7 +21,7 @@ This is a Next.js 15 SoundCloud profile viewer app deployed on Fly.io. The app f
 ## Deployment Automation with Cursor Hooks
 
 ### Hook Configuration
-This project uses Cursor Agent Hooks for automated deployment. Configuration is in `~/.cursor/hooks.json`:
+This project uses Cursor Agent Hooks for automated deployment. Configuration is in `.cursor/hooks.json`:
 
 ```json
 {
@@ -29,19 +29,19 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "./hooks/format.sh"
+        "command": "./.cursor/hooks/format.sh"
       }
     ],
     "stop": [
       {
-        "command": "./hooks/deploy.sh"
+        "command": "./.cursor/hooks/deploy.sh"
       }
     ]
   }
 }
 ```
 
-Hook scripts are located in `~/.cursor/hooks/`:
+Hook scripts are located in `.cursor/hooks/`:
 - `format.sh` - Runs linting for TypeScript/TSX files after edits
 - `deploy.sh` - Runs the full deployment pipeline when agent completes
 

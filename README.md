@@ -5,9 +5,15 @@ A beautiful, modern web application for viewing SoundCloud artist profiles with 
 ## Features
 
 - **Clean Artist Profiles**: View SoundCloud artist profiles with a modern, intuitive interface
+- **Streaming & Engagement Metrics**: Comprehensive statistics for every profile
+  - Track-level metrics: plays, likes, reposts, comments
+  - Album/playlist metrics: plays, likes, reposts
+  - Profile-wide aggregate statistics
+  - Most popular track highlighting
 - **Enhanced Follower Display**: See top followers sorted by follower count with interactive hover cards
 - **Rich Content Display**: 
   - Spotlight tracks with visual embeds
+  - Recent tracks with full engagement metrics
   - Playlists and albums in a grid layout with artwork
   - Expandable descriptions with clickable links and mentions
 - **Direct Navigation**: Access any artist profile directly via `/<artist-handle>`
@@ -164,6 +170,17 @@ The validation script checks:
 - Content validation (HTML structure, page title)
 - Response headers (Content-Type)
 - Response time performance
+
+**Fly.io-specific checks** (when deploying to Fly.io):
+- Machine status (running/stopped machines count)
+- Application logs (scans for critical errors like permission issues)
+- Volume health (persistent volume attachment status)
+- Trial account detection (warns if payment method needed)
+
+## Documentation
+
+- [Caching Implementation](./CACHING_IMPLEMENTATION.md) - Detailed documentation about the SQLite caching system
+- [Streaming Metrics](./STREAMING_METRICS.md) - Complete guide to streaming and engagement metrics
 
 ## License
 

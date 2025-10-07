@@ -57,12 +57,14 @@ describe('/api/soundcloud/profile', () => {
     const mockPlaylists = { collection: [] };
     const mockAlbums = { collection: [] };
     const mockFollowers = { collection: [], next_href: undefined };
+    const mockTracks = { collection: [] };
 
     (cachedClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
     (cachedClient.getSpotlight as jest.Mock).mockResolvedValue(mockSpotlight);
     (cachedClient.getPlaylists as jest.Mock).mockResolvedValue(mockPlaylists);
     (cachedClient.getAlbums as jest.Mock).mockResolvedValue(mockAlbums);
     (cachedClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    (cachedClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);
@@ -102,6 +104,7 @@ describe('/api/soundcloud/profile', () => {
     (cachedClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
     (cachedClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
     (cachedClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    (cachedClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);
@@ -142,6 +145,7 @@ describe('/api/soundcloud/profile', () => {
     (cachedClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
     (cachedClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
     (cachedClient.getFollowers as jest.Mock).mockResolvedValue({ collection: [] });
+    (cachedClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);

@@ -33,8 +33,11 @@ export interface SoundCloudTrack {
   duration: number;
   playback_count?: number;
   likes_count?: number;
+  reposts_count?: number;
+  comment_count?: number;
   description?: string;
   genre?: string;
+  created_at?: string;
   user: {
     id: number;
     username: string;
@@ -51,7 +54,10 @@ export interface SoundCloudPlaylist {
   duration: number;
   track_count: number;
   likes_count?: number;
+  reposts_count?: number;
+  playback_count?: number;
   is_album: boolean;
+  created_at?: string;
   user: {
     id: number;
     username: string;
