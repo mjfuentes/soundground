@@ -21,7 +21,7 @@ function extractHydrationPayload(html: string) {
   }
 
   const contents = load(script).root().text();
-  const match = contents.match(/window.__sc_hydration\s*=\s*(\[.*\]);?/s);
+  const match = contents.match(/window.__sc_hydration\s*=\s*(\[[\s\S]*\]);?/);
   if (!match) {
     return null;
   }
