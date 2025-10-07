@@ -4,6 +4,7 @@ import { SoundcloudEmbed } from "./soundcloud-embed";
 import { RichDescription } from "./rich-description";
 import { ExpandableSection } from "./expandable-section";
 import { TopFollowers } from "./top-followers";
+import type { SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 interface SoundcloudProfileViewProps {
   profile: string;
@@ -26,7 +27,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   }
 
   const data = await response.json();
-  const { profile: user, spotlight, playlists, albums, topFollowers, followersNextHref } = data;
+  const { profile: user, spotlight, playlists, albums, topFollowers } = data;
 
   const avatar = user.avatar_url?.replace("large.jpg", "t500x500.jpg") ?? "";
 
@@ -68,7 +69,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-semibold text-white">Spotlight</h3>
             <div className="flex flex-col gap-3">
-              {spotlight.map((item: any) => (
+              {spotlight.map((item: SoundCloudTrack) => (
                 <SoundcloudEmbed key={item.id} url={item.permalink_url} visual={true} />
               ))}
             </div>
@@ -79,7 +80,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-semibold text-white">Playlists</h3>
             <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-              {playlists.map((playlist: any) => (
+              {playlists.map((playlist: SoundCloudPlaylist) => (
                 <Link
                   key={playlist.id}
                   href={playlist.permalink_url}
@@ -118,7 +119,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
           <div className="flex flex-col gap-4">
             <h3 className="text-xl font-semibold text-white">Albums</h3>
             <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-              {albums.map((album: any) => (
+              {albums.map((album: SoundCloudPlaylist) => (
                 <Link
                   key={album.id}
                   href={album.permalink_url}

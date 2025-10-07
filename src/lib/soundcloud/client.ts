@@ -1,6 +1,6 @@
 import got from "got";
 
-const SOUNDCLOUD_CLIENT_ID = "REMOVED_CLIENT_ID";
+const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID || "REMOVED_CLIENT_ID";
 const SOUNDCLOUD_API_BASE = "https://api-v2.soundcloud.com";
 
 export interface SoundCloudUser {
