@@ -1,0 +1,162 @@
+# Cursor AI Agent Rules for CloudMate
+
+## Project Context
+This is a Next.js 15 SoundCloud profile viewer app deployed on Fly.io. The app fetches and displays artist profiles, playlists, albums, and followers with a modern UI.
+
+## Code Style & Standards
+- Use TypeScript with strict type checking
+- Follow Next.js 15 App Router conventions
+- Use Tailwind CSS for styling
+- Prefer async/await over promises
+- Use server components by default, client components only when needed
+- Keep components small and focused
+- Use proper semantic HTML and accessibility attributes
+
+## Project Structure
+- `/src/app/` - Next.js App Router pages and API routes
+- `/src/components/` - React components
+- `/src/lib/` - Utility functions and API clients
+- `/scripts/` - Deployment and validation scripts
+
+## Deployment Automation with Cursor Hooks
+
+### Hook Configuration
+This project uses Cursor Agent Hooks for automated deployment. Configuration is in `~/.cursor/hooks.json`:
+
+```json
+{
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run lint:fix'",
+        "pattern": "**/*.{ts,tsx}"
+      }
+    ],
+    "stop": [
+      {
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run deploy:check'"
+      },
+      {
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git add -A'"
+      },
+      {
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git commit -m \"Update via Cursor Agent\"'"
+      },
+      {
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git push'"
+      },
+      {
+        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run deploy:fly'"
+      },
+      {
+        "command": "sh -lc 'curl -f https://cloudmate.fly.dev'"
+      }
+    ]
+  }
+}
+```
+
+### Deployment Workflow
+1. After editing TypeScript files, linting auto-fixes
+2. When completing a task, the following steps run sequentially:
+   - **Validation**: Run type-check, linting, build, and Fly.io checks
+   - **Stage**: Git add all changes
+   - **Commit**: Create commit with automated message
+   - **Push**: Push to remote repository
+   - **Deploy**: Deploy to Fly.io
+   - **Verify**: Health check deployment with curl
+3. Each step must succeed before proceeding to the next. If any step fails, the workflow stops.
+
+### Deployment Commands
+- `npm run deploy` - Full validation + deploy
+- `npm run deploy:check` - Run validation only
+- `npm run deploy:fly` - Deploy to Fly.io
+- `npm run validate:env` - Check environment variables
+
+### Pre-Deployment Validation Script
+Located at `scripts/pre-deploy-check.js` - comprehensive checks before deployment.
+
+### Environment Validation Script
+Located at `scripts/validate-env.js` - validates required environment variables.
+
+## When Making Changes
+
+### API Routes
+- Keep API routes in `/src/app/api/soundcloud/`
+- Use proper error handling and status codes
+- Add caching with `next: { revalidate: 300 }` where appropriate
+- Validate inputs with Zod schemas
+
+### Components
+- Use TypeScript interfaces for props
+- Add proper loading and error states
+- Optimize images with Next.js Image component
+- Use proper semantic HTML
+
+### Before Deployment
+The pre-deployment script automatically checks:
+- No TypeScript errors
+- No ESLint errors
+- Build succeeds
+- Fly.io authentication is valid
+- Target app exists
+
+## Environment Variables
+- Development: `.env.local` (not committed)
+- Production: Managed via Fly.io secrets
+- Use `process.env.VERCEL_URL` or `process.env.FLY_APP_NAME` for API URL detection
+
+## Testing & Validation
+- Always run `npm run type-check` before major changes
+- Use `npm run lint:fix` to auto-fix linting issues
+- Test builds with `npm run build`
+- Use `npm run deploy:check` to validate deployment readiness
+
+## Common Tasks
+
+### Adding a new API endpoint
+1. Create route file in `/src/app/api/soundcloud/[endpoint]/route.ts`
+2. Use proper TypeScript types
+3. Add error handling
+4. Add caching if appropriate
+
+### Adding a new component
+1. Create in `/src/components/[component-name].tsx`
+2. Use TypeScript interface for props
+3. Add proper accessibility attributes
+4. Use Tailwind for styling
+
+### Deploying changes
+1. Make your changes
+2. Let the agent complete the task
+3. Approve deployment when prompted
+4. Or manually run `npm run deploy`
+
+## Best Practices
+- Keep README.md as the single source of documentation
+- Use semantic commit messages
+- Test locally before deploying
+- Keep dependencies up to date
+- Use environment variables for secrets
+- Add proper error boundaries
+- Optimize images and assets
+- Use proper TypeScript types (avoid `any`)
+
+## Fly.io Deployment
+- App name: `cloudmate`
+- Region: `iad` (US East)
+- Memory: 1GB
+- Auto-scaling: enabled (min 0, auto-stop)
+- Deploy command: `flyctl deploy --remote-only`
+
+## Prerequisites for Deployment
+1. Fly.io CLI installed: `curl -L https://fly.io/install.sh | sh`
+2. Authenticated: `flyctl auth login`
+3. Secrets set: `flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate`
+
+## Troubleshooting
+- If hooks don't trigger: Restart Cursor
+- If validation fails: Run checks individually (type-check, lint, build)
+- If deployment fails: Check Fly.io status with `flyctl status -a cloudmate`
+- If linting issues: Run `npm run lint:fix`
+
