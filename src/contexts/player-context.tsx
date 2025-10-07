@@ -99,7 +99,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.pause();
       audio.src = "";
     };
-  }, [volume]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount/unmount - volume is updated via audioRef.current in setVolume
 
   const play = async (item: PlayableItem) => {
     if (!audioRef.current) return;

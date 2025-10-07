@@ -5,8 +5,13 @@ import Image from "next/image";
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
+  
+  if (hours > 0) {
+    return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
@@ -36,7 +41,7 @@ export function CustomAudioPlayer() {
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
-    setVolume(newVolume); // Now expects 0-100
+    setVolume(newVolume); // Expects 0-1
   };
 
   const togglePlayPause = () => {
