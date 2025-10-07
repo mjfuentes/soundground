@@ -17,11 +17,22 @@ interface FollowerCardProps {
 
 export function FollowerCard({ follower }: FollowerCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [cardPosition, setCardPosition] = useState({ top: 0, left: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    setIsHovered(true);
+    
+    // Position card bottom-right from cursor
+    setCardPosition({
+      top: e.clientY + 10,
+      left: e.clientX + 10,
+    });
+  };
 
   return (
     <div
       className="relative"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link
@@ -44,8 +55,11 @@ export function FollowerCard({ follower }: FollowerCardProps) {
       </Link>
 
       {isHovered && (
-        <div className="pointer-events-none absolute left-1/2 top-full z-50 mt-3 w-32 -translate-x-1/2 animate-in fade-in slide-in-from-top-1 duration-150">
-          <div className="relative overflow-hidden rounded-lg border border-white/20 shadow-xl">
+        <div
+          className="pointer-events-none fixed z-[9999] w-32 animate-in fade-in duration-150"
+          style={{ top: `${cardPosition.top}px`, left: `${cardPosition.left}px` }}
+        >
+          <div className="relative overflow-hidden rounded-lg border border-white/20 bg-zinc-900/95 shadow-xl backdrop-blur-sm">
             <div className="relative aspect-square">
               {follower.avatar_url ? (
                 <Image
@@ -65,7 +79,6 @@ export function FollowerCard({ follower }: FollowerCardProps) {
               </div>
             </div>
           </div>
-          <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-l border-t border-white/20 bg-zinc-900"></div>
         </div>
       )}
     </div>

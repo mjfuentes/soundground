@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { UserMention } from "./user-mention";
 
 interface RichDescriptionProps {
   text: string;
@@ -75,13 +77,10 @@ export function RichDescription({ text }: RichDescriptionProps) {
             );
           } else if (match.type === "mention") {
             parts.push(
-              <Link
+              <UserMention
                 key={`${lineIndex}-${i}`}
-                href={`/${match.value}`}
-                className="text-purple-400 transition hover:underline"
-              >
-                @{match.value}
-              </Link>
+                username={match.value}
+              />
             );
           } else if (match.type === "email") {
             parts.push(

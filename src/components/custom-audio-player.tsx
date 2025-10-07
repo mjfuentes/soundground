@@ -75,8 +75,8 @@ export function CustomAudioPlayer() {
       )}
 
       {/* Main player container */}
-      <div className="border border-neutral-700 bg-neutral-900 shadow-lg">
-        {/* Album Art + Controls + Track Info */}
+      <div className="bg-neutral-900">
+        {/* Album Art + Track Info + Description */}
         <div className="flex items-start gap-3 border-b border-neutral-700 bg-neutral-900 px-3 py-3">
           {/* Large Album Art - 160px */}
           <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden border border-neutral-600 bg-neutral-950">
@@ -98,9 +98,9 @@ export function CustomAudioPlayer() {
             )}
           </div>
 
-          {/* Right side: Track info + controls */}
+          {/* Track info and controls */}
           <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
-            {/* Track info at top */}
+            {/* Track info */}
             <div className="min-w-0">
               <div className="truncate text-base font-semibold text-white">
                 {currentItem.title}
@@ -159,6 +159,17 @@ export function CustomAudioPlayer() {
               </button>
             </div>
           </div>
+
+          {/* Description in remaining space */}
+          {currentItem.description && (
+            <div className="hidden min-w-0 flex-1 overflow-y-auto py-1 pr-2 lg:block">
+              <div className="text-xs text-neutral-400">
+                <div className="whitespace-pre-wrap break-words">
+                  {currentItem.description}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Seekbar */}

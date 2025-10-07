@@ -39,7 +39,7 @@ export function ExpandableSection({ children, maxHeight = "4rem", className = ""
       {hasOverflow && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-1 text-xs text-amber-400 transition hover:text-amber-300"
+          className="cursor-pointer mt-1 text-xs text-amber-400 transition hover:text-amber-300"
         >
           {isExpanded ? "...less" : "...more"}
         </button>

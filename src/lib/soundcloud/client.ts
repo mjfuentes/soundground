@@ -57,6 +57,18 @@ export interface SoundCloudUser {
   } | null;
 }
 
+export interface SoundCloudComment {
+  id: number;
+  body: string;
+  timestamp: number;
+  user: {
+    id: number;
+    username: string;
+    avatar_url?: string;
+    permalink_url: string;
+  };
+}
+
 export interface SoundCloudTrack {
   id: number;
   title: string;
@@ -73,6 +85,9 @@ export interface SoundCloudTrack {
   streamable?: boolean; // Whether track has streaming enabled
   access?: "playable" | "preview" | "blocked"; // Track access level
   policy?: string; // Monetization/licensing policy
+  purchase_url?: string; // External purchase/download link
+  download_url?: string; // Direct download link
+  comments?: SoundCloudComment[]; // Recent comments
   user: {
     id: number;
     username: string;
@@ -92,8 +107,11 @@ export interface SoundCloudPlaylist {
   reposts_count?: number;
   playback_count?: number;
   is_album: boolean;
+  set_type?: string; // Type of playlist/album (playlist, album, ep, compilation)
   created_at?: string;
   tracks?: SoundCloudTrack[];
+  purchase_url?: string; // External purchase/download link
+  download_url?: string; // Direct download link
   user: {
     id: number;
     username: string;

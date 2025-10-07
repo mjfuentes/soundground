@@ -9,6 +9,7 @@ interface PlayableItem {
   artist: string; // Artist/uploader name
   artistUrl: string; // Artist profile URL
   artwork?: string;
+  description?: string; // Track description
   type: "track" | "playlist" | "album";
 }
 

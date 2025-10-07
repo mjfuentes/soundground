@@ -9,7 +9,7 @@ export function Header() {
           <div className="relative h-11 w-11">
             <Image
               src="/logo.png"
-              alt="CloudMate"
+              alt="SoundClopedia"
               fill
               className="object-contain"
               priority

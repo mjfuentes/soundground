@@ -55,30 +55,26 @@ export function FloatingPlayer() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       <div className="border-t-2 border-neutral-700 bg-neutral-900 shadow-2xl">
-        <div className="mx-auto max-w-7xl px-4 py-3">
-          {/* Window controls */}
-          <div className="mb-2 flex items-center justify-end gap-1">
-            <button
-              onClick={() => setIsMinimized(true)}
-              className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-white"
-              title="Minimize (ESC)"
-            >
-              _
-            </button>
-            <button
-              onClick={stop}
-              className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-red-900 hover:text-red-300"
-              title="Close"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Audio Player */}
-          <div className="w-full">
-            <CustomAudioPlayer />
-          </div>
+        {/* Window controls */}
+        <div className="flex items-center justify-end gap-1 border-b border-neutral-700 px-4 py-2">
+          <button
+            onClick={() => setIsMinimized(true)}
+            className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-white"
+            title="Minimize (ESC)"
+          >
+            _
+          </button>
+          <button
+            onClick={stop}
+            className="flex h-6 w-6 items-center justify-center border border-neutral-600 bg-neutral-800 text-xs text-neutral-400 hover:bg-red-900 hover:text-red-300"
+            title="Close"
+          >
+            ✕
+          </button>
         </div>
+
+        {/* Audio Player */}
+        <CustomAudioPlayer />
       </div>
     </div>
   );

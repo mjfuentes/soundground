@@ -8,6 +8,7 @@ import { usePlayer } from "@/contexts/player-context";
 interface PlaylistCardProps {
   playlist: SoundCloudPlaylist;
   showStats?: boolean;
+  coverOnly?: boolean;
 }
 
 function formatNumber(num?: number): string {
@@ -41,7 +42,7 @@ function isValidTrack(track: unknown): track is SoundCloudTrack {
   );
 }
 
-export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) {
+export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: PlaylistCardProps) {
   const { playQueue } = usePlayer();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -69,7 +70,8 @@ export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) 
         title: track.title,
         artist: track.user?.username || "Unknown Artist",
         artistUrl: track.user?.permalink_url || "https://soundcloud.com",
-        artwork: track.artwork_url?.replace("large.jpg", "t200x200.jpg"),
+        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg"),
+        description: track.description,
         type: "track" as const,
       }));
       
@@ -81,17 +83,56 @@ export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) 
     }
   };
 
+  // Cover-only mode: just the artwork
+  if (coverOnly) {
+    // Use playlist artwork, or fallback to first track's artwork
+    const imageUrl = playlist.artwork_url 
+      ? playlist.artwork_url.replace("large.jpg", "t500x500.jpg")
+      : playlist.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+    
+    return (
+      <button
+        onClick={handleClick}
+        disabled={isLoading}
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        title={playlist.title}
+      >
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={playlist.title}
+            fill
+            className="object-cover transition group-hover:scale-105"
+            sizes="(min-width: 768px) 120px, 33vw"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-500/20 to-purple-600/20">
+            <svg className="h-8 w-8 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
+            </svg>
+          </div>
+        )}
+      </button>
+    );
+  }
+
+  // Use playlist artwork, or fallback to first track's artwork
+  const artworkUrl = playlist.artwork_url 
+    ? playlist.artwork_url.replace("large.jpg", "t500x500.jpg")
+    : playlist.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+
   return (
     <button
       onClick={handleClick}
       disabled={isLoading}
-      className="group flex w-full gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="group flex w-full cursor-pointer gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {/* Artwork */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
-        {playlist.artwork_url ? (
+        {artworkUrl ? (
           <Image
-            src={playlist.artwork_url.replace("large.jpg", "t200x200.jpg")}
+            src={artworkUrl}
             alt={playlist.title}
             fill
             className="object-cover"
@@ -120,14 +161,6 @@ export function PlaylistCard({ playlist, showStats = true }: PlaylistCardProps) 
 
         {showStats && (
           <div className="flex gap-3 text-xs text-zinc-400">
-            {playlist.playback_count !== undefined && (
-              <span className="flex items-center gap-1" title="Plays">
-                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-                {formatNumber(playlist.playback_count)}
-              </span>
-            )}
             {playlist.likes_count !== undefined && (
               <span className="flex items-center gap-1" title="Likes">
                 <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">

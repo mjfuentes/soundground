@@ -1,4 +1,4 @@
-# Cursor AI Agent Rules for CloudMate
+# Cursor AI Agent Rules for SoundClopedia
 
 ## 🚨 MANDATORY: Task Completion Requirements
 
@@ -23,7 +23,7 @@
 ---
 
 ## Project Context
-Next.js 15 SoundCloud profile viewer app deployed on Fly.io. Fetches and displays artist profiles, playlists, albums, and followers.
+SoundClopedia - A Next.js 15 encyclopedia for SoundCloud music discovery. Dig deep into artist profiles, explore connections between artists, and discover new music. Deployed on Fly.io with caching and enhanced playback features.
 
 ## Agent Behavior
 
@@ -120,7 +120,7 @@ Automated validation ensures:
 
 ### Environment Variables
 - **Development**: `.env.local` (not committed)
-- **Production**: Fly.io secrets (`flyctl secrets set KEY=value -a cloudmate`)
+- **Production**: Fly.io secrets (`flyctl secrets set KEY=value -a soundclopedia`)
 - Auto-detect URL: `process.env.FLY_APP_NAME` or `process.env.VERCEL_URL`
 
 ### Development Server
@@ -153,7 +153,7 @@ Automated validation ensures:
 ## Fly.io Deployment
 
 ### Configuration
-- **App**: `cloudmate`
+- **App**: `soundclopedia`
 - **Region**: `iad` (US East)
 - **Memory**: 1GB
 - **Scaling**: Auto (min 0, auto-stop)
@@ -168,7 +168,7 @@ curl -L https://fly.io/install.sh | sh
 flyctl auth login
 
 # Set secrets
-flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
+flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundclopedia
 ```
 
 ## Troubleshooting
@@ -177,9 +177,9 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
 |-------|----------|
 | Hooks don't trigger | Restart Cursor |
 | Validation fails | Run `npm run type-check`, `npm run lint:fix`, `npm run build` individually |
-| Deployment fails | Check `flyctl status -a cloudmate` |
+| Deployment fails | Check `flyctl status -a soundclopedia` |
 | Linting errors | Run `npm run lint:fix` |
-| Check logs | `flyctl logs -n -a cloudmate` (use `-n` flag to avoid streaming) |
+| Check logs | `flyctl logs -n -a soundclopedia` (use `-n` flag to avoid streaming) |
 | Port 3000 blocked | `lsof -ti:3000 \| xargs kill -9` |
 
 ---

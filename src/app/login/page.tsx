@@ -28,9 +28,9 @@ function LoginContent() {
     <main className="flex min-h-screen items-center justify-center bg-black text-white">
       <div className="mx-auto flex max-w-lg flex-col gap-8 px-6 text-center">
         <div>
-          <h1 className="text-5xl font-semibold sm:text-6xl">Cloudmate</h1>
+          <h1 className="text-5xl font-semibold sm:text-6xl">SoundClopedia</h1>
           <p className="mt-4 text-lg text-zinc-300 sm:text-xl">
-            Connect with your SoundCloud account to explore profiles, playlists, and more
+            Your encyclopedia for SoundCloud discovery. Connect to explore artist profiles and dig deep into the music.
           </p>
         </div>
 
@@ -56,7 +56,7 @@ function LoginContent() {
         </button>
 
         <p className="text-sm text-zinc-400">
-          By signing in, you agree to grant Cloudmate access to your SoundCloud profile data.
+          By signing in, you agree to grant SoundClopedia access to your SoundCloud profile data.
         </p>
       </div>
     </main>

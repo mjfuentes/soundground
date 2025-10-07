@@ -40,13 +40,13 @@ function executeFlyctl(command) {
  * @returns {string} - App name
  */
 function getFlyAppName(url) {
-  // Extract from URL (e.g., https://cloudmate.fly.dev)
+  // Extract from URL (e.g., https://soundclopedia.fly.dev)
   const match = url.match(/https?:\/\/([^.]+)\.fly\.dev/);
   if (match) {
     return match[1];
   }
   // Fallback to environment or default
-  return process.env.FLY_APP_NAME || 'cloudmate';
+  return process.env.FLY_APP_NAME || 'soundclopedia';
 }
 
 /**
@@ -65,7 +65,7 @@ function makeRequest(url) {
       path: urlObj.pathname + urlObj.search,
       method: 'GET',
       headers: {
-        'User-Agent': 'CloudMate-Validator/1.0',
+        'User-Agent': 'SoundClopedia-Validator/1.0',
       },
       timeout: 10000, // 10 second timeout
     };
@@ -131,7 +131,7 @@ async function validateDeployment(url) {
         // Check if the body contains expected content
         const checks = [
           { name: 'HTML structure', test: () => body.includes('<!DOCTYPE html>') || body.includes('<html') },
-          { name: 'Title (Cloudmate)', test: () => body.toLowerCase().includes('cloudmate') },
+          { name: 'Title (SoundClopedia)', test: () => body.toLowerCase().includes('soundclopedia') },
           { name: 'Body content', test: () => body.length > 100 },
         ];
 
@@ -305,7 +305,7 @@ async function validateDeployment(url) {
             const volumes = executeFlyctl(`flyctl volumes list -a ${appName}`);
             
             // Check if volumes are attached
-            const volumeLines = volumes.split('\n').filter(line => line.includes('cloudmate_data'));
+            const volumeLines = volumes.split('\n').filter(line => line.includes('soundclopedia_data'));
             
             if (volumeLines.length > 0) {
               log(`  ✓ Found ${volumeLines.length} persistent volume(s)`, colors.green);
@@ -370,7 +370,7 @@ async function validateDeployment(url) {
 
 // Main execution
 const args = process.argv.slice(2);
-const url = args[0] || process.env.DEPLOYMENT_URL || 'https://cloudmate.fly.dev/';
+const url = args[0] || process.env.DEPLOYMENT_URL || 'https://soundclopedia.fly.dev/';
 
 // Validate URL format
 try {

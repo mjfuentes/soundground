@@ -71,7 +71,7 @@ export default function Home() {
       <div className="mx-auto flex max-w-2xl flex-col gap-8 px-6">
         <div className="text-center">
           <div className="mb-4 flex items-center justify-center gap-4">
-            <h1 className="text-5xl font-semibold sm:text-6xl">Cloudmate</h1>
+            <h1 className="text-5xl font-semibold sm:text-6xl">SoundClopedia</h1>
             {oauthMode && user && (
               <button
                 onClick={handleLogout}
@@ -87,7 +87,7 @@ export default function Home() {
             </p>
           )}
           <p className="mt-4 text-lg text-zinc-300 sm:text-xl">
-            Enter a SoundCloud artist handle
+            Dig deep into SoundCloud. Enter an artist handle to explore.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="flex w-full gap-3">

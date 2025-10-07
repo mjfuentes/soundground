@@ -1,6 +1,6 @@
-# CloudMate
+# SoundClopedia
 
-SoundCloud profile viewer with OAuth authentication, caching, and enhanced metrics.
+Your encyclopedia for SoundCloud music discovery. Dig deep into artist profiles, explore connections, and discover new music with enhanced research and playback features.
 
 ## Tech Stack
 
@@ -58,13 +58,13 @@ Slash command: `/push` - full deploy pipeline.
 
 ## Deployment
 
-**Fly.io**: https://cloudmate.fly.dev
+**Fly.io**: https://soundclopedia.fly.dev
 
 ```bash
 # Set secrets
 flyctl secrets set SOUNDCLOUD_CLIENT_ID=xxx SOUNDCLOUD_CLIENT_SECRET=xxx \
-  SOUNDCLOUD_REDIRECT_URI=https://cloudmate.fly.dev/api/auth/callback \
-  JWT_SECRET=$(openssl rand -base64 32) -a cloudmate
+  SOUNDCLOUD_REDIRECT_URI=https://soundclopedia.fly.dev/api/auth/callback \
+  JWT_SECRET=$(openssl rand -base64 32) -a soundclopedia
 
 # Deploy
 npm run deploy

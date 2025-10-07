@@ -15,7 +15,6 @@ function formatNumber(num: number): string {
 
 export function ProfileStats({ tracks, playlists, albums }: ProfileStatsProps) {
   // Calculate total stats
-  const totalPlays = tracks.reduce((sum, track) => sum + (track.playback_count || 0), 0);
   const totalLikes = [
     ...tracks.map(t => t.likes_count || 0),
     ...playlists.map(p => p.likes_count || 0),
@@ -31,7 +30,6 @@ export function ProfileStats({ tracks, playlists, albums }: ProfileStatsProps) {
   const totalComments = tracks.reduce((sum, track) => sum + (track.comment_count || 0), 0);
 
   const stats = [
-    { label: "Total Plays", value: totalPlays, icon: "▶" },
     { label: "Total Likes", value: totalLikes, icon: "♥" },
     { label: "Total Reposts", value: totalReposts, icon: "↻" },
     { label: "Total Comments", value: totalComments, icon: "💬" },

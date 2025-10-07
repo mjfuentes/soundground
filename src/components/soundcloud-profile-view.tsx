@@ -45,8 +45,15 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
 
   const avatar = user.avatar_url?.replace("large.jpg", "t500x500.jpg") ?? "";
 
+  // Separate albums and playlists for the sidebar - show last 3
+  const displayedAlbums = albums.slice(-3).reverse();
+  const hasMoreAlbums = albums.length > 3;
+  const displayedPlaylists = playlists.slice(-3).reverse();
+  const hasMorePlaylists = playlists.length > 3;
+
   return (
     <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
+      {/* Left column - Profile info, Albums/Playlists & Friends */}
       <section className="flex flex-col gap-4">
         {avatar ? (
           <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10">
@@ -73,52 +80,83 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
               <RichDescription text={user.description} />
             </ExpandableSection>
           ) : null}
-          <TopFollowers userId={user.id} />
         </div>
+
+        {/* Albums */}
+        {displayedAlbums.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-medium text-zinc-400">Albums</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {displayedAlbums.map((album: SoundCloudPlaylist) => {
+                // If album has only one track, render it as a track
+                if (album.tracks?.length === 1) {
+                  return <TrackCard key={album.id} track={album.tracks[0]} showStats={false} coverOnly={true} />;
+                }
+                return <AlbumCard key={album.id} album={album} showStats={false} coverOnly={true} />;
+              })}
+            </div>
+            {hasMoreAlbums && (
+              <button className="cursor-pointer self-start text-xs text-amber-400 transition hover:text-amber-300">
+                ...more
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Playlists */}
+        {displayedPlaylists.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-medium text-zinc-400">Playlists</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {displayedPlaylists.map((playlist: SoundCloudPlaylist) => {
+                // If playlist has only one track, render it as a track
+                if (playlist.tracks?.length === 1) {
+                  return <TrackCard key={playlist.id} track={playlist.tracks[0]} showStats={false} coverOnly={true} />;
+                }
+                return <AlbumCard key={playlist.id} album={playlist} showStats={false} coverOnly={true} />;
+              })}
+            </div>
+            {hasMorePlaylists && (
+              <button className="cursor-pointer self-start text-xs text-amber-400 transition hover:text-amber-300">
+                ...more
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Friends */}
+        <TopFollowers userId={user.id} />
       </section>
+
+      {/* Right column - Spotlight & Recent Activity */}
       <section className="flex flex-col gap-6">
+        {/* Spotlight - Row of 5 covers */}
         {spotlight.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold text-white">Spotlight</h3>
-            <div className="flex flex-col gap-4">
-              {spotlight.map((item: SpotlightItem) => 
-                isPlaylist(item) ? (
-                  <SpotlightPlaylist key={item.id} playlist={item} />
+          <div className="flex flex-col gap-3">
+            <h3 className="text-sm font-medium text-zinc-400">Spotlight</h3>
+            <div className="grid grid-cols-5 gap-2">
+              {spotlight.slice(0, 5).map((item: SpotlightItem) => {
+                // If it's a playlist with only one track, treat it as a single track
+                if (isPlaylist(item) && item.tracks?.length === 1) {
+                  return <TrackCard key={item.id} track={item.tracks[0]} coverOnly={true} />;
+                }
+                // Otherwise render as normal
+                return isPlaylist(item) ? (
+                  <SpotlightPlaylist key={item.id} playlist={item} coverOnly={true} />
                 ) : (
-                  <TrackCard key={item.id} track={item} showStats={true} />
-                )
-              )}
+                  <TrackCard key={item.id} track={item} coverOnly={true} />
+                );
+              })}
             </div>
           </div>
         )}
 
-        {playlists.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold text-white">Playlists</h3>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-              {playlists.map((playlist: SoundCloudPlaylist) => (
-                <AlbumCard key={playlist.id} album={playlist} showStats={true} />
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {albums.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold text-white">Albums</h3>
-            <div className="grid gap-3 grid-cols-2 md:grid-cols-3">
-              {albums.map((album: SoundCloudPlaylist) => (
-                <AlbumCard key={album.id} album={album} showStats={true} />
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Recent Activity - Main focus */}
         {tracks.length > 0 && (
           <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold text-white">Recent Tracks</h3>
+            <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
             <div className="flex flex-col gap-2">
-              {tracks.slice(0, 10).map((track: SoundCloudTrack) => (
+              {tracks.map((track: SoundCloudTrack) => (
                 <TrackCard key={track.id} track={track} showStats={true} />
               ))}
             </div>

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CloudMate",
-  description: "View SoundCloud artist profiles with enhanced features",
+  title: "SoundClopedia",
+  description: "Your encyclopedia for SoundCloud music discovery. Dig deep into artist profiles and explore connections.",
   icons: {
     icon: [
       { url: "/logo.png" },

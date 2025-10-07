@@ -168,7 +168,7 @@ export function TopFollowers({ userId }: TopFollowersProps) {
       {hasMore && !loading && !loadingMore && (
         <button
           onClick={loadMore}
-          className="self-start text-xs text-amber-400 transition hover:text-amber-300"
+          className="cursor-pointer self-start text-xs text-amber-400 transition hover:text-amber-300"
         >
           ...more
         </button>

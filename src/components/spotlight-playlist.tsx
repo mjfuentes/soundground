@@ -5,6 +5,8 @@ import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 interface SpotlightPlaylistProps {
   playlist: SoundCloudPlaylist;
+  compact?: boolean;
+  coverOnly?: boolean;
 }
 
 function isValidTrack(track: unknown): boolean {
@@ -19,7 +21,17 @@ function isValidTrack(track: unknown): boolean {
   );
 }
 
-export async function SpotlightPlaylist({ playlist }: SpotlightPlaylistProps) {
+export async function SpotlightPlaylist({ playlist, compact = false, coverOnly = false }: SpotlightPlaylistProps) {
+  // If cover only, just show the playlist card cover
+  if (coverOnly) {
+    return <PlaylistCard playlist={playlist} showStats={false} coverOnly={true} />;
+  }
+  
+  // If compact, just show the playlist card
+  if (compact) {
+    return <PlaylistCard playlist={playlist} showStats={false} />;
+  }
+
   // Fetch the full playlist with tracks, with error handling
   let playlistWithTracks = playlist;
   let fetchedFullData = false;
