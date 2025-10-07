@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAlbums } from "@/lib/soundcloud/client";
+import { getAlbums } from "@/lib/soundcloud/cached-client";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

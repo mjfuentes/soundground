@@ -53,7 +53,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
               href={user.permalink_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-orange-500 transition hover:text-orange-400"
+              className="text-white transition hover:text-zinc-300"
               title="View on SoundCloud"
             >
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">

@@ -25,33 +25,25 @@ This project uses Cursor Agent Hooks for automated deployment. Configuration is 
 
 ```json
 {
+  "version": 1,
   "hooks": {
     "afterFileEdit": [
       {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run lint:fix'",
-        "pattern": "**/*.{ts,tsx}"
+        "command": "./hooks/format.sh"
       }
     ],
     "stop": [
       {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run deploy:check'"
-      },
-      {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && git add -A'"
-      },
-      {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && ./scripts/git-commit.sh'"
-      },
-      {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run deploy:fly'"
-      },
-      {
-        "command": "sh -lc 'cd /Users/matifuentes/Workspace/cloudmate && npm run validate:deployment'"
+        "command": "./hooks/deploy.sh"
       }
     ]
   }
 }
 ```
+
+Hook scripts are located in `~/.cursor/hooks/`:
+- `format.sh` - Runs linting for TypeScript/TSX files after edits
+- `deploy.sh` - Runs the full deployment pipeline when agent completes
 
 ### Deployment Workflow
 1. After editing TypeScript files, linting auto-fixes

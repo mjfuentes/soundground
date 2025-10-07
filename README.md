@@ -11,6 +11,10 @@ A beautiful, modern web application for viewing SoundCloud artist profiles with 
   - Playlists and albums in a grid layout with artwork
   - Expandable descriptions with clickable links and mentions
 - **Direct Navigation**: Access any artist profile directly via `/<artist-handle>`
+- **Smart Caching**: SQLite-based caching system for improved performance
+  - Automatic caching of all SoundCloud API responses
+  - Configurable TTL per resource type
+  - Cache statistics and management API
 
 ## Tech Stack
 
@@ -18,6 +22,8 @@ A beautiful, modern web application for viewing SoundCloud artist profiles with 
 - **TypeScript**
 - **Tailwind CSS**
 - **SoundCloud API** (proxied through backend)
+- **better-sqlite3** for caching
+- **Jest** and Testing Library for testing
 
 ## Getting Started
 
@@ -66,6 +72,45 @@ The app includes backend API routes to proxy SoundCloud requests:
 - `/api/soundcloud/spotlight` - Get spotlight tracks
 - `/api/soundcloud/playlists` - Get artist playlists
 - `/api/soundcloud/albums` - Get artist albums
+- `/api/cache` - Cache management and statistics
+
+### Cache Management
+
+View cache statistics:
+```bash
+curl https://cloudmate.fly.dev/api/cache?action=stats
+```
+
+Clear all cache:
+```bash
+curl -X DELETE https://cloudmate.fly.dev/api/cache
+```
+
+Delete cache by type:
+```bash
+curl -X DELETE "https://cloudmate.fly.dev/api/cache?type=soundcloud:profile"
+```
+
+## Caching System
+
+CloudMate uses a SQLite-based caching system to improve performance and reduce API calls to SoundCloud:
+
+- **Cache Location**: `./data/cache.db` (automatically created)
+- **Cache TTLs**:
+  - Profiles: 10 minutes
+  - Spotlight tracks: 15 minutes
+  - Playlists/Albums: 20 minutes
+  - Followers: 30 minutes
+- **Features**:
+  - Automatic expiration
+  - Type-based categorization
+  - Hit/miss statistics
+  - Manual cache invalidation via API
+
+Configure cache location with environment variable:
+```bash
+CACHE_DB_PATH=/path/to/cache.db npm run dev
+```
 
 ## Development Workflow
 
@@ -90,6 +135,9 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a cloudmate
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript type check
+- `npm test` - Run all tests with coverage
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:ci` - Run tests in CI mode
 - `npm run validate:env` - Validate environment variables
 - `npm run validate:deployment` - Validate deployment is running correctly
 - `npm run deploy:check` - Run pre-deployment checks
