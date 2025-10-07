@@ -10,10 +10,10 @@ function formatNumber(num: number): string {
 
 export function ProfileStats({ user }: ProfileStatsProps) {
   const stats = [
-    { label: "TRACKS", value: user.track_count, symbol: "♪" },
-    { label: "LIKES", value: user.public_favorites_count || 0, symbol: "★" },
-    { label: "REPOSTS", value: user.reposts_count || 0, symbol: "↻" },
-    { label: "PLAYLISTS", value: user.playlist_count, symbol: "≡" },
+    { label: "TRACKS", value: user.track_count ?? 0, symbol: "♪" },
+    { label: "FOLLOWERS", value: user.followers_count ?? 0, symbol: "👥" },
+    { label: "FOLLOWING", value: user.followings_count ?? 0, symbol: "➜" },
+    { label: "PLAYLISTS", value: user.playlist_count ?? 0, symbol: "≡" },
   ];
 
   // Only show if there's at least some activity
