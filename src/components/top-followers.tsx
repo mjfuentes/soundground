@@ -49,15 +49,22 @@ export function TopFollowers({ userId }: TopFollowersProps) {
 
       const decoder = new TextDecoder();
       let friendsReceived = 0;
+      let buffer = ''; // Buffer for incomplete lines
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
+        // Append new chunk to buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Split by newlines but keep the last incomplete line in buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
         for (const line of lines) {
+          if (!line.trim()) continue;
+          
           try {
             const message = JSON.parse(line);
             
@@ -82,6 +89,19 @@ export function TopFollowers({ userId }: TopFollowersProps) {
           } catch (parseError) {
             console.error('Error parsing message:', parseError);
           }
+        }
+      }
+      
+      // Process any remaining buffered data
+      if (buffer.trim()) {
+        try {
+          const message = JSON.parse(buffer);
+          if (message.type === 'complete') {
+            setHasMore(message.data.hasMore);
+            setTotalFollowings(message.data.totalFollowings);
+          }
+        } catch (parseError) {
+          console.error('Error parsing final buffer:', parseError);
         }
       }
     } catch (err) {
