@@ -197,6 +197,26 @@ export async function getFollowers(userId: number, limit = 200, nextHref?: strin
   return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
 }
 
+export async function getFollowings(userId: number, limit = 200, nextHref?: string): Promise<{ collection: SoundCloudFollower[]; next_href?: string }> {
+  const headers = await getAuthHeaders();
+  
+  if (nextHref) {
+    // Use the nextHref directly
+    const url = hasClientCredentials() ? nextHref : `${nextHref}&client_id=${SOUNDCLOUD_CLIENT_ID}`;
+    const text = await got(url, { headers }).text();
+    return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+  }
+  
+  // Initial request
+  const searchParams = getAuthParams({ limit });
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followings`, {
+    searchParams,
+    headers,
+  }).text();
+
+  return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+}
+
 export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCloudPlaylist> {
   const headers = await getAuthHeaders();
   const searchParams = getAuthParams();

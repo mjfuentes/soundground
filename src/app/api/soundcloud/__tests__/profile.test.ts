@@ -57,6 +57,7 @@ describe('/api/soundcloud/profile', () => {
     const mockPlaylists = { collection: [] };
     const mockAlbums = { collection: [] };
     const mockFollowers = { collection: [], next_href: undefined };
+    const mockFollowings = { collection: [], next_href: undefined };
     const mockTracks = { collection: [] };
 
     (smartClient.resolveProfile as jest.Mock).mockResolvedValue(mockProfile);
@@ -64,6 +65,7 @@ describe('/api/soundcloud/profile', () => {
     (smartClient.getPlaylists as jest.Mock).mockResolvedValue(mockPlaylists);
     (smartClient.getAlbums as jest.Mock).mockResolvedValue(mockAlbums);
     (smartClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    (smartClient.getFollowings as jest.Mock).mockResolvedValue(mockFollowings);
     (smartClient.getTracks as jest.Mock).mockResolvedValue(mockTracks);
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
@@ -78,7 +80,7 @@ describe('/api/soundcloud/profile', () => {
     expect(data.topFollowers).toEqual([]);
   });
 
-  it('should sort followers by follower count', async () => {
+  it('should return only mutual follows (friends) sorted by follower count', async () => {
     const mockProfile = {
       id: 123,
       permalink: 'test-user',
@@ -96,6 +98,15 @@ describe('/api/soundcloud/profile', () => {
         { id: 1, permalink: 'user1', username: 'User 1', followers_count: 100 },
         { id: 2, permalink: 'user2', username: 'User 2', followers_count: 500 },
         { id: 3, permalink: 'user3', username: 'User 3', followers_count: 300 },
+        { id: 4, permalink: 'user4', username: 'User 4', followers_count: 200 },
+      ],
+    };
+
+    // Artist follows back user 2 and user 3 (mutual follows = friends)
+    const mockFollowings = {
+      collection: [
+        { id: 2, permalink: 'user2', username: 'User 2', followers_count: 500 },
+        { id: 3, permalink: 'user3', username: 'User 3', followers_count: 300 },
       ],
     };
 
@@ -104,16 +115,19 @@ describe('/api/soundcloud/profile', () => {
     (smartClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getFollowers as jest.Mock).mockResolvedValue(mockFollowers);
+    (smartClient.getFollowings as jest.Mock).mockResolvedValue(mockFollowings);
     (smartClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');
     const response = await GET(request);
     const data = await response.json();
 
-    expect(data.topFollowers).toHaveLength(3);
+    // Should only return friends (mutual follows), sorted by follower count
+    expect(data.topFollowers).toHaveLength(2);
+    expect(data.topFollowers[0].id).toBe(2); // User 2 with 500 followers
     expect(data.topFollowers[0].followers_count).toBe(500);
+    expect(data.topFollowers[1].id).toBe(3); // User 3 with 300 followers
     expect(data.topFollowers[1].followers_count).toBe(300);
-    expect(data.topFollowers[2].followers_count).toBe(100);
   });
 
   it('should handle errors gracefully', async () => {
@@ -145,6 +159,7 @@ describe('/api/soundcloud/profile', () => {
     (smartClient.getPlaylists as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getAlbums as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getFollowers as jest.Mock).mockResolvedValue({ collection: [] });
+    (smartClient.getFollowings as jest.Mock).mockResolvedValue({ collection: [] });
     (smartClient.getTracks as jest.Mock).mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost:3000/api/soundcloud/profile?url=https://soundcloud.com/test-user');

@@ -160,6 +160,19 @@ export async function getFollowers(userId: number, limit = 200, nextHref?: strin
   return authCachedClient.getFollowers(session.accessToken, userId, limit, nextHref);
 }
 
+export async function getFollowings(userId: number, limit = 200, nextHref?: string) {
+  if (!hasOAuthSecret()) {
+    return publicCachedClient.getFollowings(userId, limit, nextHref);
+  }
+  
+  const session = await getSession();
+  if (!session) {
+    throw new Error("Authentication required");
+  }
+  
+  return authCachedClient.getFollowings(session.accessToken, userId, limit, nextHref);
+}
+
 export async function getPlaylistWithTracks(playlistId: number) {
   if (!hasOAuthSecret()) {
     return publicCachedClient.getPlaylistWithTracks(playlistId);

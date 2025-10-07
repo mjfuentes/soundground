@@ -108,6 +108,27 @@ export async function getFollowers(
 }
 
 /**
+ * Cached version of getFollowings
+ * Note: Followings with pagination are cached per page/nextHref
+ */
+export async function getFollowings(
+  userId: number,
+  limit = 200,
+  nextHref?: string
+): Promise<{ collection: client.SoundCloudFollower[]; next_href?: string }> {
+  const cache = getCacheService();
+  const cacheKey = nextHref
+    ? `followings:next:${nextHref}`
+    : `followings:${userId}:${limit}`;
+  
+  return cache.getOrSet(
+    cacheKey,
+    () => client.getFollowings(userId, limit, nextHref),
+    { ttl: CACHE_TTL.FOLLOWERS, type: CACHE_TYPE.FOLLOWERS }
+  );
+}
+
+/**
  * Cached version of getPlaylistWithTracks
  */
 export async function getPlaylistWithTracks(playlistId: number): Promise<client.SoundCloudPlaylist> {

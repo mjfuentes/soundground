@@ -99,6 +99,30 @@ export async function getFollowers(accessToken: string, userId: number, limit = 
   return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
 }
 
+export async function getFollowings(accessToken: string, userId: number, limit = 200, nextHref?: string): Promise<{ collection: SoundCloudFollower[]; next_href?: string }> {
+  if (nextHref) {
+    // Use the nextHref directly with OAuth token
+    const text = await got(nextHref, {
+      headers: {
+        Authorization: `OAuth ${accessToken}`,
+      },
+    }).text();
+    return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+  }
+  
+  // Initial request
+  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followings`, {
+    searchParams: {
+      limit,
+    },
+    headers: {
+      Authorization: `OAuth ${accessToken}`,
+    },
+  }).text();
+
+  return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+}
+
 export async function getPlaylistWithTracks(accessToken: string, playlistId: number): Promise<SoundCloudPlaylist> {
   const text = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
     headers: {

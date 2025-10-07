@@ -24,7 +24,7 @@ export function TopFollowers({ initialFollowers }: TopFollowersProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-medium text-zinc-400">Followers</h3>
+      <h3 className="text-sm font-medium text-zinc-400">Friends</h3>
       <div className="grid grid-cols-8 gap-2">
         {displayedFollowers.map((follower) => (
           <FollowerCard key={follower.id} follower={follower} />

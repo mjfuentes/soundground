@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveProfile, getSpotlight, getPlaylists, getAlbums, getFollowers, getTracks } from "@/lib/soundcloud/smart-client";
+import { resolveProfile, getSpotlight, getPlaylists, getAlbums, getFollowers, getFollowings, getTracks } from "@/lib/soundcloud/smart-client";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -12,16 +12,23 @@ export async function GET(request: NextRequest) {
   try {
     const profile = await resolveProfile(url);
 
-    const [spotlight, playlists, albums, followers, tracks] = await Promise.all([
+    const [spotlight, playlists, albums, followers, followings, tracks] = await Promise.all([
       getSpotlight(profile.id).catch(() => ({ collection: [] })),
       getPlaylists(profile.id).catch(() => ({ collection: [] })),
       getAlbums(profile.id).catch(() => ({ collection: [] })),
       getFollowers(profile.id, 200).catch(() => ({ collection: [], next_href: undefined })),
+      getFollowings(profile.id, 200).catch(() => ({ collection: [], next_href: undefined })),
       getTracks(profile.id, 50).catch(() => ({ collection: [] })), // Limit to 50 tracks for performance
     ]);
 
-    // Sort all followers by follower count (descending) and take top results
-    const sortedFollowers = followers.collection.sort((a, b) => b.followers_count - a.followers_count);
+    // Create a Set of following IDs for fast lookup
+    const followingIds = new Set(followings.collection.map(f => f.id));
+    
+    // Filter followers to only include friends (mutual follows)
+    const friends = followers.collection.filter(follower => followingIds.has(follower.id));
+    
+    // Sort friends by follower count (descending)
+    const sortedFriends = friends.sort((a, b) => b.followers_count - a.followers_count);
 
     return NextResponse.json({
       profile,
@@ -29,7 +36,7 @@ export async function GET(request: NextRequest) {
       playlists: playlists.collection,
       albums: albums.collection,
       tracks: tracks.collection,
-      topFollowers: sortedFollowers,
+      topFollowers: sortedFriends, // Now contains only mutual follows (friends)
       followersNextHref: followers.next_href,
     });
   } catch (error) {

@@ -109,6 +109,28 @@ export async function getFollowers(
 }
 
 /**
+ * Cached version of getFollowings with OAuth token
+ * Note: Followings with pagination are cached per page/nextHref
+ */
+export async function getFollowings(
+  accessToken: string,
+  userId: number,
+  limit = 200,
+  nextHref?: string
+) {
+  const cache = getCacheService();
+  const cacheKey = nextHref
+    ? `followings:next:${nextHref}`
+    : `followings:${userId}:${limit}`;
+  
+  return cache.getOrSet(
+    cacheKey,
+    () => authClient.getFollowings(accessToken, userId, limit, nextHref),
+    { ttl: CACHE_TTL.FOLLOWERS, type: CACHE_TYPE.FOLLOWERS }
+  );
+}
+
+/**
  * Cached version of getPlaylistWithTracks with OAuth token
  */
 export async function getPlaylistWithTracks(accessToken: string, playlistId: number) {
