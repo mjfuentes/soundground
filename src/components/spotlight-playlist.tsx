@@ -7,26 +7,49 @@ interface SpotlightPlaylistProps {
   playlist: SoundCloudPlaylist;
 }
 
+function isValidTrack(track: unknown): boolean {
+  if (!track || typeof track !== 'object') return false;
+  const t = track as Record<string, unknown>;
+  return !!(
+    t.id &&
+    t.title &&
+    t.permalink_url &&
+    typeof t.duration === 'number' &&
+    t.duration > 0
+  );
+}
+
 export async function SpotlightPlaylist({ playlist }: SpotlightPlaylistProps) {
   // Fetch the full playlist with tracks, with error handling
   let playlistWithTracks = playlist;
+  let fetchedFullData = false;
   
   try {
-    playlistWithTracks = await getPlaylistWithTracks(playlist.id);
+    const fullPlaylist = await getPlaylistWithTracks(playlist.id);
+    if (fullPlaylist && fullPlaylist.tracks) {
+      playlistWithTracks = fullPlaylist;
+      fetchedFullData = true;
+    }
   } catch (error) {
-    console.error(`Failed to fetch tracks for playlist ${playlist.id}:`, error);
-    // Fall back to showing just the playlist card
+    console.error(`Failed to fetch full tracks for playlist ${playlist.id}:`, error);
+    // Fall back to filtering what we have
   }
+  
+  // Filter out invalid tracks (ones without proper data)
+  // If we didn't fetch full data, only show the playlist card without tracks
+  const validTracks = fetchedFullData 
+    ? (playlistWithTracks.tracks?.filter(isValidTrack) || [])
+    : [];
   
   return (
     <div className="flex flex-col gap-2">
       {/* Playlist header card */}
       <PlaylistCard playlist={playlist} showStats={true} />
       
-      {/* Playlist tracks */}
-      {playlistWithTracks.tracks && playlistWithTracks.tracks.length > 0 && (
+      {/* Playlist tracks - only show if we got valid full data */}
+      {validTracks.length > 0 && (
         <div className="ml-4 flex flex-col gap-2 border-l-2 border-white/10 pl-4">
-          {playlistWithTracks.tracks.map((track) => (
+          {validTracks.map((track) => (
             <TrackCard key={track.id} track={track} showStats={true} />
           ))}
         </div>

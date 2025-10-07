@@ -16,8 +16,7 @@ function formatNumber(num?: number): string {
   return num.toString();
 }
 
-function formatDuration(ms?: number): string {
-  if (!ms || !isFinite(ms)) return "0:00";
+function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
