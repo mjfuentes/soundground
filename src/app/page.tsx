@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export default function Home() {
   const [value, setValue] = useState("");
@@ -41,14 +40,6 @@ export default function Home() {
             Go
           </button>
         </form>
-        <div className="text-center">
-          <Link
-            href="/signin"
-            className="text-sm text-purple-400 transition hover:text-purple-300 hover:underline"
-          >
-            Link multiple platforms (SoundCloud + RA.co)
-          </Link>
-        </div>
       </div>
     </main>
   );

@@ -4,7 +4,6 @@ import { SoundcloudEmbed } from "./soundcloud-embed";
 import { RichDescription } from "./rich-description";
 import { ExpandableSection } from "./expandable-section";
 import { TopFollowers } from "./top-followers";
-import { LinkedPlatforms } from "./linked-platforms";
 
 interface SoundcloudProfileViewProps {
   profile: string;
@@ -62,7 +61,6 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
                   {topFollowers && topFollowers.length > 0 && (
                     <TopFollowers initialFollowers={topFollowers} />
                   )}
-                  <LinkedPlatforms soundcloudPermalink={user.permalink} />
                 </div>
       </section>
       <section className="flex flex-col gap-6">
