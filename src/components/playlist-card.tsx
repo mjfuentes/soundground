@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import type { SoundCloudPlaylist, SoundCloudTrack } from "@/lib/soundcloud/client";
+import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
+import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 import { usePlayer } from "@/contexts/player-context";
 
 interface PlaylistCardProps {
@@ -29,19 +30,6 @@ function formatDuration(ms: number): string {
   return `${minutes}m`;
 }
 
-function isValidTrack(track: unknown): track is SoundCloudTrack {
-  if (!track || typeof track !== 'object') return false;
-  const t = track as Record<string, unknown>;
-  return !!(
-    t.id &&
-    t.title &&
-    t.permalink_url &&
-    typeof t.duration === 'number' &&
-    t.duration > 0 &&
-    (t.streamable !== false || t.access === "preview")
-  );
-}
-
 export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: PlaylistCardProps) {
   const { playQueue } = usePlayer();
   const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +45,7 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
       }
       
       const playlistData: SoundCloudPlaylist = await response.json();
-      const tracks = playlistData.tracks?.filter(isValidTrack) || [];
+      const tracks = playlistData.tracks?.filter(isTrackPlayable) || [];
       
       if (tracks.length === 0) {
         throw new Error("No playable tracks in playlist");
@@ -70,7 +58,8 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
         title: track.title,
         artist: track.user?.username || "Unknown Artist",
         artistUrl: track.user?.permalink_url || "https://soundcloud.com",
-        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg"),
+        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg")
+          || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
         description: track.description,
         type: "track" as const,
       }));

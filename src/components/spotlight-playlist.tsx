@@ -2,23 +2,12 @@ import { PlaylistCard } from "./playlist-card";
 import { TrackCard } from "./track-card";
 import { getPlaylistWithTracks } from "@/lib/soundcloud/cached-client";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
+import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 
 interface SpotlightPlaylistProps {
   playlist: SoundCloudPlaylist;
   compact?: boolean;
   coverOnly?: boolean;
-}
-
-function isValidTrack(track: unknown): boolean {
-  if (!track || typeof track !== 'object') return false;
-  const t = track as Record<string, unknown>;
-  return !!(
-    t.id &&
-    t.title &&
-    t.permalink_url &&
-    typeof t.duration === 'number' &&
-    t.duration > 0
-  );
 }
 
 export async function SpotlightPlaylist({ playlist, compact = false, coverOnly = false }: SpotlightPlaylistProps) {
@@ -47,10 +36,10 @@ export async function SpotlightPlaylist({ playlist, compact = false, coverOnly =
     // Fall back to filtering what we have
   }
   
-  // Filter out invalid tracks (ones without proper data)
+  // Filter out invalid/unplayable tracks
   // If we didn't fetch full data, only show the playlist card without tracks
   const validTracks = fetchedFullData 
-    ? (playlistWithTracks.tracks?.filter(isValidTrack) || [])
+    ? (playlistWithTracks.tracks?.filter(isTrackPlayable) || [])
     : [];
   
   return (

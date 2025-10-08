@@ -96,6 +96,9 @@ export interface SoundCloudTrack {
   };
 }
 
+// Re-export track validation function
+export { isTrackPlayable } from './track-validation';
+
 export interface SoundCloudPlaylist {
   id: number;
   title: string;
@@ -117,6 +120,7 @@ export interface SoundCloudPlaylist {
     id: number;
     username: string;
     permalink_url: string;
+    avatar_url?: string;
   };
 }
 

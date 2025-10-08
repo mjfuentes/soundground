@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTracks } from "@/lib/soundcloud/smart-client";
+import { isTrackPlayable } from "@/lib/soundcloud/client";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -11,12 +12,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tracks = await getTracks(
+    const result = await getTracks(
       parseInt(userId, 10),
       limit ? parseInt(limit, 10) : 200
     );
 
-    return NextResponse.json(tracks);
+    // Filter out unplayable tracks
+    const playableTracks = result.collection.filter(isTrackPlayable);
+
+    return NextResponse.json({ collection: playableTracks });
   } catch (error) {
     console.error("Error fetching tracks:", error);
     return NextResponse.json(

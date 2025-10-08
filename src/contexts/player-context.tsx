@@ -153,7 +153,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/soundcloud/stream/${item.id}`);
       
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ error: "Failed to fetch stream" }));
+        
+        // Handle 404 errors (track not found, deleted, or unavailable)
+        if (response.status === 404) {
+          throw new Error("This track is unavailable. It may have been deleted or is not available in your region. Try opening in SoundCloud.");
+        }
+        
         throw new Error(data.error || "Failed to fetch stream");
       }
 
@@ -161,7 +167,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const streamUrl = streamData.stream_url;
 
       if (!streamUrl) {
-        throw new Error("No stream URL available");
+        throw new Error("No stream URL available. Try opening in SoundCloud.");
       }
 
       // Load and play audio
@@ -175,6 +181,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       setIsPlaying(false);
       console.error("Playback error:", err);
+      
+      // If there's a queue and auto-play is enabled, try the next track after a delay
+      if (queue.length > 0) {
+        setTimeout(() => {
+          const [nextTrack, ...remainingQueue] = queue;
+          setQueue(remainingQueue);
+          
+          if (item) {
+            setHistory(prev => [...prev, item]);
+          }
+          
+          play(nextTrack);
+        }, 2000); // Wait 2 seconds before auto-skipping
+      }
     }
   };
 

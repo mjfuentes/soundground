@@ -42,11 +42,11 @@ export function SearchBar({
   }, []);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full">
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <svg
-            className="w-5 h-5 text-zinc-400"
+            className="w-4 h-4 text-zinc-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -65,17 +65,17 @@ export function SearchBar({
           value={query}
           onChange={handleChange}
           placeholder={placeholder}
-          className="w-full py-4 pl-12 pr-12 text-lg bg-white/5 border border-white/20 rounded-full text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-200"
+          className="w-full py-2 pl-9 pr-9 text-sm bg-zinc-900 border border-zinc-800 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:bg-zinc-800 focus:border-zinc-700 transition-all duration-200"
           aria-label="Search"
         />
         {query && (
           <button
             onClick={handleClear}
-            className="absolute inset-y-0 right-0 flex items-center pr-4 text-zinc-400 hover:text-white transition-colors"
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 transition-colors"
             aria-label="Clear search"
           >
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

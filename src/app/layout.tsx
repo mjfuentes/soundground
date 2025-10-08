@@ -40,7 +40,7 @@ export default function RootLayout({
       >
         <PlayerProvider>
           <Header />
-          <div className="pt-16">{children}</div>
+          <div className="pt-20">{children}</div>
           <FloatingPlayer />
         </PlayerProvider>
       </body>

@@ -5,7 +5,7 @@ import { ExpandableSection } from "./expandable-section";
 import { TopFollowers } from "./top-followers";
 import { TrackCard } from "./track-card";
 import { SpotlightPlaylist } from "./spotlight-playlist";
-import { AlbumCard } from "./album-card";
+import { ExpandableAlbums } from "./expandable-albums";
 import { RecentActivityList } from "./recent-activity-list";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import { getServerBaseUrl } from "@/lib/server-base-url";
@@ -46,12 +46,6 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
 
   const avatar = user.avatar_url?.replace("large.jpg", "t500x500.jpg") ?? "";
 
-  // Separate albums and playlists for the sidebar - show last 3
-  const displayedAlbums = albums.slice(-3).reverse();
-  const hasMoreAlbums = albums.length > 3;
-  const displayedPlaylists = playlists.slice(-3).reverse();
-  const hasMorePlaylists = playlists.length > 3;
-
   return (
     <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
       {/* Left column - Profile info, Albums/Playlists & Friends */}
@@ -84,45 +78,13 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
         </div>
 
         {/* Albums */}
-        {displayedAlbums.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-medium text-zinc-400">Albums</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {displayedAlbums.map((album: SoundCloudPlaylist) => {
-                // If album has only one track, render it as a track
-                if (album.tracks?.length === 1) {
-                  return <TrackCard key={album.id} track={album.tracks[0]} showStats={false} coverOnly={true} />;
-                }
-                return <AlbumCard key={album.id} album={album} showStats={false} coverOnly={true} />;
-              })}
-            </div>
-            {hasMoreAlbums && (
-              <button className="cursor-pointer self-start text-xs text-amber-400 transition hover:text-amber-300">
-                ...more
-              </button>
-            )}
-          </div>
+        {albums.length > 0 && (
+          <ExpandableAlbums albums={albums} title="Albums" />
         )}
 
         {/* Playlists */}
-        {displayedPlaylists.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-medium text-zinc-400">Playlists</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {displayedPlaylists.map((playlist: SoundCloudPlaylist) => {
-                // If playlist has only one track, render it as a track
-                if (playlist.tracks?.length === 1) {
-                  return <TrackCard key={playlist.id} track={playlist.tracks[0]} showStats={false} coverOnly={true} />;
-                }
-                return <AlbumCard key={playlist.id} album={playlist} showStats={false} coverOnly={true} />;
-              })}
-            </div>
-            {hasMorePlaylists && (
-              <button className="cursor-pointer self-start text-xs text-amber-400 transition hover:text-amber-300">
-                ...more
-              </button>
-            )}
-          </div>
+        {playlists.length > 0 && (
+          <ExpandableAlbums albums={playlists} title="Playlists" />
         )}
 
         {/* Friends */}

@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SearchBar } from "@/components/search-bar";
-import { SearchResults } from "@/components/search-results";
-import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 export default function Home() {
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [oauthMode, setOauthMode] = useState(false);
-  const [searchResults, setSearchResults] = useState<(SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -41,33 +35,6 @@ export default function Home() {
         setOauthMode(false);
         setLoading(false);
       });
-  }, []);
-
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setSearchQuery("");
-      return;
-    }
-
-    setIsSearching(true);
-    setSearchQuery(query);
-
-    try {
-      const response = await fetch(`/api/soundcloud/search?q=${encodeURIComponent(query)}&limit=20`);
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.collection || []);
-      } else {
-        console.error("Search failed:", response.statusText);
-        setSearchResults([]);
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
   }, []);
 
   const handleLogout = async () => {
@@ -114,33 +81,22 @@ export default function Home() {
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Hero section with search */}
-        <div className={`text-center transition-all duration-300 ${searchResults.length > 0 ? 'mb-8' : 'mt-20 mb-12'}`}>
+        {/* Hero section */}
+        <div className="text-center mt-20 mb-12">
           <h2 className="text-4xl font-semibold sm:text-5xl mb-4">
             What do you want to listen to today?
           </h2>
-          <p className="text-lg text-zinc-300 sm:text-xl mb-8">
+          <p className="text-lg text-zinc-300 sm:text-xl">
             Search for artists, tracks, albums, playlists, and more
           </p>
-          
-          <SearchBar onSearch={handleSearch} />
         </div>
 
-        {/* Search results */}
-        <SearchResults 
-          results={searchResults} 
-          isLoading={isSearching}
-          query={searchQuery}
-        />
-
-        {/* Quick links or suggestions when no search */}
-        {!searchQuery && (
-          <div className="max-w-4xl mx-auto mt-16">
-            <div className="text-center text-zinc-500">
-              <p className="text-sm">Try searching for your favorite artists, tracks, or genres</p>
-            </div>
+        {/* Quick links or suggestions */}
+        <div className="max-w-4xl mx-auto mt-16">
+          <div className="text-center text-zinc-500">
+            <p className="text-sm">Try searching for your favorite artists, tracks, or genres using the search bar above</p>
           </div>
-        )}
+        </div>
       </div>
     </main>
   );

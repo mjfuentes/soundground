@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
+import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 import { usePlayer } from "@/contexts/player-context";
 
 interface AlbumCardProps {
@@ -19,23 +21,45 @@ function formatNumber(num?: number): string {
 }
 
 export function AlbumCard({ album, showStats = true, compact = false, coverOnly = false }: AlbumCardProps) {
-  const { play } = usePlayer();
+  const { playQueue } = usePlayer();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleClick = () => {
-    const artworkUrl = album.artwork_url 
-      ? album.artwork_url.replace("large.jpg", "t500x500.jpg")
-      : album.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
-    
-    play({
-      id: album.id,
-      url: album.permalink_url,
-      title: album.title,
-      artist: album.user?.username || "Unknown Artist",
-      artistUrl: album.user?.permalink_url || "https://soundcloud.com",
-      artwork: artworkUrl,
-      description: album.description,
-      type: "album",
-    });
+  const handleClick = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch full album with tracks
+      const response = await fetch(`/api/soundcloud/playlist-tracks?id=${album.id}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch album tracks");
+      }
+      
+      const albumData: SoundCloudPlaylist = await response.json();
+      const tracks = albumData.tracks?.filter(isTrackPlayable) || [];
+      
+      if (tracks.length === 0) {
+        throw new Error("No playable tracks in album");
+      }
+      
+      // Convert tracks to PlayableItems - don't shuffle albums
+      const playableItems = tracks.map(track => ({
+        id: track.id,
+        url: track.permalink_url,
+        title: track.title,
+        artist: track.user?.username || "Unknown Artist",
+        artistUrl: track.user?.permalink_url || "https://soundcloud.com",
+        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg")
+          || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
+        description: track.description,
+        type: "track" as const,
+      }));
+      
+      playQueue(playableItems, false); // false = don't shuffle albums
+    } catch (error) {
+      console.error("Error playing album:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Cover-only mode: just the album art with hover card
@@ -52,7 +76,8 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
     return (
       <button
         onClick={handleClick}
-        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
+        disabled={isLoading}
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {coverOnlyArtworkUrl ? (
           <Image
@@ -113,7 +138,8 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
     return (
       <button
         onClick={handleClick}
-        className="group flex w-full cursor-pointer items-center gap-2 text-left"
+        disabled={isLoading}
+        className="group flex w-full cursor-pointer items-center gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white/5 transition">
           {compactArtworkUrl ? (
@@ -150,7 +176,8 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
   return (
     <button
       onClick={handleClick}
-      className="group flex w-full cursor-pointer flex-col gap-2 text-left"
+      disabled={isLoading}
+      className="group flex w-full cursor-pointer flex-col gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <div className="relative aspect-square overflow-hidden rounded-lg bg-white/5 transition">
         {defaultArtworkUrl ? (

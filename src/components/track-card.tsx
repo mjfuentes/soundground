@@ -94,10 +94,8 @@ function getDownloadPlatform(url: string): { platform: string; action: string; i
 export function TrackCard({ track, showStats = true, playlistTracks, coverOnly = false }: TrackCardProps) {
   const { play, playTrackWithQueue } = usePlayer();
 
-  // Check if track is playable
-  const isPlayable = track.streamable !== false && 
-                     (!track.access || track.access === "playable");
-  
+  // Check if track is playable (should already be filtered server-side, but double-check)
+  const isPlayable = track.streamable !== false && track.access !== "blocked";
   const isPreviewOnly = track.access === "preview";
 
   const handleClick = () => {
@@ -114,7 +112,8 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
         title: track.title,
         artist: track.user?.username || "Unknown Artist",
         artistUrl: track.user?.permalink_url || "https://soundcloud.com",
-        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg"),
+        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg") 
+          || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
         description: track.description,
         type: "track" as const,
       };
@@ -122,14 +121,15 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
       // If we have playlist context, add other tracks to queue
       if (playlistTracks && playlistTracks.length > 1) {
         const otherTracks = playlistTracks
-          .filter(t => t.id !== track.id && (t.streamable !== false || t.access === "preview"))
+          .filter(t => t.id !== track.id)
           .map(t => ({
             id: t.id,
             url: t.permalink_url,
             title: t.title,
             artist: t.user?.username || "Unknown Artist",
             artistUrl: t.user?.permalink_url || "https://soundcloud.com",
-            artwork: t.artwork_url?.replace("large.jpg", "t500x500.jpg"),
+            artwork: t.artwork_url?.replace("large.jpg", "t500x500.jpg")
+              || t.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
             description: t.description,
             type: "track" as const,
           }));
