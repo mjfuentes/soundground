@@ -134,7 +134,6 @@ export function TopFollowers({ userId }: TopFollowersProps) {
             <div key={i} className="aspect-square animate-pulse rounded-lg bg-zinc-800" />
           ))}
         </div>
-        <p className="text-xs text-zinc-500">Loading friends...</p>
       </div>
     );
   }

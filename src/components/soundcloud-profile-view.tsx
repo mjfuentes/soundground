@@ -6,6 +6,7 @@ import { TopFollowers } from "./top-followers";
 import { TrackCard } from "./track-card";
 import { SpotlightPlaylist } from "./spotlight-playlist";
 import { AlbumCard } from "./album-card";
+import { RecentActivityList } from "./recent-activity-list";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import { getServerBaseUrl } from "@/lib/server-base-url";
 import type { SoundCloudTrack, SoundCloudPlaylist, SpotlightItem } from "@/lib/soundcloud/client";
@@ -133,7 +134,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
         {/* Spotlight - Row of 5 covers */}
         {spotlight.length > 0 && (
           <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-medium text-zinc-400">Spotlight</h3>
+            <h3 className="text-xl font-semibold text-white">Spotlight</h3>
             <div className="grid grid-cols-5 gap-2">
               {spotlight.slice(0, 5).map((item: SpotlightItem) => {
                 // If it's a playlist with only one track, treat it as a single track
@@ -153,14 +154,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
 
         {/* Recent Activity - Main focus */}
         {tracks.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
-            <div className="flex flex-col gap-2">
-              {tracks.map((track: SoundCloudTrack) => (
-                <TrackCard key={track.id} track={track} showStats={true} />
-              ))}
-            </div>
-          </div>
+          <RecentActivityList tracks={tracks} />
         )}
 
         {spotlight.length === 0 && playlists.length === 0 && albums.length === 0 && tracks.length === 0 && (

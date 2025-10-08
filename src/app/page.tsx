@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { SearchBar } from "@/components/search-bar";
+import { SearchResults } from "@/components/search-results";
+import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 export default function Home() {
-  const [value, setValue] = useState("");
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [oauthMode, setOauthMode] = useState(false);
+  const [searchResults, setSearchResults] = useState<(SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -38,13 +43,32 @@ export default function Home() {
       });
   }, []);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!value.trim()) return;
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearchQuery("");
+      return;
+    }
 
-    const query = value.trim();
-    router.push(`/${encodeURIComponent(query)}`);
-  };
+    setIsSearching(true);
+    setSearchQuery(query);
+
+    try {
+      const response = await fetch(`/api/soundcloud/search?q=${encodeURIComponent(query)}&limit=20`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.collection || []);
+      } else {
+        console.error("Search failed:", response.statusText);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -67,45 +91,56 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-black text-white">
-      <div className="mx-auto flex max-w-2xl flex-col gap-8 px-6">
-        <div className="text-center">
-          <div className="mb-4 flex items-center justify-center gap-4">
-            <h1 className="text-5xl font-semibold sm:text-6xl">SoundClopedia</h1>
-            {oauthMode && user && (
+    <main className="min-h-screen bg-black text-white">
+      {/* Header with auth info */}
+      <div className="border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">SoundClopedia</h1>
+          {oauthMode && user && (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-zinc-400">
+                Signed in as <span className="font-medium text-amber-500">@{user.username}</span>
+              </span>
               <button
                 onClick={handleLogout}
-                className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/10"
+                className="text-sm text-zinc-400 hover:text-white transition"
               >
                 Logout
               </button>
-            )}
-          </div>
-          {oauthMode && user && (
-            <p className="mb-2 text-sm text-zinc-400">
-              Signed in as <span className="text-amber-500">@{user.username}</span>
-            </p>
+            </div>
           )}
-          <p className="mt-4 text-lg text-zinc-300 sm:text-xl">
-            Dig deep into SoundCloud. Enter an artist handle to explore.
-          </p>
         </div>
-        <form onSubmit={handleSubmit} className="flex w-full gap-3">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="artist-handle"
-            className="flex-1 rounded-lg border border-white/20 bg-white/5 px-6 py-3 text-white placeholder-zinc-400 transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-amber-500 px-8 py-3 font-medium text-black transition hover:bg-amber-400 disabled:opacity-50"
-            disabled={!value.trim()}
-          >
-            Go
-          </button>
-        </form>
+      </div>
+
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Hero section with search */}
+        <div className={`text-center transition-all duration-300 ${searchResults.length > 0 ? 'mb-8' : 'mt-20 mb-12'}`}>
+          <h2 className="text-4xl font-semibold sm:text-5xl mb-4">
+            What do you want to listen to today?
+          </h2>
+          <p className="text-lg text-zinc-300 sm:text-xl mb-8">
+            Search for artists, tracks, albums, playlists, and more
+          </p>
+          
+          <SearchBar onSearch={handleSearch} />
+        </div>
+
+        {/* Search results */}
+        <SearchResults 
+          results={searchResults} 
+          isLoading={isSearching}
+          query={searchQuery}
+        />
+
+        {/* Quick links or suggestions when no search */}
+        {!searchQuery && (
+          <div className="max-w-4xl mx-auto mt-16">
+            <div className="text-center text-zinc-500">
+              <p className="text-sm">Try searching for your favorite artists, tracks, or genres</p>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

@@ -186,6 +186,18 @@ export async function getPlaylistWithTracks(playlistId: number) {
   return authCachedClient.getPlaylistWithTracks(session.accessToken, playlistId);
 }
 
+export async function search(
+  query: string,
+  options: {
+    limit?: number;
+    offset?: number;
+    filter?: 'tracks' | 'users' | 'playlists' | 'albums';
+  } = {}
+) {
+  // Search doesn't require authentication, use public client
+  return publicCachedClient.search(query, options);
+}
+
 // Re-export types
 export type {
   SoundCloudUser,
@@ -193,6 +205,7 @@ export type {
   SoundCloudPlaylist,
   SoundCloudFollower,
   SpotlightItem,
+  SoundCloudSearchResult,
 } from "./client";
 
 export { isPlaylist } from "./client";

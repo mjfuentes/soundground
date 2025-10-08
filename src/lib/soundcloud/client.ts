@@ -92,6 +92,7 @@ export interface SoundCloudTrack {
     id: number;
     username: string;
     permalink_url: string;
+    avatar_url?: string;
   };
 }
 
@@ -245,5 +246,38 @@ export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCl
   }).text();
 
   return JSON.parse(text) as SoundCloudPlaylist;
+}
+
+export interface SoundCloudSearchResult {
+  collection: (SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[];
+  total_results?: number;
+  next_href?: string;
+  query_urn?: string;
+}
+
+export async function search(
+  query: string,
+  options: {
+    limit?: number;
+    offset?: number;
+    filter?: 'tracks' | 'users' | 'playlists' | 'albums';
+  } = {}
+): Promise<SoundCloudSearchResult> {
+  const headers = await getAuthHeaders();
+  const { limit = 20, offset = 0, filter } = options;
+  
+  const searchParams = getAuthParams({
+    q: query,
+    limit,
+    offset,
+    ...(filter && { filter }),
+  });
+  
+  const text = await got(`${SOUNDCLOUD_API_BASE}/search`, {
+    searchParams,
+    headers,
+  }).text();
+
+  return JSON.parse(text) as SoundCloudSearchResult;
 }
 

@@ -9,6 +9,7 @@ const CACHE_TTL = {
   ALBUMS: 20 * 60 * 1000, // 20 minutes
   TRACKS: 20 * 60 * 1000, // 20 minutes
   FOLLOWERS: 30 * 60 * 1000, // 30 minutes
+  SEARCH: 5 * 60 * 1000, // 5 minutes (search results change frequently)
 };
 
 // Cache types for categorization
@@ -19,6 +20,7 @@ const CACHE_TYPE = {
   ALBUMS: 'soundcloud:albums',
   TRACKS: 'soundcloud:tracks',
   FOLLOWERS: 'soundcloud:followers',
+  SEARCH: 'soundcloud:search',
 };
 
 /**
@@ -142,6 +144,28 @@ export async function getPlaylistWithTracks(playlistId: number): Promise<client.
 }
 
 /**
+ * Cached version of search
+ */
+export async function search(
+  query: string,
+  options: {
+    limit?: number;
+    offset?: number;
+    filter?: 'tracks' | 'users' | 'playlists' | 'albums';
+  } = {}
+): Promise<client.SoundCloudSearchResult> {
+  const cache = getCacheService();
+  const { limit = 20, offset = 0, filter } = options;
+  const cacheKey = `search:${query}:${limit}:${offset}:${filter || 'all'}`;
+  
+  return cache.getOrSet(
+    cacheKey,
+    () => client.search(query, options),
+    { ttl: CACHE_TTL.SEARCH, type: CACHE_TYPE.SEARCH }
+  );
+}
+
+/**
  * Invalidate all cache for a specific user
  * Note: Currently clears all cache entries of SoundCloud types
  * In a production system, you would implement pattern-based deletion for the specific userId
@@ -181,6 +205,7 @@ export type {
   SoundCloudPlaylist,
   SoundCloudFollower,
   SpotlightItem,
+  SoundCloudSearchResult,
 } from './client';
 
 export { isPlaylist } from './client';

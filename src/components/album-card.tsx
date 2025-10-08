@@ -22,13 +22,17 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
   const { play } = usePlayer();
 
   const handleClick = () => {
+    const artworkUrl = album.artwork_url 
+      ? album.artwork_url.replace("large.jpg", "t500x500.jpg")
+      : album.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+    
     play({
       id: album.id,
       url: album.permalink_url,
       title: album.title,
       artist: album.user?.username || "Unknown Artist",
       artistUrl: album.user?.permalink_url || "https://soundcloud.com",
-      artwork: album.artwork_url?.replace("large.jpg", "t500x500.jpg"),
+      artwork: artworkUrl,
       description: album.description,
       type: "album",
     });

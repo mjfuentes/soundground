@@ -26,6 +26,27 @@ function formatDuration(ms: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
+function formatDate(dateString?: string): string | null {
+  if (!dateString) return null;
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return null;
+  
+  const now = new Date();
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const currentYear = now.getFullYear();
+  
+  // If same year, show DD.MM, otherwise show DD.MM.YY
+  if (year === currentYear) {
+    return `${day}.${month}`;
+  } else {
+    const yearShort = String(year).slice(-2);
+    return `${day}.${month}.${yearShort}`;
+  }
+}
+
 function getDownloadPlatform(url: string): { platform: string; action: string; icon: React.ReactElement } | null {
   if (!url) return null;
   
@@ -123,7 +144,8 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
 
   // Cover-only mode: just the artwork
   if (coverOnly) {
-    const imageUrl = track.artwork_url?.replace("large.jpg", "t500x500.jpg");
+    const imageUrl = track.artwork_url?.replace("large.jpg", "t500x500.jpg") 
+      || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg");
     const downloadLink = track.purchase_url || track.download_url;
     const downloadPlatform = downloadLink ? getDownloadPlatform(downloadLink) : null;
     
@@ -169,9 +191,9 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
     <>
       {/* Album Art */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
-        {track.artwork_url ? (
+        {(track.artwork_url || track.user?.avatar_url) ? (
           <Image
-            src={track.artwork_url.replace("large.jpg", "t500x500.jpg")}
+            src={(track.artwork_url || track.user?.avatar_url)?.replace("large.jpg", "t500x500.jpg") || ""}
             alt={track.title}
             fill
             className="object-cover"
@@ -225,6 +247,10 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
           <p className="text-xs text-zinc-400">
             {formatDuration(track.duration)}
             {track.genre && ` • ${track.genre}`}
+            {(() => {
+              const formattedDate = formatDate(track.created_at);
+              return formattedDate ? <> • <span className="font-bold text-zinc-300">{formattedDate}</span></> : null;
+            })()}
           </p>
         </div>
 

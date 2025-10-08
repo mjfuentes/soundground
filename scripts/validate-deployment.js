@@ -46,7 +46,7 @@ function getFlyAppName(url) {
     return match[1];
   }
   // Fallback to environment or default
-  return process.env.FLY_APP_NAME || 'soundclopedia';
+  return process.env.FLY_APP_NAME || 'cloudmate';
 }
 
 /**
@@ -305,7 +305,7 @@ async function validateDeployment(url) {
             const volumes = executeFlyctl(`flyctl volumes list -a ${appName}`);
             
             // Check if volumes are attached
-            const volumeLines = volumes.split('\n').filter(line => line.includes('soundclopedia_data'));
+            const volumeLines = volumes.split('\n').filter(line => line.includes('cloudmate_data') || line.includes('soundclopedia_data'));
             
             if (volumeLines.length > 0) {
               log(`  ✓ Found ${volumeLines.length} persistent volume(s)`, colors.green);
@@ -370,7 +370,7 @@ async function validateDeployment(url) {
 
 // Main execution
 const args = process.argv.slice(2);
-const url = args[0] || process.env.DEPLOYMENT_URL || 'https://soundclopedia.fly.dev/';
+const url = args[0] || process.env.DEPLOYMENT_URL || 'https://cloudmate.fly.dev/';
 
 // Validate URL format
 try {
