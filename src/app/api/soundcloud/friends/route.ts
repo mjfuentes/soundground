@@ -1,7 +1,47 @@
 import { NextRequest } from "next/server";
 import { getFollowers, getFollowings, SoundCloudFollower } from "@/lib/soundcloud/smart-client";
+import { getCacheService } from "@/lib/cache";
 
 const FRIENDS_PER_BATCH = 48;
+const FOLLOWINGS_CACHE_TTL = 600; // 10 minutes - followings don't change often
+
+async function getAllFollowingIds(userIdNum: number): Promise<{ ids: Set<number>; total: number }> {
+  const cache = getCacheService();
+  const cacheKey = `user:${userIdNum}:all-following-ids`;
+  
+  // Try to get from cache first
+  const cached = cache.get<{ ids: number[]; total: number }>(cacheKey);
+  if (cached) {
+    return { ids: new Set(cached.ids), total: cached.total };
+  }
+  
+  // Not in cache, fetch all followings
+  const followingIds = new Set<number>();
+  let followingsNextHref: string | undefined = undefined;
+  let totalFollowings = 0;
+
+  // Fetch all followings (needed for comparison)
+  let followingsResponse = await getFollowings(userIdNum, 200);
+  followingsResponse.collection.forEach(f => followingIds.add(f.id));
+  totalFollowings += followingsResponse.collection.length;
+  followingsNextHref = followingsResponse.next_href;
+
+  while (followingsNextHref) {
+    followingsResponse = await getFollowings(userIdNum, 200, followingsNextHref);
+    followingsResponse.collection.forEach(f => followingIds.add(f.id));
+    totalFollowings += followingsResponse.collection.length;
+    followingsNextHref = followingsResponse.next_href;
+  }
+  
+  // Cache the complete set
+  cache.set(
+    cacheKey,
+    { ids: Array.from(followingIds), total: totalFollowings },
+    { ttl: FOLLOWINGS_CACHE_TTL * 1000, type: "followings_set" } // Convert seconds to ms
+  );
+  
+  return { ids: followingIds, total: totalFollowings };
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -23,26 +63,11 @@ export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // First, fetch all followings to build the lookup set
+        // Get all following IDs (from cache if available)
         console.log(`Fetching followings for user ${userIdNum}...`);
-        const followingIds = new Set<number>();
-        let followingsNextHref: string | undefined = undefined;
-        let totalFollowings = 0;
-
-        // Fetch all followings (needed for comparison)
-        let followingsResponse = await getFollowings(userIdNum, 200);
-        followingsResponse.collection.forEach(f => followingIds.add(f.id));
-        totalFollowings += followingsResponse.collection.length;
-        followingsNextHref = followingsResponse.next_href;
-
-        while (followingsNextHref) {
-          followingsResponse = await getFollowings(userIdNum, 200, followingsNextHref);
-          followingsResponse.collection.forEach(f => followingIds.add(f.id));
-          totalFollowings += followingsResponse.collection.length;
-          followingsNextHref = followingsResponse.next_href;
-        }
-
-        console.log(`Fetched ${totalFollowings} followings, now streaming friends (limit: ${limit})...`);
+        const { ids: followingIds, total: totalFollowings } = await getAllFollowingIds(userIdNum);
+        
+        console.log(`Fetched ${totalFollowings} followings (cached), now streaming friends (limit: ${limit})...`);
 
         // Now stream followers and check for friends as we go
         let followersNextHref: string | undefined = undefined;
