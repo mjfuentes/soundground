@@ -191,6 +191,23 @@ export async function getTracks(userId: number, limit = 200): Promise<{ collecti
   return JSON.parse(text) as { collection: SoundCloudTrack[] };
 }
 
+export async function getTrack(trackId: number): Promise<SoundCloudTrack | null> {
+  const headers = await getAuthHeaders();
+  const searchParams = getAuthParams({});
+  
+  try {
+    const text = await got(`${SOUNDCLOUD_API_BASE}/tracks/${trackId}`, {
+      searchParams,
+      headers,
+    }).text();
+
+    return JSON.parse(text) as SoundCloudTrack;
+  } catch (error) {
+    console.error(`Error fetching track ${trackId}:`, error);
+    return null;
+  }
+}
+
 export interface SoundCloudFollower {
   id: number;
   permalink: string;

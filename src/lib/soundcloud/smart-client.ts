@@ -147,6 +147,11 @@ export async function getTracks(userId: number, limit = 200) {
   return authCachedClient.getTracks(session.accessToken, userId, limit);
 }
 
+export async function getTrack(trackId: number) {
+  // Use public client for individual tracks (doesn't require auth)
+  return publicCachedClient.getTrack(trackId);
+}
+
 export async function getFollowers(userId: number, limit = 200, nextHref?: string) {
   if (!hasOAuthSecret()) {
     return publicCachedClient.getFollowers(userId, limit, nextHref);

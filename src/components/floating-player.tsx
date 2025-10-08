@@ -2,6 +2,8 @@
 
 import { usePlayer } from "@/contexts/player-context";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 function formatTime(seconds: number): string {
@@ -19,6 +21,8 @@ function formatTime(seconds: number): string {
 }
 
 export function FloatingPlayer() {
+  const pathname = usePathname();
+  
   const {
     currentItem,
     isPlaying,
@@ -63,7 +67,13 @@ export function FloatingPlayer() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [stop, isPaused, pause, resume]);
 
-  if (!isPlaying || !currentItem) {
+  // Don't show floating player on the full-screen player page
+  if (pathname === "/play") {
+    return null;
+  }
+
+  // Show player if there's a current item (whether playing or paused)
+  if (!currentItem) {
     return null;
   }
 
@@ -115,14 +125,12 @@ export function FloatingPlayer() {
           <div className="truncate text-sm font-medium text-white">
             {currentItem.title}
           </div>
-          <a
-            href={currentItem.artistUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="truncate text-xs text-neutral-500 hover:text-neutral-300 block"
+          <Link
+            href={`/track/${currentItem.id}`}
+            className="truncate text-xs text-neutral-500 hover:text-neutral-300 block cursor-pointer"
           >
             {currentItem.artist}
-          </a>
+          </Link>
         </div>
 
         {/* Playback Controls */}
@@ -130,10 +138,10 @@ export function FloatingPlayer() {
           <button
             onClick={previous}
             disabled={isLoading}
-            className="text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="cursor-pointer text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Previous"
           >
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
             </svg>
           </button>
@@ -141,15 +149,15 @@ export function FloatingPlayer() {
           <button
             onClick={togglePlayPause}
             disabled={isLoading || !!error}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white text-black hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             aria-label={isPaused ? "Play" : "Pause"}
           >
             {isPaused ? (
-              <svg className="h-4 w-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             )}
@@ -158,10 +166,10 @@ export function FloatingPlayer() {
           <button
             onClick={next}
             disabled={queue.length === 0 || isLoading}
-            className="text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="cursor-pointer text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             aria-label="Next"
           >
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
             </svg>
           </button>
@@ -197,19 +205,19 @@ export function FloatingPlayer() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
-            className="text-neutral-400 hover:text-white transition-colors"
+            className="cursor-pointer text-neutral-400 hover:text-white transition-colors"
             aria-label={volume > 0 ? "Mute" : "Unmute"}
           >
             {volume > 0.5 ? (
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
               </svg>
             ) : volume > 0 ? (
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M5 9v6h4l5 5V4L9 9H5z" />
               </svg>
             ) : (
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M5 9v6h4l5 5V4L9 9H5z" />
                 <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2" />
               </svg>
@@ -237,10 +245,10 @@ export function FloatingPlayer() {
         {/* Close Button */}
         <button
           onClick={stop}
-          className="text-neutral-400 hover:text-white transition-colors ml-2"
+          className="cursor-pointer text-neutral-400 hover:text-white transition-colors"
           aria-label="Close player"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -256,7 +264,7 @@ export function FloatingPlayer() {
                 href={currentItem.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-shrink-0 rounded px-3 py-1 text-xs text-red-300 underline hover:text-white"
+                className="flex-shrink-0 cursor-pointer rounded px-3 py-1 text-xs text-red-300 underline hover:text-white"
               >
                 Open in SoundCloud
               </a>

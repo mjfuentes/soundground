@@ -2,8 +2,10 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { SoundCloudTrack } from "@/lib/soundcloud/client";
 import { usePlayer } from "@/contexts/player-context";
+import { getHighQualityImage } from "@/lib/image-utils";
 
 interface TrackCardProps {
   track: SoundCloudTrack;
@@ -92,11 +94,13 @@ function getDownloadPlatform(url: string): { platform: string; action: string; i
 }
 
 export function TrackCard({ track, showStats = true, playlistTracks, coverOnly = false }: TrackCardProps) {
-  const { play, playTrackWithQueue } = usePlayer();
+  const router = useRouter();
+  const { play, playTrackWithQueue, currentItem, isPlaying, pause, resume } = usePlayer();
 
   // Check if track is playable (should already be filtered server-side, but double-check)
   const isPlayable = track.streamable !== false && track.access !== "blocked";
   const isPreviewOnly = track.access === "preview";
+  const isCurrentTrack = currentItem?.id === track.id;
 
   const handleClick = () => {
     if (!isPlayable && !isPreviewOnly) {
@@ -105,47 +109,66 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
       return;
     }
     
-    if (track.permalink_url && track.id) {
-      const currentTrackItem = {
-        id: track.id,
-        url: track.permalink_url,
-        title: track.title,
-        artist: track.user?.username || "Unknown Artist",
-        artistUrl: track.user?.permalink_url || "https://soundcloud.com",
-        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg") 
-          || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
-        description: track.description,
-        type: "track" as const,
-      };
+    // Always navigate to track page
+    if (track.id) {
+      router.push(`/track/${track.id}`);
+    }
+  };
 
-      // If we have playlist context, add other tracks to queue
-      if (playlistTracks && playlistTracks.length > 1) {
-        const otherTracks = playlistTracks
-          .filter(t => t.id !== track.id)
-          .map(t => ({
-            id: t.id,
-            url: t.permalink_url,
-            title: t.title,
-            artist: t.user?.username || "Unknown Artist",
-            artistUrl: t.user?.permalink_url || "https://soundcloud.com",
-            artwork: t.artwork_url?.replace("large.jpg", "t500x500.jpg")
-              || t.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
-            description: t.description,
-            type: "track" as const,
-          }));
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation to track page
+    
+    if (!isPlayable && !isPreviewOnly) {
+      window.open(track.permalink_url, '_blank');
+      return;
+    }
 
-        playTrackWithQueue(currentTrackItem, otherTracks, true); // true = shuffle others
+    // If this track is already current, toggle play/pause
+    if (isCurrentTrack) {
+      if (isPlaying) {
+        pause();
       } else {
-        // No playlist context, just play the track
-        play(currentTrackItem);
+        resume();
       }
+      return;
+    }
+
+    const trackItem = {
+      id: track.id,
+      url: track.permalink_url,
+      title: track.title,
+      artist: track.user?.username || "Unknown Artist",
+      artistUrl: track.user?.permalink_url || "https://soundcloud.com",
+      artwork: getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url),
+      description: track.description,
+      type: "track" as const,
+    };
+
+    // If this is part of a playlist, play with queue
+    if (playlistTracks && playlistTracks.length > 1) {
+      const otherTracks = playlistTracks
+        .filter(t => t.id !== track.id)
+        .map(t => ({
+          id: t.id,
+          url: t.permalink_url,
+          title: t.title,
+          artist: t.user?.username || "Unknown Artist",
+          artistUrl: t.user?.permalink_url || "https://soundcloud.com",
+          artwork: t.artwork_url?.replace("large.jpg", "original.jpg") 
+            || t.user?.avatar_url?.replace("large.jpg", "original.jpg"),
+          description: t.description,
+          type: "track" as const,
+        }));
+      playTrackWithQueue(trackItem, otherTracks, false); // Don't shuffle
+    } else {
+      // Just play the single track
+      play(trackItem);
     }
   };
 
   // Cover-only mode: just the artwork
   if (coverOnly) {
-    const imageUrl = track.artwork_url?.replace("large.jpg", "t500x500.jpg") 
-      || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg");
+    const imageUrl = getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url);
     const downloadLink = track.purchase_url || track.download_url;
     const downloadPlatform = downloadLink ? getDownloadPlatform(downloadLink) : null;
     
@@ -171,6 +194,24 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
             </svg>
           </div>
         )}
+        {/* Play Button Overlay */}
+        {(isPlayable || isPreviewOnly) && (
+          <div
+            onClick={handlePlayClick}
+            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+            title="Play track"
+          >
+            {isCurrentTrack && isPlaying ? (
+              <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+              </svg>
+            ) : (
+              <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            )}
+          </div>
+        )}
         {downloadPlatform && (
           <a
             href={downloadLink}
@@ -189,11 +230,11 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
 
   const content = (
     <>
-      {/* Album Art */}
+      {/* Album Art with Play Button */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
         {(track.artwork_url || track.user?.avatar_url) ? (
           <Image
-            src={(track.artwork_url || track.user?.avatar_url)?.replace("large.jpg", "t500x500.jpg") || ""}
+            src={getHighQualityImage(track.artwork_url || track.user?.avatar_url) || ""}
             alt={track.title}
             fill
             className="object-cover"
@@ -204,6 +245,24 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
             <svg className="h-8 w-8 text-purple-400/50" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
             </svg>
+          </div>
+        )}
+        {/* Play Button Overlay */}
+        {(isPlayable || isPreviewOnly) && (
+          <div
+            onClick={handlePlayClick}
+            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+            title="Play track"
+          >
+            {isCurrentTrack && isPlaying ? (
+              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+              </svg>
+            ) : (
+              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            )}
           </div>
         )}
       </div>

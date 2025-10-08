@@ -1,8 +1,23 @@
 # Changelog
 
-All notable changes to CloudMate will be documented in this file.
+All notable changes to SoundGround will be documented in this file.
 
-## [Unreleased] - 2025-10-07
+## [Unreleased] - 2025-10-08
+
+### Added
+- **External Platform Link Detection**
+  - Track view now detects Bandcamp, Beatport, and Hypeddit links in `purchase_url`, `download_url`, and track descriptions
+  - Displays prominent "Buy on Bandcamp", "Buy on Beatport", or "Download on Hypeddit" buttons alongside the Play button
+  - Automatically extracts URLs from track descriptions and identifies platform types
+  - Supports multiple external links on the same track
+
+### Changed
+- **Rebranded** from CloudMate to **SoundGround** - "Sounds from the Underground"
+- Updated all documentation, meta tags, and configuration
+- Updated Fly.io app name to `soundground`
+- Set production domain to soundground.net
+
+## [Previous] - 2025-10-07
 
 ### Added
 - **Comprehensive Streaming & Engagement Metrics**

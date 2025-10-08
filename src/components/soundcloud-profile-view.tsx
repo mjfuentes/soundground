@@ -9,6 +9,7 @@ import { ExpandableAlbums } from "./expandable-albums";
 import { RecentActivityList } from "./recent-activity-list";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import { getServerBaseUrl } from "@/lib/server-base-url";
+import { getHighQualityImage } from "@/lib/image-utils";
 import type { SoundCloudTrack, SoundCloudPlaylist, SpotlightItem } from "@/lib/soundcloud/client";
 
 interface SoundcloudProfileViewProps {
@@ -44,7 +45,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
     );
   }
 
-  const avatar = user.avatar_url?.replace("large.jpg", "t500x500.jpg") ?? "";
+  const avatar = getHighQualityImage(user.avatar_url) ?? "";
 
   return (
     <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
@@ -87,17 +88,19 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
           <ExpandableAlbums albums={playlists} title="Playlists" />
         )}
 
-        {/* Friends */}
-        <TopFollowers userId={user.id} />
+        {/* Friends - Hidden on mobile, visible on desktop */}
+        <div className="hidden md:block">
+          <TopFollowers userId={user.id} />
+        </div>
       </section>
 
       {/* Right column - Spotlight & Recent Activity */}
       <section className="flex flex-col gap-6">
-        {/* Spotlight - Row of 5 covers */}
+        {/* Spotlight - Responsive grid */}
         {spotlight.length > 0 && (
           <div className="flex flex-col gap-3">
             <h3 className="text-xl font-semibold text-white">Spotlight</h3>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {spotlight.slice(0, 5).map((item: SpotlightItem) => {
                 // If it's a playlist with only one track, treat it as a single track
                 if (isPlaylist(item) && item.tracks?.length === 1) {

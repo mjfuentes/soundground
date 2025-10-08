@@ -61,7 +61,7 @@ export function SearchResults({ results, isLoading, query }: SearchResultsProps)
   };
 
   const handleTrackClick = (track: SoundCloudTrack) => {
-    window.open(track.permalink_url, '_blank');
+    router.push(`/track/${track.id}`);
   };
 
   const handlePlaylistClick = (playlist: SoundCloudPlaylist) => {

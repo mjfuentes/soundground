@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef, useEffect, type ReactNode } from "react";
+import Hls from "hls.js";
 
 interface PlayableItem {
   id: number; // Track ID for API calls
@@ -24,6 +25,7 @@ interface PlayerContextValue {
   error: string | null;
   queue: PlayableItem[];
   play: (item: PlayableItem) => void;
+  load: (item: PlayableItem) => void;
   playQueue: (items: PlayableItem[], shuffle?: boolean) => void;
   playTrackWithQueue: (track: PlayableItem, otherTracks: PlayableItem[], shuffle?: boolean) => void;
   next: () => void;
@@ -62,6 +64,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [shouldPlayNext, setShouldPlayNext] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   // Initialize HTML5 Audio element
   useEffect(() => {
@@ -97,6 +100,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
     const handlePause = () => {
       setIsPaused(true);
+      setIsPlaying(false);
     };
 
     audio.addEventListener("loadstart", handleLoadStart);
@@ -119,6 +123,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("pause", handlePause);
       audio.pause();
       audio.src = "";
+      
+      // Clean up HLS instance
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount/unmount - volume is updated via audioRef.current in setVolume
@@ -141,7 +151,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldPlayNext]); // Only depend on shouldPlayNext to avoid circular dependencies
 
-  const play = async (item: PlayableItem) => {
+  const load = async (item: PlayableItem) => {
     if (!audioRef.current) return;
 
     try {
@@ -170,9 +180,96 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         throw new Error("No stream URL available. Try opening in SoundCloud.");
       }
 
-      // Load and play audio
+      // Load audio without playing
       audioRef.current.src = streamUrl;
-      await audioRef.current.play();
+      setIsLoading(false);
+      setIsPaused(true);
+      setIsPlaying(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load track";
+      setError(message);
+      setIsLoading(false);
+      setIsPlaying(false);
+      console.error("Load error:", err);
+    }
+  };
+
+  const play = async (item: PlayableItem) => {
+    if (!audioRef.current) return;
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      setCurrentItem(item);
+
+      // Clean up any existing HLS instance
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+
+      // Fetch stream URL from our API
+      const response = await fetch(`/api/soundcloud/stream/${item.id}`);
+      
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ error: "Failed to fetch stream" }));
+        
+        // Handle 404 errors (track not found, deleted, or unavailable)
+        if (response.status === 404) {
+          throw new Error("This track is unavailable. It may have been deleted or is not available in your region. Try opening in SoundCloud.");
+        }
+        
+        throw new Error(data.error || "Failed to fetch stream");
+      }
+
+      const streamData = await response.json();
+      const streamUrl = streamData.stream_url;
+      const format = streamData.format;
+
+      if (!streamUrl) {
+        throw new Error("No stream URL available. Try opening in SoundCloud.");
+      }
+
+      // Check if stream is HLS
+      const isHLS = streamUrl.includes('.m3u8') || format?.protocol === 'hls';
+
+      if (isHLS && Hls.isSupported()) {
+        // Use HLS.js for HLS streams
+        console.log('[Player] Using HLS.js for stream:', streamUrl.substring(0, 100) + '...');
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+        });
+        
+        hls.loadSource(streamUrl);
+        hls.attachMedia(audioRef.current);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          audioRef.current?.play();
+        });
+        
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            console.error('[Player] HLS fatal error:', data);
+            setError("HLS stream error. Try opening in SoundCloud.");
+            setIsLoading(false);
+            setIsPlaying(false);
+          }
+        });
+        
+        hlsRef.current = hls;
+      } else if (isHLS && audioRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari native HLS support
+        console.log('[Player] Using native HLS support:', streamUrl.substring(0, 100) + '...');
+        audioRef.current.src = streamUrl;
+        await audioRef.current.play();
+      } else {
+        // Progressive MP3 or other formats
+        console.log('[Player] Using direct audio:', streamUrl.substring(0, 100) + '...');
+        audioRef.current.src = streamUrl;
+        await audioRef.current.play();
+      }
+      
       setIsPlaying(true);
       setIsPaused(false);
     } catch (err) {
@@ -218,6 +315,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.currentTime = 0;
       audioRef.current.src = "";
     }
+    
+    // Clean up HLS instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    
     setCurrentItem(null);
     setIsPlaying(false);
     setIsPaused(false);
@@ -300,6 +404,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         error,
         queue,
         play,
+        load,
         playQueue,
         playTrackWithQueue,
         next,

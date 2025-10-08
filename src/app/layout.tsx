@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/header";
+import { ConditionalHeader } from "@/components/conditional-header";
 import { PlayerProvider } from "@/contexts/player-context";
 import { FloatingPlayer } from "@/components/floating-player";
 
@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SoundClopedia",
-  description: "Your encyclopedia for SoundCloud music discovery. Dig deep into artist profiles and explore connections.",
+  title: "SoundGround - Sounds from the Underground",
+  description: "Discover and explore SoundCloud artists. Dig deep into artist profiles, explore connections, and uncover hidden gems in the underground music scene.",
   icons: {
     icon: [
       { url: "/logo.png" },
@@ -39,8 +39,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <PlayerProvider>
-          <Header />
-          <div className="pt-20">{children}</div>
+          <ConditionalHeader />
+          {children}
           <FloatingPlayer />
         </PlayerProvider>
       </body>

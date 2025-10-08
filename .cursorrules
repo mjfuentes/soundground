@@ -1,4 +1,4 @@
-# Cursor AI Agent Rules for SoundClopedia
+# Cursor AI Agent Rules for SoundGround
 
 ## 🚨 MANDATORY: Task Completion Requirements
 
@@ -6,10 +6,10 @@
 
 1. **✅ Type Check**: Run `npm run type-check` - must pass with zero errors
 2. **🏗️ Build**: Run `npm run build` - must complete successfully  
-3. **🚀 Local Server**: Start dev server on port 3000
-   - Kill existing processes: `lsof -ti:3000 | xargs kill -9`
-   - Start server: `npm run dev`
-   - Verify server is running
+3. **🔄 RESTART Dev Server**: ALWAYS restart after code changes (Fast Refresh can cause stale code errors)
+   - Kill existing: `lsof -ti:3000 | xargs kill -9`
+   - Start fresh: `npm run dev` (background)
+   - Verify: `sleep 3 && curl -s http://localhost:3000 > /dev/null && echo "✅ Server running"`
 4. **🌐 Browser Testing**: Use browser tools to test the changes
    - Navigate to `http://localhost:3000`
    - Take snapshot of the page
@@ -20,10 +20,12 @@
 
 **NO EXCEPTIONS.** If any step fails, fix the issue before completing the task.
 
+**⚠️ CRITICAL**: Step 3 (restart) is MANDATORY after ANY code changes. Fast Refresh is unreliable and causes runtime errors. ALWAYS do a clean restart.
+
 ---
 
 ## Project Context
-SoundClopedia - A Next.js 15 encyclopedia for SoundCloud music discovery. Dig deep into artist profiles, explore connections between artists, and discover new music. Deployed on Fly.io with caching and enhanced playback features.
+SoundGround - Sounds from the Underground. A Next.js 15 app for SoundCloud music discovery. Dig deep into artist profiles, explore connections between artists, and uncover hidden gems in the underground music scene. Deployed on Fly.io with caching and enhanced playback features.
 
 ## Agent Behavior
 
@@ -120,7 +122,7 @@ Automated validation ensures:
 
 ### Environment Variables
 - **Development**: `.env.local` (not committed)
-- **Production**: Fly.io secrets (`flyctl secrets set KEY=value -a soundclopedia`)
+- **Production**: Fly.io secrets (`flyctl secrets set KEY=value -a soundground`)
 - Auto-detect URL: `process.env.FLY_APP_NAME` or `process.env.VERCEL_URL`
 
 ### Development Server
@@ -153,7 +155,7 @@ Automated validation ensures:
 ## Fly.io Deployment
 
 ### Configuration
-- **App**: `soundclopedia`
+- **App**: `soundground`
 - **Region**: `iad` (US East)
 - **Memory**: 1GB
 - **Scaling**: Auto (min 0, auto-stop)
@@ -168,7 +170,7 @@ curl -L https://fly.io/install.sh | sh
 flyctl auth login
 
 # Set secrets
-flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundclopedia
+flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundground
 ```
 
 ## Troubleshooting
@@ -177,9 +179,9 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundclopedia
 |-------|----------|
 | Hooks don't trigger | Restart Cursor |
 | Validation fails | Run `npm run type-check`, `npm run lint:fix`, `npm run build` individually |
-| Deployment fails | Check `flyctl status -a soundclopedia` |
+| Deployment fails | Check `flyctl status -a soundground` |
 | Linting errors | Run `npm run lint:fix` |
-| Check logs | `flyctl logs -n -a soundclopedia` (use `-n` flag to avoid streaming) |
+| Check logs | `flyctl logs -n -a soundground` (use `-n` flag to avoid streaming) |
 | Port 3000 blocked | `lsof -ti:3000 \| xargs kill -9` |
 
 ---

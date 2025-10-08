@@ -89,6 +89,19 @@ export async function getTracks(userId: number, limit = 200): Promise<{ collecti
 }
 
 /**
+ * Cached version of getTrack
+ */
+export async function getTrack(trackId: number): Promise<client.SoundCloudTrack | null> {
+  const cache = getCacheService();
+  const cacheKey = `track:${trackId}`;
+  return cache.getOrSet(
+    cacheKey,
+    () => client.getTrack(trackId),
+    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS }
+  );
+}
+
+/**
  * Cached version of getFollowers
  * Note: Followers with pagination are cached per page/nextHref
  */

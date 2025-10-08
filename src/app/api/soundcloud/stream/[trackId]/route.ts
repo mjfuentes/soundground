@@ -80,11 +80,17 @@ export async function GET(
     
     // Request the transcoding URL to get the actual playable stream
     try {
+      console.log(`[Stream ${trackIdNum}] Requesting transcoding URL:`, transcodingUrl);
+      console.log(`[Stream ${trackIdNum}] Format:`, bestTranscoding.format);
+      
       const streamResponse = await got(transcodingUrl, {
         searchParams: {
           client_id: process.env.SOUNDCLOUD_CLIENT_ID || "REMOVED_CLIENT_ID"
         },
       }).json() as { url: string };
+
+      console.log(`[Stream ${trackIdNum}] Got stream URL:`, streamResponse.url.substring(0, 100) + '...');
+      console.log(`[Stream ${trackIdNum}] Protocol:`, bestTranscoding.format?.protocol);
 
       // Return stream information
       return NextResponse.json({
@@ -104,7 +110,7 @@ export async function GET(
         quality: bestTranscoding.quality,
       });
     } catch (streamError) {
-      console.error("Error fetching actual stream URL:", streamError);
+      console.error(`[Stream ${trackIdNum}] Error fetching actual stream URL:`, streamError);
       return NextResponse.json(
         { error: "Failed to get playable stream URL" },
         { status: 500 }

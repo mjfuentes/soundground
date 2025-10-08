@@ -1,6 +1,16 @@
-# SoundClopedia
+# SoundGround
 
-Your encyclopedia for SoundCloud music discovery. Dig deep into artist profiles, explore connections, and discover new music with enhanced research and playback features.
+**Sounds from the Underground**
+
+Discover and explore SoundCloud artists. Dig deep into artist profiles, explore connections between artists, and uncover hidden gems in the underground music scene.
+
+## Features
+
+- **Artist Profiles** - Deep dive into artist information with streaming stats, followers, and activity
+- **Track Player** - Built-in audio player with queue management and playback controls
+- **External Platform Links** - Automatic detection of Bandcamp, Beatport, and Hypeddit links for buying or downloading tracks
+- **Smart Caching** - SQLite-based caching system for fast repeated loads
+- **SoundCloud OAuth** - Secure authentication with SoundCloud
 
 ## Tech Stack
 
@@ -58,13 +68,14 @@ Slash command: `/push` - full deploy pipeline.
 
 ## Deployment
 
-**Fly.io**: https://soundclopedia.fly.dev
+**Fly.io**: https://soundground.fly.dev  
+**Production**: https://soundground.net
 
 ```bash
 # Set secrets
 flyctl secrets set SOUNDCLOUD_CLIENT_ID=xxx SOUNDCLOUD_CLIENT_SECRET=xxx \
-  SOUNDCLOUD_REDIRECT_URI=https://soundclopedia.fly.dev/api/auth/callback \
-  JWT_SECRET=$(openssl rand -base64 32) -a soundclopedia
+  SOUNDCLOUD_REDIRECT_URI=https://soundground.net/api/auth/callback \
+  JWT_SECRET=$(openssl rand -base64 32) -a soundground
 
 # Deploy
 npm run deploy

@@ -70,7 +70,7 @@ export function RichDescription({ text }: RichDescriptionProps) {
                 href={match.value}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-purple-400 underline decoration-purple-400/30 transition hover:decoration-purple-400"
+                className="cursor-pointer text-purple-400 underline decoration-purple-400/30 transition hover:decoration-purple-400"
               >
                 {match.value}
               </a>
@@ -87,7 +87,7 @@ export function RichDescription({ text }: RichDescriptionProps) {
               <a
                 key={`${lineIndex}-${i}`}
                 href={`mailto:${match.value}`}
-                className="text-purple-400 underline decoration-purple-400/30 transition hover:decoration-purple-400"
+                className="cursor-pointer text-purple-400 underline decoration-purple-400/30 transition hover:decoration-purple-400"
               >
                 {match.value}
               </a>

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { SearchBar } from "./search-bar";
 import { SearchDropdown } from "./search-dropdown";
@@ -64,15 +63,9 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-6 py-3">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition flex-shrink-0">
-            <div className="relative h-9 w-9">
-              <Image
-                src="/logo.png"
-                alt="SoundClopedia"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent">
+              SoundGround
+            </span>
           </Link>
           <div className="flex-1 max-w-2xl mx-auto relative" ref={containerRef}>
             <SearchBar onSearch={handleSearch} />
@@ -85,7 +78,7 @@ export function Header() {
               />
             )}
           </div>
-          <div className="w-9 flex-shrink-0"></div> {/* Spacer for visual balance */}
+          <div className="flex-shrink-0"></div> {/* Spacer for visual balance */}
         </div>
       </div>
     </header>

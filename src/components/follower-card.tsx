@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getHighQualityImage } from "@/lib/image-utils";
 
 interface FollowerCardProps {
   follower: {
@@ -41,7 +42,7 @@ export function FollowerCard({ follower }: FollowerCardProps) {
       >
         {follower.avatar_url ? (
           <Image
-            src={follower.avatar_url.replace("large.jpg", "t200x200.jpg")}
+            src={getHighQualityImage(follower.avatar_url) || ""}
             alt={follower.username}
             fill
             className="object-cover"
@@ -63,7 +64,7 @@ export function FollowerCard({ follower }: FollowerCardProps) {
             <div className="relative aspect-square">
               {follower.avatar_url ? (
                 <Image
-                  src={follower.avatar_url.replace("large.jpg", "t200x200.jpg")}
+                  src={getHighQualityImage(follower.avatar_url) || ""}
                   alt={follower.username}
                   fill
                   className="object-cover"

@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useCallback } from "react";
 import Image from "next/image";
-import { usePlayer } from "@/contexts/player-context";
 import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 interface SearchDropdownProps {
@@ -10,6 +10,8 @@ interface SearchDropdownProps {
   isLoading: boolean;
   query: string;
   onClose: () => void;
+  selectedIndex?: number;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 function isUser(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): result is SoundCloudUser {
@@ -24,28 +26,101 @@ function isPlaylist(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylis
   return 'is_album' in result;
 }
 
-export function SearchDropdown({ results, isLoading, query, onClose }: SearchDropdownProps) {
+// Helper function to check if an item has an image
+function hasImage(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): boolean {
+  if (isUser(result)) {
+    return !!result.avatar_url;
+  }
+  return !!result.artwork_url;
+}
+
+// Quality filter: Remove low-quality results that clutter search
+function isQualityResult(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): boolean {
+  if (isUser(result)) {
+    // Artists: Must have either
+    // 1. Avatar AND at least 1 follower, OR
+    // 2. At least 10 followers, OR  
+    // 3. At least 1 track
+    const hasAvatar = !!result.avatar_url;
+    const hasMinFollowers = (result.followers_count || 0) >= 10;
+    const hasTracks = (result.track_count || 0) >= 1;
+    
+    // Reject if no avatar, no tracks, and very few followers
+    if (!hasAvatar && !hasTracks && (result.followers_count || 0) < 10) {
+      return false;
+    }
+    
+    return hasAvatar || hasMinFollowers || hasTracks;
+  } else if (isTrack(result)) {
+    // Tracks: Must have artwork OR significant playback count (1000+)
+    const hasArtwork = !!result.artwork_url;
+    const hasSignificantPlays = (result.playback_count || 0) >= 1000;
+    
+    return hasArtwork || hasSignificantPlays;
+  } else if (isPlaylist(result)) {
+    // Playlists: Must have artwork OR at least 3 tracks
+    const hasArtwork = !!result.artwork_url;
+    const hasMinTracks = (result.track_count || 0) >= 3;
+    
+    return hasArtwork || hasMinTracks;
+  }
+  
+  return true;
+}
+
+// Sort results: Artists first, then by image availability, then by relevance metrics
+function sortSearchResults(results: (SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]) {
+  return [...results].sort((a, b) => {
+    // Priority 1: Artists (users) come first
+    const aIsUser = isUser(a);
+    const bIsUser = isUser(b);
+    if (aIsUser && !bIsUser) return -1;
+    if (!aIsUser && bIsUser) return 1;
+
+    // Priority 2: Items with images come before items without
+    const aHasImage = hasImage(a);
+    const bHasImage = hasImage(b);
+    if (aHasImage && !bHasImage) return -1;
+    if (!aHasImage && bHasImage) return 1;
+
+    // Priority 3: Within same type, sort by engagement/popularity
+    if (isUser(a) && isUser(b)) {
+      // Sort artists by follower count
+      return (b.followers_count || 0) - (a.followers_count || 0);
+    } else if (isTrack(a) && isTrack(b)) {
+      // Sort tracks by playback count
+      return (b.playback_count || 0) - (a.playback_count || 0);
+    } else if (isPlaylist(a) && isPlaylist(b)) {
+      // Sort playlists by likes count
+      return (b.likes_count || 0) - (a.likes_count || 0);
+    }
+
+    // Priority 4: Tracks before playlists if different types
+    const aIsTrack = isTrack(a);
+    const bIsTrack = isTrack(b);
+    if (aIsTrack && !bIsTrack) return -1;
+    if (!aIsTrack && bIsTrack) return 1;
+
+    return 0;
+  });
+}
+
+const MAX_RESULTS = 5;
+
+export function SearchDropdown({ results, isLoading, query, onClose, selectedIndex = 0, containerRef }: SearchDropdownProps) {
   const router = useRouter();
-  const { play } = usePlayer();
 
-  if (!query && !isLoading) return null;
+  // Filter out low-quality results first, then sort, then limit to MAX_RESULTS
+  const qualityResults = results.filter(isQualityResult);
+  const sortedResults = sortSearchResults(qualityResults).slice(0, MAX_RESULTS);
 
-  const handleResultClick = (result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist) => {
+  const handleResultClick = useCallback((result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist) => {
     if (isUser(result)) {
       router.push(`/${result.permalink}`);
       onClose();
     } else if (isTrack(result)) {
-      // Convert SoundCloud track to PlayableItem format
-      play({
-        id: result.id,
-        url: result.permalink_url,
-        title: result.title,
-        artist: result.user?.username || "Unknown Artist",
-        artistUrl: result.user?.permalink_url || "",
-        artwork: result.artwork_url,
-        description: result.description,
-        type: "track"
-      });
+      // Navigate to track page
+      router.push(`/track/${result.id}`);
       onClose();
     } else if (isPlaylist(result)) {
       // Navigate to playlist owner's page for now
@@ -58,32 +133,70 @@ export function SearchDropdown({ results, isLoading, query, onClose }: SearchDro
         }
       }
     }
-  };
+  }, [router, onClose]);
+
+  // Listen for keyboard navigation events
+  useEffect(() => {
+    if (!query && !isLoading) return;
+    
+    const handleNavigateSelected = (e: Event) => {
+      const customEvent = e as CustomEvent<{ index: number }>;
+      const result = sortedResults[customEvent.detail.index];
+      if (result) {
+        handleResultClick(result);
+      }
+    };
+
+    const container = containerRef?.current;
+    container?.addEventListener('navigate-selected', handleNavigateSelected);
+    return () => {
+      container?.removeEventListener('navigate-selected', handleNavigateSelected);
+    };
+  }, [sortedResults, containerRef, handleResultClick, query, isLoading]);
+
+  if (!query && !isLoading) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl max-h-[500px] overflow-y-auto z-50">
+    <div className="absolute top-full left-0 right-0 mt-2 bg-black/40 backdrop-blur-sm border border-zinc-800/50 rounded-md shadow-xl overflow-hidden z-50">
       {isLoading ? (
-        <div className="p-8 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
-            <span className="text-sm text-zinc-400">Searching...</span>
-          </div>
+        <div className="py-1">
+          {/* Fixed number of skeleton loaders */}
+          {Array.from({ length: MAX_RESULTS }).map((_, i) => (
+            <div key={i} className="px-3 py-2 flex items-center gap-3 animate-pulse">
+              <div className="h-10 w-10 rounded-full bg-zinc-800/50"></div>
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-zinc-800/50 rounded w-3/4"></div>
+                <div className="h-2.5 bg-zinc-800/50 rounded w-1/2"></div>
+              </div>
+            </div>
+          ))}
         </div>
-      ) : results.length === 0 ? (
-        <div className="p-8 text-center text-zinc-500">
-          <p className="text-sm">No results found for &quot;{query}&quot;</p>
+      ) : sortedResults.length === 0 ? (
+        <div className="py-8 text-center">
+          <p className="text-xs text-zinc-500">No results</p>
         </div>
       ) : (
-        <div className="py-2">
-          {results.map((result) => {
+        <div className="py-1">
+          {/* Pad results to always show MAX_RESULTS items */}
+          {Array.from({ length: MAX_RESULTS }).map((_, index) => {
+            const result = sortedResults[index];
+            
+            if (!result) {
+              // Empty placeholder to maintain fixed height
+              return <div key={`empty-${index}`} className="h-14"></div>;
+            }
+
             if (isUser(result)) {
+              const isSelected = index === selectedIndex;
               return (
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className="w-full px-4 py-3 hover:bg-zinc-800 transition-colors flex items-center gap-3 text-left cursor-pointer"
+                  className={`w-full px-3 py-2 transition-colors flex items-center gap-3 text-left cursor-pointer ${
+                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50'
+                  }`}
                 >
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden flex-shrink-0 bg-zinc-800">
+                  <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0 bg-zinc-800/30">
                     {result.avatar_url && (
                       <Image
                         src={result.avatar_url}
@@ -94,24 +207,22 @@ export function SearchDropdown({ results, isLoading, query, onClose }: SearchDro
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white truncate">{result.username}</div>
-                    <div className="text-xs text-zinc-400 flex items-center gap-2">
-                      <span>{result.followers_count?.toLocaleString() || 0} followers</span>
-                      <span>•</span>
-                      <span>{result.track_count || 0} tracks</span>
-                    </div>
+                    <div className="text-sm font-medium text-white truncate">{result.username}</div>
+                    <div className="text-xs text-zinc-500">{result.followers_count?.toLocaleString() || 0} followers</div>
                   </div>
-                  <div className="text-xs text-zinc-500 uppercase">Artist</div>
                 </button>
               );
             } else if (isTrack(result)) {
+              const isSelected = index === selectedIndex;
               return (
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className="w-full px-4 py-3 hover:bg-zinc-800 transition-colors flex items-center gap-3 text-left cursor-pointer"
+                  className={`w-full px-3 py-2 transition-colors flex items-center gap-3 text-left cursor-pointer ${
+                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50'
+                  }`}
                 >
-                  <div className="relative h-12 w-12 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+                  <div className="relative h-10 w-10 rounded overflow-hidden flex-shrink-0 bg-zinc-800/30">
                     {result.artwork_url && (
                       <Image
                         src={result.artwork_url}
@@ -122,20 +233,22 @@ export function SearchDropdown({ results, isLoading, query, onClose }: SearchDro
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white truncate">{result.title}</div>
-                    <div className="text-xs text-zinc-400 truncate">{result.user?.username || 'Unknown'}</div>
+                    <div className="text-sm font-medium text-white truncate">{result.title}</div>
+                    <div className="text-xs text-zinc-500 truncate">{result.user?.username || 'Unknown'}</div>
                   </div>
-                  <div className="text-xs text-zinc-500 uppercase">Track</div>
                 </button>
               );
             } else if (isPlaylist(result)) {
+              const isSelected = index === selectedIndex;
               return (
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className="w-full px-4 py-3 hover:bg-zinc-800 transition-colors flex items-center gap-3 text-left cursor-pointer"
+                  className={`w-full px-3 py-2 transition-colors flex items-center gap-3 text-left cursor-pointer ${
+                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50'
+                  }`}
                 >
-                  <div className="relative h-12 w-12 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+                  <div className="relative h-10 w-10 rounded overflow-hidden flex-shrink-0 bg-zinc-800/30">
                     {result.artwork_url && (
                       <Image
                         src={result.artwork_url}
@@ -146,10 +259,9 @@ export function SearchDropdown({ results, isLoading, query, onClose }: SearchDro
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-white truncate">{result.title}</div>
-                    <div className="text-xs text-zinc-400 truncate">{result.user?.username || 'Unknown'}</div>
+                    <div className="text-sm font-medium text-white truncate">{result.title}</div>
+                    <div className="text-xs text-zinc-500 truncate">{result.user?.username || 'Unknown'}</div>
                   </div>
-                  <div className="text-xs text-zinc-500 uppercase">Playlist</div>
                 </button>
               );
             }

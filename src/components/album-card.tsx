@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 import { usePlayer } from "@/contexts/player-context";
+import { getHighQualityImage } from "@/lib/image-utils";
 
 interface AlbumCardProps {
   album: SoundCloudPlaylist;
@@ -21,12 +22,26 @@ function formatNumber(num?: number): string {
 }
 
 export function AlbumCard({ album, showStats = true, compact = false, coverOnly = false }: AlbumCardProps) {
-  const { playQueue } = usePlayer();
+  const { playQueue, currentItem, isPlaying, pause, resume } = usePlayer();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check if any track from this album is currently playing
+  const isCurrentAlbum = album.tracks?.some(t => t.id === currentItem?.id);
 
   const handleClick = async () => {
     try {
       setIsLoading(true);
+      
+      // If this album is currently playing, toggle play/pause
+      if (isCurrentAlbum) {
+        if (isPlaying) {
+          pause();
+        } else {
+          resume();
+        }
+        setIsLoading(false);
+        return;
+      }
       
       // Fetch full album with tracks
       const response = await fetch(`/api/soundcloud/playlist-tracks?id=${album.id}`);
@@ -48,8 +63,7 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
         title: track.title,
         artist: track.user?.username || "Unknown Artist",
         artistUrl: track.user?.permalink_url || "https://soundcloud.com",
-        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg")
-          || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
+        artwork: getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url),
         description: track.description,
         type: "track" as const,
       }));
@@ -69,9 +83,7 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
     const typeLabel = isPlaylist ? 'Playlist' : (album.set_type === 'ep' ? 'EP' : album.set_type === 'compilation' ? 'Compilation' : 'Album');
     
     // Use album artwork, or fallback to first track's artwork
-    const coverOnlyArtworkUrl = album.artwork_url 
-      ? album.artwork_url.replace("large.jpg", "t500x500.jpg")
-      : album.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+    const coverOnlyArtworkUrl = getHighQualityImage(album.artwork_url) || getHighQualityImage(album.tracks?.[0]?.artwork_url);
 
     return (
       <button
@@ -94,6 +106,21 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
             </svg>
           </div>
         )}
+        
+        {/* Play Button Overlay */}
+        <div 
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+        >
+          {isCurrentAlbum && isPlaying ? (
+            <svg className="h-10 w-10 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          ) : (
+            <svg className="h-10 w-10 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+        </div>
         
         {/* Hover card */}
         <div className="pointer-events-none absolute left-full top-0 z-50 ml-2 hidden w-64 rounded-lg border border-white/20 bg-zinc-900/95 p-3 shadow-xl backdrop-blur-sm group-hover:block">
@@ -131,9 +158,7 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
 
   if (compact) {
     // Use album artwork, or fallback to first track's artwork
-    const compactArtworkUrl = album.artwork_url 
-      ? album.artwork_url.replace("large.jpg", "t500x500.jpg")
-      : album.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+    const compactArtworkUrl = getHighQualityImage(album.artwork_url) || getHighQualityImage(album.tracks?.[0]?.artwork_url);
 
     return (
       <button
@@ -157,6 +182,20 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
               </svg>
             </div>
           )}
+          {/* Play Button Overlay */}
+          <div 
+            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+          >
+            {isCurrentAlbum && isPlaying ? (
+              <svg className="h-5 w-5 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+              </svg>
+            ) : (
+              <svg className="h-5 w-5 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            )}
+          </div>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h4 className="line-clamp-1 text-xs font-medium text-white group-hover:text-purple-400">
@@ -169,9 +208,7 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
   }
 
   // Use album artwork, or fallback to first track's artwork
-  const defaultArtworkUrl = album.artwork_url 
-    ? album.artwork_url.replace("large.jpg", "t500x500.jpg")
-    : album.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+  const defaultArtworkUrl = getHighQualityImage(album.artwork_url) || getHighQualityImage(album.tracks?.[0]?.artwork_url);
 
   return (
     <button
@@ -195,6 +232,20 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
             </svg>
           </div>
         )}
+        {/* Play Button Overlay */}
+        <div 
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+        >
+          {isCurrentAlbum && isPlaying ? (
+            <svg className="h-12 w-12 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          ) : (
+            <svg className="h-12 w-12 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+        </div>
       </div>
       <div className="flex flex-col gap-0.5">
         <h4 className="line-clamp-2 text-xs font-medium text-white group-hover:text-purple-400">

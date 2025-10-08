@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { getHighQualityImage } from "@/lib/image-utils";
 
 interface UserMentionProps {
   username: string;
@@ -63,7 +64,7 @@ export function UserMention({ username }: UserMentionProps) {
       <Link
         ref={linkRef}
         href={`/${username}`}
-        className="text-purple-400 transition hover:underline"
+        className="cursor-pointer text-purple-400 transition hover:underline"
         onMouseEnter={handleMouseEnter}
       >
         @{username}
@@ -79,7 +80,7 @@ export function UserMention({ username }: UserMentionProps) {
             <div className="relative aspect-square">
               {userData.avatar_url ? (
                 <Image
-                  src={userData.avatar_url.replace("large.jpg", "t200x200.jpg")}
+                  src={getHighQualityImage(userData.avatar_url) || ""}
                   alt={userData.username}
                   fill
                   className="object-cover"

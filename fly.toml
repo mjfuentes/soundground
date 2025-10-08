@@ -1,4 +1,4 @@
-app = 'cloudmate'
+app = 'soundground'
 primary_region = 'iad'
 
 [build]
@@ -17,7 +17,7 @@ primary_region = 'iad'
   cpus = 1
 
 [mounts]
-  source = 'soundclopedia_data'
+  source = 'soundground_data'
   destination = '/app/data'
   initial_size = '1gb'
 

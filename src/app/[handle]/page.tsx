@@ -10,7 +10,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ handle:
   const { handle } = await params;
   
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen text-white" style={{ backgroundColor: '#060606' }}>
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-12 pb-[350px]">
         <Suspense fallback={<ProfileSkeleton />}>
           <SoundcloudProfileLoader handle={handle} />

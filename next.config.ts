@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* config options here */
   output: 'standalone',
   images: {
     remotePatterns: [
@@ -10,9 +11,25 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "a1.sndcdn.com",
+        hostname: "**.sndcdn.com",
       },
     ],
+  },
+  // Improve Fast Refresh stability
+  experimental: {
+    // Optimize package imports
+    optimizePackageImports: ['@/components', '@/lib', '@/contexts'],
+  },
+  // Reduce webpack errors during hot reload
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Ignore specific modules that cause issues during HMR
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: /node_modules/,
+      };
+    }
+    return config;
   },
 };
 

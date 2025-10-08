@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 import { usePlayer } from "@/contexts/player-context";
+import { getHighQualityImage } from "@/lib/image-utils";
 
 interface PlaylistCardProps {
   playlist: SoundCloudPlaylist;
@@ -31,12 +32,26 @@ function formatDuration(ms: number): string {
 }
 
 export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: PlaylistCardProps) {
-  const { playQueue } = usePlayer();
+  const { playQueue, currentItem, isPlaying, pause, resume } = usePlayer();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check if any track from this playlist is currently playing
+  const isCurrentPlaylist = playlist.tracks?.some(t => t.id === currentItem?.id);
 
   const handleClick = async () => {
     try {
       setIsLoading(true);
+      
+      // If this playlist is currently playing, toggle play/pause
+      if (isCurrentPlaylist) {
+        if (isPlaying) {
+          pause();
+        } else {
+          resume();
+        }
+        setIsLoading(false);
+        return;
+      }
       
       // Fetch full playlist with tracks
       const response = await fetch(`/api/soundcloud/playlist-tracks?id=${playlist.id}`);
@@ -58,8 +73,7 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
         title: track.title,
         artist: track.user?.username || "Unknown Artist",
         artistUrl: track.user?.permalink_url || "https://soundcloud.com",
-        artwork: track.artwork_url?.replace("large.jpg", "t500x500.jpg")
-          || track.user?.avatar_url?.replace("large.jpg", "t500x500.jpg"),
+        artwork: getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url),
         description: track.description,
         type: "track" as const,
       }));
@@ -75,9 +89,7 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
   // Cover-only mode: just the artwork
   if (coverOnly) {
     // Use playlist artwork, or fallback to first track's artwork
-    const imageUrl = playlist.artwork_url 
-      ? playlist.artwork_url.replace("large.jpg", "t500x500.jpg")
-      : playlist.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+    const imageUrl = getHighQualityImage(playlist.artwork_url) || getHighQualityImage(playlist.tracks?.[0]?.artwork_url);
     
     return (
       <button
@@ -102,14 +114,26 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
             </svg>
           </div>
         )}
+        {/* Play Button Overlay */}
+        <div 
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+        >
+          {isCurrentPlaylist && isPlaying ? (
+            <svg className="h-10 w-10 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          ) : (
+            <svg className="h-10 w-10 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+        </div>
       </button>
     );
   }
 
   // Use playlist artwork, or fallback to first track's artwork
-  const artworkUrl = playlist.artwork_url 
-    ? playlist.artwork_url.replace("large.jpg", "t500x500.jpg")
-    : playlist.tracks?.[0]?.artwork_url?.replace("large.jpg", "t500x500.jpg");
+  const artworkUrl = getHighQualityImage(playlist.artwork_url) || getHighQualityImage(playlist.tracks?.[0]?.artwork_url);
 
   return (
     <button
@@ -134,6 +158,20 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
             </svg>
           </div>
         )}
+        {/* Play Button Overlay */}
+        <div 
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+        >
+          {isCurrentPlaylist && isPlaying ? (
+            <svg className="h-7 w-7 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            </svg>
+          ) : (
+            <svg className="h-7 w-7 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+        </div>
       </div>
 
       {/* Playlist Info */}
