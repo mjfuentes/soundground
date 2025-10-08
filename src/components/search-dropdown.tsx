@@ -157,7 +157,7 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
   if (!query && !isLoading) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-black/40 backdrop-blur-sm border border-zinc-800/50 rounded-md shadow-xl overflow-hidden z-50">
+    <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-md shadow-xl overflow-hidden z-50">
       {isLoading ? (
         <div className="py-1">
           {/* Fixed number of skeleton loaders */}

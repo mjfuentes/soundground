@@ -63,15 +63,29 @@ export function SearchBar({
     inputRef.current?.focus();
   }, [onSearch]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Pass to parent handler first if provided
+    if (onKeyDown) {
+      onKeyDown(e);
+    }
+    
+    // On Enter, trigger immediate search
+    if (e.key === 'Enter' && query.trim()) {
+      e.preventDefault();
+      setDebouncedQuery(query.trim());
+      onSearch(query.trim(), false);
+    }
+  }, [onKeyDown, query, onSearch]);
+
   return (
     <div className="relative w-full">
       <div className="relative">
         {/* Custom placeholder with emphasized "artist" */}
         {!query && (
-          <div className="absolute inset-0 flex items-center pl-3 pointer-events-none">
-            <span className="text-xs text-zinc-500">
+          <div className="absolute inset-0 flex items-center pl-4 pointer-events-none">
+            <span className="text-sm text-zinc-500">
               search{" "}
-              <span className="text-sm font-semibold text-zinc-400">artist</span>
+              <span className="text-base font-semibold text-zinc-400">artist</span>
               {" "}tracks albums
             </span>
           </div>
@@ -81,10 +95,10 @@ export function SearchBar({
           type="text"
           value={query}
           onChange={handleChange}
-          onKeyDown={onKeyDown}
-          className={`w-full py-2 px-3 text-sm bg-transparent border rounded-md text-white caret-white focus:outline-none transition-all duration-200 ${
+          onKeyDown={handleKeyDown}
+          className={`w-full py-2.5 px-4 text-base bg-transparent border rounded-md text-white caret-white focus:outline-none transition-all duration-200 ${
             isLoading 
-              ? 'border-zinc-600 animate-pulse' 
+              ? 'border-zinc-600' 
               : 'border-zinc-700 focus:border-zinc-500'
           }`}
           aria-label="Search"

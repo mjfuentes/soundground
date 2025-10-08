@@ -19,7 +19,7 @@ export function RecentActivityList({ tracks }: RecentActivityListProps) {
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         {displayedTracks.map((track: SoundCloudTrack) => (
           <TrackCard key={track.id} track={track} showStats={true} />
         ))}

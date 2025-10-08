@@ -23,13 +23,16 @@ export default function Home() {
       return;
     }
 
-    // Immediately show loading state
+    // Open dropdown immediately but don't show loading on immediate calls
     if (isImmediate) {
-      setIsSearching(true);
       setSearchQuery(query);
       setIsDropdownOpen(true);
       setSelectedIndex(0); // Reset to first result
+      return; // Don't fetch on immediate calls, wait for debounce
     }
+
+    // Only show loading for debounced searches
+    setIsSearching(true);
 
     try {
       const response = await fetch(`/api/soundcloud/search?q=${encodeURIComponent(query)}&limit=20`);
@@ -93,7 +96,7 @@ export default function Home() {
         {/* Logo and Search in a row */}
         <div className="flex items-center gap-4 mb-6">
           {/* Logo/Title */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 soundground-logo">
             <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
               <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>

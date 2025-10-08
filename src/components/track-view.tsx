@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { SoundCloudTrack } from "@/lib/soundcloud/client";
 import { usePlayer } from "@/contexts/player-context";
-import { ProfileSkeleton } from "@/components/profile-skeleton";
+import { TrackSkeleton } from "@/components/track-skeleton";
 import { RichDescription } from "@/components/rich-description";
 import { getHighQualityImage } from "@/lib/image-utils";
 
@@ -268,7 +268,7 @@ export function TrackView({ trackId }: TrackViewProps) {
   };
 
   if (loading) {
-    return <ProfileSkeleton />;
+    return <TrackSkeleton />;
   }
 
   if (error || !track) {

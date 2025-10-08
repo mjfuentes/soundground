@@ -231,18 +231,18 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
   const content = (
     <>
       {/* Album Art with Play Button */}
-      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
+      <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
         {(track.artwork_url || track.user?.avatar_url) ? (
           <Image
             src={getHighQualityImage(track.artwork_url || track.user?.avatar_url) || ""}
             alt={track.title}
             fill
             className="object-cover"
-            sizes="64px"
+            sizes="48px"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <svg className="h-8 w-8 text-purple-400/50" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6 text-purple-400/50" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
             </svg>
           </div>
@@ -255,11 +255,11 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
             title="Play track"
           >
             {isCurrentTrack && isPlaying ? (
-              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
               </svg>
             ) : (
-              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
             )}
@@ -351,15 +351,15 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
 
   if (!track.permalink_url) {
     return (
-      <div className="group flex gap-3 rounded-lg border border-white/10 bg-white/5 p-3 opacity-75">
+      <div className="group flex gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 opacity-75">
         {content}
       </div>
     );
   }
 
   const buttonClasses = isPlayable || isPreviewOnly
-    ? "group flex w-full cursor-pointer gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
-    : "group flex w-full cursor-pointer gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-orange-500/50 hover:bg-orange-500/10 opacity-75";
+    ? "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
+    : "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-orange-500/50 hover:bg-orange-500/10 opacity-75";
 
   const buttonTitle = isPlayable || isPreviewOnly
     ? "Play track"
