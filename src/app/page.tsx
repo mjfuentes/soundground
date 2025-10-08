@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { SearchBar } from "@/components/search-bar";
 import { SearchDropdown } from "@/components/search-dropdown";
+import { ClientSearchCache } from "@/lib/client-search-cache";
 import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 export default function Home() {
@@ -23,30 +24,48 @@ export default function Home() {
       return;
     }
 
-    // Open dropdown immediately but don't show loading on immediate calls
-    if (isImmediate) {
-      setSearchQuery(query);
-      setIsDropdownOpen(true);
-      setSelectedIndex(0); // Reset to first result
-      return; // Don't fetch on immediate calls, wait for debounce
+    setSearchQuery(query);
+    setIsDropdownOpen(true);
+    setSelectedIndex(0);
+
+    // Check cache immediately and show results
+    const cachedResults = ClientSearchCache.get(query);
+    if (cachedResults) {
+      setSearchResults(cachedResults);
     }
 
-    // Only show loading for debounced searches
+    // Don't fetch on immediate calls, wait for debounce
+    if (isImmediate) {
+      return;
+    }
+
+    // Always show loading indicator when fetching fresh results
     setIsSearching(true);
 
     try {
       const response = await fetch(`/api/soundcloud/search?q=${encodeURIComponent(query)}&limit=20`);
       if (response.ok) {
         const data = await response.json();
-        setSearchResults(data.collection || []);
-        setSelectedIndex(0); // Always select first result
+        const freshResults = data.collection || [];
+        
+        // Only update UI if results are actually different
+        if (!cachedResults || ClientSearchCache.areResultsDifferent(cachedResults, freshResults)) {
+          setSearchResults(freshResults);
+        }
+        
+        // Always cache the fresh results
+        ClientSearchCache.set(query, freshResults);
       } else {
         console.error("Search failed:", response.statusText);
-        setSearchResults([]);
+        if (!cachedResults) {
+          setSearchResults([]);
+        }
       }
     } catch (error) {
       console.error("Search error:", error);
-      setSearchResults([]);
+      if (!cachedResults) {
+        setSearchResults([]);
+      }
     } finally {
       setIsSearching(false);
     }

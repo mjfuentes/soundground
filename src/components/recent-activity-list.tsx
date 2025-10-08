@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { TrackCard } from "./track-card";
+import { ActivityPostCard } from "./activity-post-card";
 import type { SoundCloudTrack } from "@/lib/soundcloud/client";
 
 interface RecentActivityListProps {
   tracks: SoundCloudTrack[];
 }
 
-const DEFAULT_SHOWN = 12;
+const DEFAULT_SHOWN = 6;
 
 export function RecentActivityList({ tracks }: RecentActivityListProps) {
   const [showAll, setShowAll] = useState(false);
@@ -17,19 +17,19 @@ export function RecentActivityList({ tracks }: RecentActivityListProps) {
   const hasMore = tracks.length > DEFAULT_SHOWN;
 
   return (
-    <div className="flex flex-col gap-4">
-      <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
-      <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-6">
+      <h3 className="text-2xl font-bold text-white">Recent Uploads</h3>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {displayedTracks.map((track: SoundCloudTrack) => (
-          <TrackCard key={track.id} track={track} showStats={true} />
+          <ActivityPostCard key={track.id} track={track} />
         ))}
       </div>
       {hasMore && !showAll && (
         <button
           onClick={() => setShowAll(true)}
-          className="cursor-pointer self-start text-xs text-amber-400 transition hover:text-amber-300"
+          className="cursor-pointer self-center rounded-full bg-white/10 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-white/20"
         >
-          ...more
+          Show more
         </button>
       )}
     </div>

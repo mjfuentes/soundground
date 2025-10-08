@@ -1,23 +1,47 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
 
 interface SearchBarProps {
   onSearch: (query: string, isImmediate?: boolean) => void;
   debounceMs?: number;
   isLoading?: boolean;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  value?: string;
 }
 
-export function SearchBar({ 
+export interface SearchBarRef {
+  blur: () => void;
+}
+
+export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function SearchBar({ 
   onSearch, 
   debounceMs = 300,
   isLoading = false,
-  onKeyDown
-}: SearchBarProps) {
-  const [query, setQuery] = useState("");
+  onKeyDown,
+  value: externalValue
+}, ref) {
+  const [query, setQuery] = useState(externalValue || "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Expose blur method to parent
+  useImperativeHandle(ref, () => ({
+    blur: () => {
+      inputRef.current?.blur();
+    }
+  }), []);
+
+  // Sync with external value
+  useEffect(() => {
+    if (externalValue !== undefined) {
+      setQuery(externalValue);
+      // Also clear debounced query when external value is cleared
+      if (externalValue === "") {
+        setDebouncedQuery("");
+      }
+    }
+  }, [externalValue]);
 
   // Auto-focus on mount
   useEffect(() => {
@@ -67,13 +91,21 @@ export function SearchBar({
     // Pass to parent handler first if provided
     if (onKeyDown) {
       onKeyDown(e);
+      // If parent already handled it (e.g., prevented default), don't do our own handling
+      if (e.defaultPrevented) {
+        return;
+      }
     }
     
-    // On Enter, trigger immediate search
+    // On Enter, trigger immediate search (only if parent didn't handle it)
     if (e.key === 'Enter' && query.trim()) {
       e.preventDefault();
       setDebouncedQuery(query.trim());
       onSearch(query.trim(), false);
+      // Keep focus on input after Enter
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   }, [onKeyDown, query, onSearch]);
 
@@ -134,5 +166,5 @@ export function SearchBar({
       </div>
     </div>
   );
-}
+});
 

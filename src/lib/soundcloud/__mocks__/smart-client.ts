@@ -4,6 +4,7 @@ export const getSpotlight = jest.fn();
 export const getPlaylists = jest.fn();
 export const getAlbums = jest.fn();
 export const getTracks = jest.fn();
+export const getReposts = jest.fn();
 export const getFollowers = jest.fn();
 export const getFollowings = jest.fn();
 export const getPlaylistWithTracks = jest.fn();

@@ -89,6 +89,19 @@ export async function getTracks(userId: number, limit = 200): Promise<{ collecti
 }
 
 /**
+ * Cached version of getReposts
+ */
+export async function getReposts(userId: number, limit = 200): Promise<{ collection: client.SoundCloudTrack[] }> {
+  const cache = getCacheService();
+  const cacheKey = `reposts:${userId}:${limit}`;
+  return cache.getOrSet(
+    cacheKey,
+    () => client.getReposts(userId, limit),
+    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS }
+  );
+}
+
+/**
  * Cached version of getTrack
  */
 export async function getTrack(trackId: number): Promise<client.SoundCloudTrack | null> {

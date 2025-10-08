@@ -7,6 +7,9 @@ import { TrackCard } from "./track-card";
 import { SpotlightPlaylist } from "./spotlight-playlist";
 import { ExpandableAlbums } from "./expandable-albums";
 import { RecentActivityList } from "./recent-activity-list";
+import { ActivityPostCard } from "./activity-post-card";
+import { ProfileWithAutoQueue } from "./profile-with-auto-queue";
+import { ProfileWithCache } from "./profile-with-cache";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import { getServerBaseUrl } from "@/lib/server-base-url";
 import { getHighQualityImage } from "@/lib/image-utils";
@@ -35,7 +38,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   }
 
   const data = await response.json();
-  const { profile: user, spotlight = [], playlists = [], albums = [], tracks = [] } = data ?? {};
+  const { profile: user, spotlight = [], playlists = [], albums = [], tracks = [], reposts = [] } = data ?? {};
 
   if (!user) {
     return (
@@ -48,12 +51,35 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
   const avatar = getHighQualityImage(user.avatar_url) ?? "";
 
   return (
-    <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
+    <ProfileWithCache
+      handle={profile}
+      freshData={{
+        profile: user,
+        spotlight,
+        playlists,
+        albums,
+        tracks,
+      }}
+    >
+      <ProfileWithAutoQueue
+        spotlight={spotlight}
+        tracks={tracks}
+        artistName={user.username}
+        artistUrl={user.permalink_url}
+      >
+        <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
       {/* Left column - Profile info, Albums/Playlists & Friends */}
       <section className="flex flex-col gap-4">
         {avatar ? (
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10">
-            <Image src={avatar} alt={`${user.username} avatar`} fill className="object-cover" sizes="(min-width: 768px) 320px, 100vw" />
+          <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-neutral-900">
+            <Image 
+              src={avatar} 
+              alt={`${user.username} avatar`} 
+              fill 
+              className="object-cover transition-all duration-500 ease-in-out" 
+              sizes="(min-width: 768px) 320px, 100vw"
+              priority
+            />
           </div>
         ) : null}
         <div className="flex flex-col gap-4">
@@ -90,7 +116,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
 
         {/* Friends - Hidden on mobile, visible on desktop */}
         <div className="hidden md:block">
-          <TopFollowers userId={user.id} />
+          <TopFollowers userId={user.id} followerCount={user.followers_count} />
         </div>
       </section>
 
@@ -117,17 +143,31 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
           </div>
         )}
 
-        {/* Recent Activity - Main focus */}
+        {/* Recent Uploads */}
         {tracks.length > 0 && (
           <RecentActivityList tracks={tracks} />
         )}
 
-        {spotlight.length === 0 && playlists.length === 0 && albums.length === 0 && tracks.length === 0 && (
+        {/* Recent Shares (Reposts) */}
+        {reposts.length > 0 && (
+          <div className="flex flex-col gap-6">
+            <h3 className="text-2xl font-bold text-white">Recent Shares</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {reposts.slice(0, 6).map((track: SoundCloudTrack) => (
+                <ActivityPostCard key={track.id} track={track} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {spotlight.length === 0 && playlists.length === 0 && albums.length === 0 && tracks.length === 0 && reposts.length === 0 && (
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-sm text-zinc-400">
             No tracks, playlists, or albums found for this artist.
           </div>
         )}
       </section>
     </article>
+      </ProfileWithAutoQueue>
+    </ProfileWithCache>
   );
 }

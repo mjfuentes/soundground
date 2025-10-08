@@ -147,6 +147,11 @@ export async function getTracks(userId: number, limit = 200) {
   return authCachedClient.getTracks(session.accessToken, userId, limit);
 }
 
+export async function getReposts(userId: number, limit = 200) {
+  // Use public client for reposts
+  return publicCachedClient.getReposts(userId, limit);
+}
+
 export async function getTrack(trackId: number) {
   // Use public client for individual tracks (doesn't require auth)
   return publicCachedClient.getTrack(trackId);

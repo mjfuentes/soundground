@@ -5,7 +5,7 @@
   "description": "SoundGround - Sounds from the Underground. Discover and explore SoundCloud artists.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

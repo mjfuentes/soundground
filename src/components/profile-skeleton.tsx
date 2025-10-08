@@ -1,30 +1,85 @@
-export function ProfileSkeleton() {
+"use client";
+
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { getProfilePreview } from "@/lib/profile-preview";
+
+interface PreviewData {
+  username: string;
+  avatar: string;
+  followers: number;
+}
+
+export function ProfileSkeletonWrapper({ handle }: { handle: string }) {
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+
+  useEffect(() => {
+    const previewData = getProfilePreview(handle);
+    if (previewData) {
+      setPreview({
+        username: previewData.username,
+        avatar: previewData.avatar,
+        followers: previewData.followers,
+      });
+    }
+  }, [handle]);
+
+  return <ProfileSkeleton preview={preview} />;
+}
+
+function ProfileSkeleton({ preview }: { preview: PreviewData | null }) {
   return (
-    <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr] animate-pulse">
+    <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
       {/* Left Column - Avatar and Profile Info */}
       <section className="flex flex-col gap-4">
-        {/* Avatar skeleton */}
+        {/* Avatar - show preview or skeleton */}
         <div className="relative aspect-square overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
-          </div>
+          {preview?.avatar ? (
+            <>
+              <Image
+                src={preview.avatar}
+                alt={preview.username || 'Artist'}
+                fill
+                className="object-cover blur-md"
+                priority
+                unoptimized
+              />
+              <div className="absolute inset-0 bg-black/20"></div>
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+              <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+          )}
         </div>
         
         <div className="flex flex-col gap-4">
-          {/* Username skeleton */}
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-48 rounded-lg bg-neutral-800"></div>
-            <div className="h-6 w-6 rounded bg-neutral-800"></div>
-          </div>
+          {/* Username - show preview or skeleton */}
+          {preview?.username ? (
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-white">{preview.username}</h1>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 animate-pulse">
+              <div className="h-9 w-48 rounded-lg bg-neutral-800"></div>
+              <div className="h-6 w-6 rounded bg-neutral-800"></div>
+            </div>
+          )}
           
-          {/* Description skeleton */}
-          <div className="flex flex-col gap-2">
-            <div className="h-4 w-full rounded bg-neutral-800"></div>
-            <div className="h-4 w-5/6 rounded bg-neutral-800"></div>
-            <div className="h-4 w-4/6 rounded bg-neutral-800"></div>
-          </div>
+          {/* Followers - show preview or skeleton */}
+          {preview?.followers ? (
+            <div className="text-sm text-zinc-400">
+              {preview.followers.toLocaleString()} followers
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 animate-pulse">
+              <div className="h-4 w-full rounded bg-neutral-800"></div>
+              <div className="h-4 w-5/6 rounded bg-neutral-800"></div>
+              <div className="h-4 w-4/6 rounded bg-neutral-800"></div>
+            </div>
+          )}
         </div>
       </section>
 

@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const userId = searchParams.get("userId");
   const limit = parseInt(searchParams.get("limit") || String(FRIENDS_PER_BATCH), 10);
+  const followerCount = parseInt(searchParams.get("followerCount") || "0", 10);
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "Missing 'userId' parameter" }), {
@@ -57,6 +58,10 @@ export async function GET(request: NextRequest) {
 
   const userIdNum = parseInt(userId, 10);
   const startTime = Date.now();
+  
+  // For big artists (>10k followers), just show their followings as "friends"
+  const BIG_ARTIST_THRESHOLD = 10000;
+  const isBigArtist = followerCount > BIG_ARTIST_THRESHOLD;
 
   // Create a streaming response
   const encoder = new TextEncoder();
@@ -64,10 +69,60 @@ export async function GET(request: NextRequest) {
     async start(controller) {
       try {
         // Get all following IDs (from cache if available)
-        console.log(`Fetching followings for user ${userIdNum}...`);
+        console.log(`Fetching followings for user ${userIdNum} (${followerCount} followers)...`);
         const { ids: followingIds, total: totalFollowings } = await getAllFollowingIds(userIdNum);
         
-        console.log(`Fetched ${totalFollowings} followings (cached), now streaming friends (limit: ${limit})...`);
+        if (isBigArtist) {
+          console.log(`Big artist detected (${followerCount} followers) - streaming followings as friends (limit: ${limit})...`);
+          
+          // For big artists, just stream their followings
+          let followingsStreamed = 0;
+          let followingsNextHref: string | undefined = undefined;
+          let followingsResponse = await getFollowings(userIdNum, Math.min(limit, 200));
+          
+          // Send each following as a "friend"
+          for (const following of followingsResponse.collection) {
+            if (followingsStreamed >= limit) break;
+            const data = JSON.stringify({ type: 'friend', data: following }) + '\n';
+            controller.enqueue(encoder.encode(data));
+            followingsStreamed++;
+          }
+          
+          followingsNextHref = followingsResponse.next_href;
+          
+          // Continue fetching if needed
+          while (followingsNextHref && followingsStreamed < limit) {
+            followingsResponse = await getFollowings(userIdNum, Math.min(limit - followingsStreamed, 200), followingsNextHref);
+            
+            for (const following of followingsResponse.collection) {
+              if (followingsStreamed >= limit) break;
+              const data = JSON.stringify({ type: 'friend', data: following }) + '\n';
+              controller.enqueue(encoder.encode(data));
+              followingsStreamed++;
+            }
+            
+            followingsNextHref = followingsResponse.next_href;
+          }
+          
+          const hasMore = followingsNextHref !== undefined;
+          console.log(`Streamed ${followingsStreamed} followings as friends (hasMore: ${hasMore})`);
+          
+          // Send completion message
+          const completionData = JSON.stringify({
+            type: 'complete',
+            data: {
+              totalFollowings,
+              friendsStreamed: followingsStreamed,
+              hasMore,
+              fetchTimeMs: Date.now() - startTime,
+            }
+          }) + '\n';
+          controller.enqueue(encoder.encode(completionData));
+          controller.close();
+          return;
+        }
+        
+        console.log(`Fetched ${totalFollowings} followings (cached), now streaming mutual friends (limit: ${limit})...`);
 
         // Now stream followers and check for friends as we go
         let followersNextHref: string | undefined = undefined;
@@ -75,13 +130,16 @@ export async function GET(request: NextRequest) {
         let friendsFound = 0;
 
         // Fetch followers page by page until we have enough friends
+        console.log(`[Friends API] Fetching first batch of followers for user ${userIdNum}...`);
         let followersResponse = await getFollowers(userIdNum, 200);
+        console.log(`[Friends API] Got ${followersResponse.collection.length} followers in first batch`);
         totalFollowers += followersResponse.collection.length;
 
         // Check for friends in this batch
         const friendsInBatch = followersResponse.collection.filter(follower => 
           followingIds.has(follower.id)
         );
+        console.log(`[Friends API] Found ${friendsInBatch.length} friends in first batch`);
 
         // Send each friend immediately
         for (const friend of friendsInBatch) {
@@ -89,19 +147,28 @@ export async function GET(request: NextRequest) {
           const data = JSON.stringify({ type: 'friend', data: friend }) + '\n';
           controller.enqueue(encoder.encode(data));
           friendsFound++;
+          console.log(`[Friends API] Streamed friend ${friendsFound}: ${friend.username}`);
         }
 
         followersNextHref = followersResponse.next_href;
+        console.log(`[Friends API] First batch done, friendsFound: ${friendsFound}, hasMore: ${!!followersNextHref}`);
 
         // Continue with remaining pages until we hit the limit
-        while (followersNextHref && friendsFound < limit) {
+        // BUT: limit total follower scan to prevent infinite loops on huge accounts
+        const MAX_FOLLOWERS_TO_SCAN = 2000; // Stop after scanning 2000 followers
+        let batchNum = 1;
+        while (followersNextHref && friendsFound < limit && totalFollowers < MAX_FOLLOWERS_TO_SCAN) {
+          batchNum++;
+          console.log(`[Friends API] Fetching batch ${batchNum}... (scanned ${totalFollowers} followers so far)`);
           followersResponse = await getFollowers(userIdNum, 200, followersNextHref);
+          console.log(`[Friends API] Got ${followersResponse.collection.length} followers in batch ${batchNum}`);
           totalFollowers += followersResponse.collection.length;
 
           // Check for friends in this batch
           const friendsInBatch = followersResponse.collection.filter(follower => 
             followingIds.has(follower.id)
           );
+          console.log(`[Friends API] Found ${friendsInBatch.length} friends in batch ${batchNum}`);
 
           // Send each friend immediately (up to limit)
           for (const friend of friendsInBatch) {
@@ -109,9 +176,15 @@ export async function GET(request: NextRequest) {
             const data = JSON.stringify({ type: 'friend', data: friend }) + '\n';
             controller.enqueue(encoder.encode(data));
             friendsFound++;
+            console.log(`[Friends API] Streamed friend ${friendsFound}: ${friend.username}`);
           }
 
           followersNextHref = followersResponse.next_href;
+          console.log(`[Friends API] Batch ${batchNum} done, friendsFound: ${friendsFound}, totalScanned: ${totalFollowers}, hasMore: ${!!followersNextHref}`);
+        }
+        
+        if (totalFollowers >= MAX_FOLLOWERS_TO_SCAN && friendsFound < limit) {
+          console.log(`[Friends API] Stopped scanning - hit max limit of ${MAX_FOLLOWERS_TO_SCAN} followers`);
         }
 
         const hasMore = followersNextHref !== undefined;

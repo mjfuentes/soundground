@@ -24,10 +24,12 @@ interface PlayerContextValue {
   volume: number;
   error: string | null;
   queue: PlayableItem[];
+  hasPlayedBefore: boolean;
   play: (item: PlayableItem) => void;
   load: (item: PlayableItem) => void;
   playQueue: (items: PlayableItem[], shuffle?: boolean) => void;
   playTrackWithQueue: (track: PlayableItem, otherTracks: PlayableItem[], shuffle?: boolean) => void;
+  loadQueue: (items: PlayableItem[], shuffle?: boolean) => void;
   next: () => void;
   previous: () => void;
   pause: () => void;
@@ -361,6 +363,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     play(track);
   };
 
+  const loadQueue = (items: PlayableItem[], shuffle = false) => {
+    if (items.length === 0) return;
+    
+    const processedItems = shuffle ? shuffleArray(items) : items;
+    setQueue(processedItems);
+  };
+
   const next = () => {
     if (queue.length === 0) return;
     
@@ -391,6 +400,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setQueue([]);
   };
 
+  // Track if player has ever played anything
+  const hasPlayedBefore = currentItem !== null || history.length > 0;
+
   return (
     <PlayerContext.Provider
       value={{
@@ -403,10 +415,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         volume,
         error,
         queue,
+        hasPlayedBefore,
         play,
         load,
         playQueue,
         playTrackWithQueue,
+        loadQueue,
         next,
         previous,
         pause,

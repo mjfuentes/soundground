@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { FollowerCard } from "./follower-card";
 
 interface Follower {
@@ -14,11 +14,12 @@ interface Follower {
 
 interface TopFollowersProps {
   userId: number;
+  followerCount?: number;
 }
 
 const FRIENDS_PER_PAGE = 48; // 6 rows of 8
 
-export function TopFollowers({ userId }: TopFollowersProps) {
+export function TopFollowers({ userId, followerCount = 0 }: TopFollowersProps) {
   const [friends, setFriends] = useState<Follower[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -26,6 +27,7 @@ export function TopFollowers({ userId }: TopFollowersProps) {
   const [hasMore, setHasMore] = useState(false);
   const [totalFollowings, setTotalFollowings] = useState<number | null>(null);
   const [currentLimit, setCurrentLimit] = useState(FRIENDS_PER_PAGE);
+  const hasFetched = useRef(false);
 
   const fetchFriends = useCallback(async (limit: number, startFrom: number = 0) => {
     try {
@@ -36,7 +38,8 @@ export function TopFollowers({ userId }: TopFollowersProps) {
         setLoadingMore(true);
       }
 
-      const response = await fetch(`/api/soundcloud/friends?userId=${userId}&limit=${limit}`);
+      console.log(`[TopFollowers] Fetching friends for userId ${userId}, limit ${limit}, startFrom ${startFrom}, followerCount ${followerCount}`);
+      const response = await fetch(`/api/soundcloud/friends?userId=${userId}&limit=${limit}&followerCount=${followerCount}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch friends');
@@ -70,20 +73,25 @@ export function TopFollowers({ userId }: TopFollowersProps) {
             
             if (message.type === 'friend') {
               friendsReceived++;
+              console.log(`[TopFollowers] Received friend ${friendsReceived}: ${message.data.username}`);
               // Only add friends after startFrom index
               if (friendsReceived > startFrom) {
                 setFriends(prev => {
                   // Prevent duplicates
                   if (prev.some(f => f.id === message.data.id)) {
+                    console.log(`[TopFollowers] Duplicate friend, skipping: ${message.data.username}`);
                     return prev;
                   }
+                  console.log(`[TopFollowers] Adding friend to state: ${message.data.username}`);
                   return [...prev, message.data];
                 });
               }
             } else if (message.type === 'complete') {
+              console.log(`[TopFollowers] Stream complete - hasMore: ${message.data.hasMore}, totalFollowings: ${message.data.totalFollowings}`);
               setHasMore(message.data.hasMore);
               setTotalFollowings(message.data.totalFollowings);
             } else if (message.type === 'error') {
+              console.error(`[TopFollowers] Stream error: ${message.data.message}`);
               throw new Error(message.data.message);
             }
           } catch (parseError) {
@@ -114,10 +122,14 @@ export function TopFollowers({ userId }: TopFollowersProps) {
   }, [userId]);
 
   useEffect(() => {
+    // Only fetch once per userId
+    if (hasFetched.current) return;
+    
+    hasFetched.current = true;
     setFriends([]);
     setCurrentLimit(FRIENDS_PER_PAGE);
     fetchFriends(FRIENDS_PER_PAGE, 0);
-  }, [userId, fetchFriends]);
+  }, [userId]); // Remove fetchFriends from dependencies to prevent loop
 
   const loadMore = () => {
     const newLimit = currentLimit + FRIENDS_PER_PAGE;

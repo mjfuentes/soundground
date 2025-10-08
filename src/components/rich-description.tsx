@@ -10,7 +10,7 @@ export function RichDescription({ text }: RichDescriptionProps) {
   const lines = text.split("\n");
 
   return (
-    <div className="whitespace-pre-wrap text-sm text-zinc-300">
+    <div className="whitespace-pre-wrap text-sm text-zinc-300 font-serif leading-relaxed">
       {lines.map((line, lineIndex) => {
         const parts: React.ReactNode[] = [];
         let lastIndex = 0;

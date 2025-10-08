@@ -1,18 +1,26 @@
 import { Suspense } from "react";
 import { SoundcloudProfileView } from "@/components/soundcloud-profile-view";
-import { ProfileSkeleton } from "@/components/profile-skeleton";
+import { ProfileSkeletonWrapper } from "@/components/profile-skeleton";
 
-async function SoundcloudProfileLoader({ handle }: { handle: string }) {
+async function SoundcloudProfileLoader({ 
+  handle 
+}: { 
+  handle: string;
+}) {
   return <SoundcloudProfileView profile={handle} />;
 }
 
-export default async function ArtistPage({ params }: { params: Promise<{ handle: string }> }) {
+export default async function ArtistPage({ 
+  params
+}: { 
+  params: Promise<{ handle: string }>;
+}) {
   const { handle } = await params;
   
   return (
     <main className="min-h-screen text-white" style={{ backgroundColor: '#060606' }}>
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-12 pb-[350px]">
-        <Suspense fallback={<ProfileSkeleton />}>
+        <Suspense fallback={<ProfileSkeletonWrapper handle={handle} />}>
           <SoundcloudProfileLoader handle={handle} />
         </Suspense>
       </div>

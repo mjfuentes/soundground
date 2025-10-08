@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useCallback } from "react";
 import Image from "next/image";
+import { setProfilePreview } from "@/lib/profile-preview";
 import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 interface SearchDropdownProps {
@@ -116,6 +117,14 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
 
   const handleResultClick = useCallback((result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist) => {
     if (isUser(result)) {
+      // Store preview data for instant loading
+      setProfilePreview({
+        username: result.username || '',
+        avatar: result.avatar_url || '',
+        followers: result.followers_count || 0,
+        handle: result.permalink,
+      });
+      // Navigate to clean URL
       router.push(`/${result.permalink}`);
       onClose();
     } else if (isTrack(result)) {
@@ -154,24 +163,11 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
     };
   }, [sortedResults, containerRef, handleResultClick, query, isLoading]);
 
-  if (!query && !isLoading) return null;
+  if (!query) return null;
 
   return (
     <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-md shadow-xl overflow-hidden z-50">
-      {isLoading ? (
-        <div className="py-1">
-          {/* Fixed number of skeleton loaders */}
-          {Array.from({ length: MAX_RESULTS }).map((_, i) => (
-            <div key={i} className="px-3 py-2 flex items-center gap-3 animate-pulse">
-              <div className="h-10 w-10 rounded-full bg-zinc-800/50"></div>
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 bg-zinc-800/50 rounded w-3/4"></div>
-                <div className="h-2.5 bg-zinc-800/50 rounded w-1/2"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : sortedResults.length === 0 ? (
+      {sortedResults.length === 0 && !isLoading ? (
         <div className="py-8 text-center">
           <p className="text-xs text-zinc-500">No results</p>
         </div>
