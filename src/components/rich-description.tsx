@@ -10,20 +10,22 @@ export function RichDescription({ text }: RichDescriptionProps) {
   const lines = text.split("\n");
 
   return (
-    <div className="whitespace-pre-wrap text-sm text-zinc-300 font-serif leading-relaxed">
+    <div className="whitespace-pre-wrap text-sm text-neutral-400 leading-relaxed">
       {lines.map((line, lineIndex) => {
         const parts: React.ReactNode[] = [];
         let lastIndex = 0;
 
         // Match URLs (http/https)
         const urlRegex = /(https?:\/\/[^\s]+)/g;
+        // Match www URLs (without protocol, not preceded by http:// or https://)
+        const wwwRegex = /(?<!https?:\/\/)(www\.[^\s]+)/g;
         // Match @ mentions (but not emails)
         const mentionRegex = /@([a-zA-Z0-9_-]+)(?![@\w.-]*\.[a-zA-Z]{2,})/g;
         // Match emails
         const emailRegex = /[\w.-]+@([\w-]+\.)+[\w-]{2,4}/g;
 
         // Combine all matches with their positions
-        const matches: Array<{ index: number; length: number; type: "url" | "mention" | "email"; value: string }> = [];
+        const matches: Array<{ index: number; length: number; type: "url" | "mention" | "email"; value: string; displayText?: string }> = [];
 
         let match;
         while ((match = urlRegex.exec(line)) !== null) {
@@ -32,6 +34,16 @@ export function RichDescription({ text }: RichDescriptionProps) {
             length: match[0].length,
             type: "url",
             value: match[0],
+          });
+        }
+
+        while ((match = wwwRegex.exec(line)) !== null) {
+          matches.push({
+            index: match.index,
+            length: match[0].length,
+            type: "url",
+            value: `https://${match[0]}`, // Prepend https://
+            displayText: match[0], // Show original www. text
           });
         }
 
@@ -72,7 +84,7 @@ export function RichDescription({ text }: RichDescriptionProps) {
                 rel="noopener noreferrer"
                 className="cursor-pointer text-purple-400 underline decoration-purple-400/30 transition hover:decoration-purple-400"
               >
-                {match.value}
+                {match.displayText || match.value}
               </a>
             );
           } else if (match.type === "mention") {

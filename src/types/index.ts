@@ -58,6 +58,7 @@ export interface SoundCloudTrack {
   comment_count?: number;
   description?: string;
   genre?: string;
+  tag_list?: string;
   created_at?: string;
   streamable?: boolean;
   access?: "playable" | "preview" | "blocked";

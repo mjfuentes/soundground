@@ -299,32 +299,33 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
   return (
     <div className="pb-32">
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <div className="flex flex-col gap-8 md:flex-row md:gap-12">
-          {/* Album Artwork - Square 1:1 */}
-          <div className="shrink-0 mx-auto md:mx-0">
-            <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
-              {artwork ? (
-                <Image
-                  src={artwork}
-                  alt={album.title}
-                  fill
-                  className="object-cover"
-                  sizes="320px"
-                  priority
-                  quality={100}
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
-                  </svg>
-                </div>
-              )}
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 md:flex-row md:gap-12">
+            {/* Album Artwork - Square 1:1 */}
+            <div className="shrink-0 mx-auto md:mx-0">
+              <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
+                {artwork ? (
+                  <Image
+                    src={artwork}
+                    alt={album.title}
+                    fill
+                    className="object-cover"
+                    sizes="320px"
+                    priority
+                    quality={100}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Album Info */}
-          <div className="flex flex-1 flex-col">
+            {/* Album Info */}
+            <div className="flex flex-1 flex-col">
             {/* Title & Type */}
             <div className="mb-6">
               <div className="mb-2 flex items-center gap-2">
@@ -332,12 +333,15 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
               </div>
               <h1 className="mb-2 text-2xl font-normal text-white">{album.title}</h1>
               {album.user && (
-                <Link
-                  href={`/${album.user.permalink_url.split('/').pop()}`}
-                  className="text-neutral-400 hover:text-white hover:underline"
-                >
-                  {album.user.username || "Unknown Artist"}
-                </Link>
+                <p className="text-neutral-400">
+                  by{" "}
+                  <Link
+                    href={`/${album.user.permalink_url.split('/').pop()}`}
+                    className="hover:text-white hover:underline"
+                  >
+                    {album.user.username || "Unknown Artist"}
+                  </Link>
+                </p>
               )}
             </div>
 
@@ -389,51 +393,51 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
                 <span>{formatRoundedPlays(totalPlays)} plays</span>
               )}
             </div>
-
-            {/* Description */}
-            {album.description && (
-              <div className="mb-8 border-t border-neutral-800 pt-6">
-                {/* Mobile: Truncated description with "Show more" */}
-                <div className="md:hidden">
-                  {isDescriptionExpanded || album.description.length <= MAX_DESCRIPTION_LENGTH_MOBILE ? (
-                    <>
-                      <RichDescription text={album.description} />
-                      {album.description.length > MAX_DESCRIPTION_LENGTH_MOBILE && (
-                        <button
-                          onClick={() => setIsDescriptionExpanded(false)}
-                          className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-                        >
-                          Show less
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <RichDescription text={album.description.slice(0, MAX_DESCRIPTION_LENGTH_MOBILE) + '...'} />
-                      <button
-                        onClick={() => setIsDescriptionExpanded(true)}
-                        className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-                      >
-                        Show more
-                      </button>
-                    </>
-                  )}
-                </div>
-                {/* Desktop: Full description */}
-                <div className="hidden md:block">
-                  <RichDescription text={album.description} />
-                </div>
-              </div>
-            )}
-
           </div>
+        </div>
+
+        {/* Description - Full width below cover art on desktop */}
+        {album.description && (
+          <div className="mb-8 border-t border-neutral-800 pt-6">
+            {/* Mobile: Truncated description with "Show more" */}
+            <div className="md:hidden">
+              {isDescriptionExpanded || album.description.length <= MAX_DESCRIPTION_LENGTH_MOBILE ? (
+                <>
+                  <RichDescription text={album.description} />
+                  {album.description.length > MAX_DESCRIPTION_LENGTH_MOBILE && (
+                    <button
+                      onClick={() => setIsDescriptionExpanded(false)}
+                      className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                    >
+                      Show less
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <RichDescription text={album.description.slice(0, MAX_DESCRIPTION_LENGTH_MOBILE) + '...'} />
+                  <button
+                    onClick={() => setIsDescriptionExpanded(true)}
+                    className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                  >
+                    Show more
+                  </button>
+                </>
+              )}
+            </div>
+            {/* Desktop: Full description */}
+            <div className="hidden md:block">
+              <RichDescription text={album.description} />
+            </div>
+          </div>
+        )}
         </div>
 
         {/* Tracks List - Using TrackCard */}
         {album.tracks && album.tracks.length > 0 && (
           <div className="mt-6">
             <div className="space-y-1">
-              {album.tracks.map((track) => {
+              {album.tracks.map((track, index) => {
                 const handleTrackPlay = () => {
                   if (!isTrackPlayable(track)) return;
                   
@@ -459,6 +463,7 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
                     track={track}
                     playlistTracks={playableTracks}
                     showStats={false}
+                    trackNumber={index + 1}
                   />
                 );
               })}

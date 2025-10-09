@@ -119,7 +119,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
         {spotlight.length > 0 && (
           <div className="flex flex-col gap-3">
             <h3 className="text-xl font-semibold text-white">Spotlight</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {spotlight.slice(0, 5).map((item: SpotlightItem) => {
                 // If it's a playlist with only one track, treat it as a single track
                 if (isPlaylist(item) && item.tracks?.length === 1) {

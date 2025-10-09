@@ -13,6 +13,7 @@ interface TrackCardProps {
   playlistTracks?: SoundCloudTrack[]; // All tracks from the playlist for queue
   coverOnly?: boolean;
   onCardClick?: () => void; // Optional custom click handler for the card
+  trackNumber?: number; // Track number for albums
 }
 
 function formatNumber(num?: number): string {
@@ -99,7 +100,7 @@ function getDownloadPlatform(url: string): { platform: string; action: string; i
   return null;
 }
 
-export function TrackCard({ track, showStats = true, playlistTracks, coverOnly = false, onCardClick }: TrackCardProps) {
+export function TrackCard({ track, showStats = true, playlistTracks, coverOnly = false, onCardClick, trackNumber }: TrackCardProps) {
   const router = useRouter();
   const { play, playTrackWithQueue, currentItem, isPlaying, pause, resume } = usePlayer();
 
@@ -240,6 +241,13 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
 
   const content = (
     <>
+      {/* Track Number (for albums) */}
+      {trackNumber !== undefined && (
+        <div className="flex-shrink-0 w-8 flex items-center justify-center">
+          <span className="text-sm text-neutral-500">{trackNumber}</span>
+        </div>
+      )}
+      
       {/* Album Art with Play Button */}
       <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
         {(track.artwork_url || track.user?.avatar_url) ? (
@@ -360,15 +368,15 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
 
   if (!track.permalink_url) {
     return (
-      <div className="group flex gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 opacity-75">
+      <div className="group flex gap-2.5 rounded-lg border border-neutral-800 bg-neutral-900/50 p-2.5 opacity-75">
         {content}
       </div>
     );
   }
 
   const divClasses = isPlayable || isPreviewOnly
-    ? "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
-    : "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-orange-500/50 hover:bg-orange-500/10 opacity-75";
+    ? "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-neutral-800 bg-neutral-900/50 p-2.5 text-left transition hover:border-purple-500/50 hover:bg-purple-500/20"
+    : "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-neutral-800 bg-neutral-900/50 p-2.5 text-left transition hover:border-orange-500/50 hover:bg-orange-500/20 opacity-75";
 
   const divTitle = isPlayable || isPreviewOnly
     ? "View track details"

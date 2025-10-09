@@ -227,7 +227,7 @@ function HeaderSearch() {
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-neutral-800 bg-black/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center justify-center gap-2 sm:gap-4">
           <button
             onClick={handleLogoClick}
             onMouseDown={handleLogoMouseDown}
@@ -243,7 +243,7 @@ function HeaderSearch() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="flex-1 max-w-2xl relative" ref={containerRef}>
+          <div className="w-full max-w-2xl relative" ref={containerRef}>
             <SearchBar 
               ref={searchBarRef}
               onSearch={handleSearch}
@@ -273,13 +273,13 @@ export function Header() {
     <Suspense fallback={
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-neutral-800 bg-black/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-4">
             <div className="flex items-center justify-center text-neutral-400 flex-shrink-0 p-1">
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </div>
-            <div className="flex-1 max-w-2xl">
+            <div className="w-full max-w-2xl">
               <div className="w-full py-2.5 px-3 sm:px-4 border border-zinc-700 rounded-md"></div>
             </div>
           </div>

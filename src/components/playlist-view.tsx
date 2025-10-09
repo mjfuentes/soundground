@@ -145,32 +145,33 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
   return (
     <div className="pb-32">
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <div className="flex flex-col gap-8 md:flex-row md:gap-12">
-          {/* Playlist Artwork - Square 1:1 */}
-          <div className="shrink-0 mx-auto md:mx-0">
-            <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
-              {artwork ? (
-                <Image
-                  src={artwork}
-                  alt={playlist.title}
-                  fill
-                  className="object-cover"
-                  sizes="320px"
-                  priority
-                  quality={100}
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
-                  </svg>
-                </div>
-              )}
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 md:flex-row md:gap-12">
+            {/* Playlist Artwork - Square 1:1 */}
+            <div className="shrink-0 mx-auto md:mx-0">
+              <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
+                {artwork ? (
+                  <Image
+                    src={artwork}
+                    alt={playlist.title}
+                    fill
+                    className="object-cover"
+                    sizes="320px"
+                    priority
+                    quality={100}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Playlist Info */}
-          <div className="flex flex-1 flex-col">
+            {/* Playlist Info */}
+            <div className="flex flex-1 flex-col">
             {/* Title & Type */}
             <div className="mb-6">
               <div className="mb-2 flex items-center gap-2">
@@ -230,44 +231,44 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
                 <span>{formatNumber(playlist.likes_count)} likes</span>
               )}
             </div>
-
-            {/* Description */}
-            {playlist.description && (
-              <div className="mb-8 border-t border-neutral-800 pt-6">
-                {/* Mobile: Truncated description with "Show more" */}
-                <div className="md:hidden">
-                  {isDescriptionExpanded || playlist.description.length <= MAX_DESCRIPTION_LENGTH_MOBILE ? (
-                    <>
-                      <RichDescription text={playlist.description} />
-                      {playlist.description.length > MAX_DESCRIPTION_LENGTH_MOBILE && (
-                        <button
-                          onClick={() => setIsDescriptionExpanded(false)}
-                          className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-                        >
-                          Show less
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <RichDescription text={playlist.description.slice(0, MAX_DESCRIPTION_LENGTH_MOBILE) + '...'} />
-                      <button
-                        onClick={() => setIsDescriptionExpanded(true)}
-                        className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
-                      >
-                        Show more
-                      </button>
-                    </>
-                  )}
-                </div>
-                {/* Desktop: Full description */}
-                <div className="hidden md:block">
-                  <RichDescription text={playlist.description} />
-                </div>
-              </div>
-            )}
-
           </div>
+        </div>
+
+        {/* Description - Full width below cover art on desktop */}
+        {playlist.description && (
+          <div className="mb-8 border-t border-neutral-800 pt-6">
+            {/* Mobile: Truncated description with "Show more" */}
+            <div className="md:hidden">
+              {isDescriptionExpanded || playlist.description.length <= MAX_DESCRIPTION_LENGTH_MOBILE ? (
+                <>
+                  <RichDescription text={playlist.description} />
+                  {playlist.description.length > MAX_DESCRIPTION_LENGTH_MOBILE && (
+                    <button
+                      onClick={() => setIsDescriptionExpanded(false)}
+                      className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                    >
+                      Show less
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <RichDescription text={playlist.description.slice(0, MAX_DESCRIPTION_LENGTH_MOBILE) + '...'} />
+                  <button
+                    onClick={() => setIsDescriptionExpanded(true)}
+                    className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                  >
+                    Show more
+                  </button>
+                </>
+              )}
+            </div>
+            {/* Desktop: Full description */}
+            <div className="hidden md:block">
+              <RichDescription text={playlist.description} />
+            </div>
+          </div>
+        )}
         </div>
 
         {/* Tracks List - Show artwork for playlists, simple list for albums */}

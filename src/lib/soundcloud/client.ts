@@ -81,6 +81,7 @@ export interface SoundCloudTrack {
   comment_count?: number;
   description?: string;
   genre?: string;
+  tag_list?: string; // Space-separated tags
   created_at?: string;
   streamable?: boolean; // Whether track has streaming enabled
   access?: "playable" | "preview" | "blocked"; // Track access level
@@ -271,14 +272,46 @@ export async function getFollowings(userId: number, limit = 200, nextHref?: stri
 
 export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCloudPlaylist> {
   const headers = await getAuthHeaders();
-  const searchParams = getAuthParams();
+  const searchParams = getAuthParams({
+    linked_partitioning: 1, // Enable full track list
+  });
   
   const text = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
     searchParams,
     headers,
   }).text();
 
-  return JSON.parse(text) as SoundCloudPlaylist;
+  const playlist = JSON.parse(text) as SoundCloudPlaylist;
+  
+  // Some tracks in the playlist might be incomplete (missing title, user, duration)
+  // Fetch full details for each incomplete track
+  if (playlist.tracks && playlist.tracks.length > 0) {
+    const trackPromises = playlist.tracks.map(async (track) => {
+      // Check if track has all required fields
+      const isComplete = track.title && track.user && track.duration !== undefined;
+      
+      if (!isComplete && track.id) {
+        // Fetch full track details
+        try {
+          const fullTrack = await getTrack(track.id);
+          return fullTrack || track; // Fall back to incomplete track if fetch returns null
+        } catch (error) {
+          // If track fetch fails, return the incomplete track
+          console.warn(`Failed to fetch track ${track.id}:`, error);
+          return track;
+        }
+      }
+      
+      return track;
+    });
+    
+    // Wait for all track fetches to complete
+    const fetchedTracks = await Promise.all(trackPromises);
+    // Filter out any null tracks that couldn't be fetched
+    playlist.tracks = fetchedTracks.filter((t): t is SoundCloudTrack => t !== null);
+  }
+
+  return playlist;
 }
 
 export interface SoundCloudSearchResult {

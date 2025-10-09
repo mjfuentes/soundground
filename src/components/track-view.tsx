@@ -8,6 +8,7 @@ import type { SoundCloudTrack } from "@/lib/soundcloud/client";
 import { usePlayer } from "@/contexts/player-context";
 import { TrackSkeleton } from "@/components/track-skeleton";
 import { RichDescription } from "@/components/rich-description";
+import { TrackCard } from "@/components/track-card";
 import { getHighQualityImage } from "@/lib/image-utils";
 
 interface TrackViewProps {
@@ -156,6 +157,7 @@ export function TrackView({ trackId }: TrackViewProps) {
   const [track, setTrack] = useState<SoundCloudTrack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [artistTracks, setArtistTracks] = useState<SoundCloudTrack[]>([]);
 
   // Scroll to top when track page opens
   useEffect(() => {
@@ -188,6 +190,27 @@ export function TrackView({ trackId }: TrackViewProps) {
 
     fetchTrack();
   }, [trackId]);
+
+  // Fetch more tracks from the artist
+  useEffect(() => {
+    async function fetchArtistTracks() {
+      if (!track?.user?.id) return;
+      
+      try {
+        const response = await fetch(`/api/soundcloud/user-tracks?userId=${track.user.id}&limit=10`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        // Filter out the current track and show up to 6 tracks
+        const otherTracks = data.tracks?.collection?.filter((t: SoundCloudTrack) => t.id !== track.id).slice(0, 6) || [];
+        setArtistTracks(otherTracks);
+      } catch (err) {
+        console.error("Failed to load artist tracks:", err);
+      }
+    }
+
+    fetchArtistTracks();
+  }, [track]);
 
   // Auto-load track into player with smart replacement logic
   useEffect(() => {
@@ -298,10 +321,11 @@ export function TrackView({ trackId }: TrackViewProps) {
   return (
     <div className="pb-32">
       <div className="mx-auto max-w-4xl px-6 py-8">
-        <div className="flex flex-col gap-8 md:flex-row md:gap-12">
-          {/* Album Art - Square 1:1 */}
-          <div className="shrink-0 mx-auto md:mx-0">
-            <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-8 md:flex-row md:gap-12">
+            {/* Album Art - Square 1:1 */}
+            <div className="shrink-0 mx-auto md:mx-0">
+              <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
               {artwork ? (
                 <Image
                   src={artwork}
@@ -326,27 +350,33 @@ export function TrackView({ trackId }: TrackViewProps) {
           <div className="flex flex-1 flex-col">
             {/* Title & Artist */}
             <div className="mb-6">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="text-sm text-neutral-500">
+                  {track.duration > 20 * 60 * 1000 ? "Mix" : "Track"}
+                </span>
+              </div>
               <h1 className="mb-2 text-2xl font-normal text-white">{track.title}</h1>
-              {track.user?.permalink_url ? (
-                <Link
-                  href={`/${track.user.permalink_url.split('/').pop()}`}
-                  className="cursor-pointer text-neutral-400 transition-colors hover:text-white"
-                >
-                  by {track.user.username || "Unknown Artist"}
-                </Link>
-              ) : (
-                <p className="text-neutral-400">
-                  by {track.user?.username || "Unknown Artist"}
-                </p>
-              )}
+              <p className="text-neutral-400">
+                by{" "}
+                {track.user?.permalink_url ? (
+                  <Link
+                    href={`/${track.user.permalink_url.split('/').pop()}`}
+                    className="cursor-pointer transition-colors hover:text-white hover:underline"
+                  >
+                    {track.user.username || "Unknown Artist"}
+                  </Link>
+                ) : (
+                  <span>{track.user?.username || "Unknown Artist"}</span>
+                )}
+              </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="mb-6 flex flex-col gap-3 md:flex-row">
+            <div className="mb-6 flex flex-wrap gap-3">
               {/* Play/Pause Button */}
               <button
                 onClick={handlePlayPause}
-                className="flex w-full cursor-pointer items-center justify-center bg-white py-3 text-black transition-colors hover:bg-neutral-200 md:w-[64px]"
+                className="flex flex-1 cursor-pointer items-center justify-center bg-white py-3 px-4 text-black transition-colors hover:bg-neutral-200"
                 aria-label={isCurrentTrack && isPlaying ? "Pause" : "Play"}
               >
                 {getButtonIcon()}
@@ -359,7 +389,7 @@ export function TrackView({ trackId }: TrackViewProps) {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full cursor-pointer items-center justify-center gap-2 border border-white/20 bg-transparent py-3 text-center font-medium text-white transition-colors hover:border-white/40 hover:bg-white/10 md:flex-1 md:px-8"
+                  className="flex flex-1 cursor-pointer items-center justify-center gap-2 border border-white/20 bg-transparent py-3 px-4 text-center font-medium text-white transition-colors hover:border-white/40 hover:bg-white/10"
                   title={link.platform === 'Hypeddit' ? link.action : `${link.action} on ${link.platform}`}
                 >
                   {link.icon}
@@ -369,7 +399,7 @@ export function TrackView({ trackId }: TrackViewProps) {
             </div>
 
             {/* Stats Row */}
-            <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-500">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-500">
               {track.created_at && <span>{formatDate(track.created_at)}</span>}
               <span>{formatDuration(track.duration)}</span>
               {track.genre && <span className="capitalize">{track.genre}</span>}
@@ -377,15 +407,43 @@ export function TrackView({ trackId }: TrackViewProps) {
                 <span>{formatNumber(track.playback_count)} plays</span>
               )}
             </div>
-
-            {/* Description */}
-            {track.description && (
-              <div className="mb-8 border-t border-neutral-800 pt-6">
-                <RichDescription text={track.description} />
-              </div>
-            )}
-
           </div>
+        </div>
+
+        {/* Description - Full width below cover art on desktop */}
+        {track.description && (
+          <div className="border-t border-neutral-800 pt-6 mt-6">
+            <RichDescription text={track.description} />
+          </div>
+        )}
+
+        {/* More from Artist */}
+        {artistTracks.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white">
+                More from {track.user?.username || "this artist"}
+              </h2>
+              {track.user?.permalink_url && (
+                <Link
+                  href={`/${track.user.permalink_url.split('/').pop()}`}
+                  className="text-sm text-neutral-400 hover:text-white transition-colors"
+                >
+                  View profile →
+                </Link>
+              )}
+            </div>
+            <div className="space-y-1">
+              {artistTracks.map((artistTrack) => (
+                <TrackCard
+                  key={artistTrack.id}
+                  track={artistTrack}
+                  showStats={false}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         </div>
       </div>
     </div>

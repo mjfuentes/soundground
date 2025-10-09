@@ -21,7 +21,7 @@ export const DEFAULT_CLIENT_ID = "REMOVED_CLIENT_ID";
 export const CACHE_TTL = {
   PROFILE: 30 * 60 * 1000, // 30 minutes
   TRACKS: 15 * 60 * 1000, // 15 minutes
-  PLAYLISTS: 15 * 60 * 1000, // 15 minutes
+  PLAYLISTS: 90 * 24 * 60 * 60 * 1000, // 90 days (essentially permanent - full track data fetched on first load)
   SEARCH: 10 * 60 * 1000, // 10 minutes
   FOLLOWERS: 60 * 60 * 1000, // 1 hour
   DEFAULT: 5 * 60 * 1000, // 5 minutes

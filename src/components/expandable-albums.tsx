@@ -24,7 +24,7 @@ export function ExpandableAlbums({ albums, title }: ExpandableAlbumsProps) {
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-sm font-medium text-zinc-400">{title}</h3>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {displayedAlbums.map((album: SoundCloudPlaylist) => {
           // If album has only one track, render it as a track
           if (album.tracks?.length === 1) {

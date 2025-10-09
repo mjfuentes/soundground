@@ -1,7 +1,4 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-echo "🔍 Running pre-commit checks..."
+echo "⚡ Running fast pre-commit checks..."
 
 # Run lint-staged (auto-fix)
 npx lint-staged
@@ -10,9 +7,5 @@ npx lint-staged
 echo "📝 Type checking..."
 npm run type-check
 
-# Run tests (fast, no coverage)
-echo "🧪 Running tests..."
-npm test -- --passWithNoTests --bail --silent --onlyChanged
-
-echo "✅ All checks passed!"
-echo "💡 Build check will run in CI pipeline"
+echo "✅ Pre-commit checks passed!"
+echo "💡 Tests, coverage, and build checks will run in CI pipeline"
