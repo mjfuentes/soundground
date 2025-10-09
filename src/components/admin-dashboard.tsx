@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 
 interface CacheStats {
   type: string;
@@ -33,36 +34,34 @@ export function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-    // Refresh data every 5 seconds
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
     try {
-      // Fetch cache stats
-      const cacheRes = await fetch('/api/admin/cache-stats');
+      const [cacheRes, metricsRes, logsRes, changelogRes] = await Promise.all([
+        fetch('/api/admin/cache-stats'),
+        fetch('/api/admin/metrics'),
+        fetch('/api/admin/logs'),
+        fetch('/api/admin/changelog'),
+      ]);
+
       if (cacheRes.ok) {
         const data = await cacheRes.json();
         setCacheStats(data.stats || []);
       }
 
-      // Fetch system metrics
-      const metricsRes = await fetch('/api/admin/metrics');
       if (metricsRes.ok) {
         const data = await metricsRes.json();
         setMetrics(data);
       }
 
-      // Fetch recent logs
-      const logsRes = await fetch('/api/admin/logs');
       if (logsRes.ok) {
         const data = await logsRes.json();
         setLogs(data.logs || []);
       }
 
-      // Fetch changelog
-      const changelogRes = await fetch('/api/admin/changelog');
       if (changelogRes.ok) {
         const data = await changelogRes.json();
         setChangelog(data.content);
@@ -88,7 +87,14 @@ export function AdminDashboard() {
   };
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   };
 
   const getLogLevelColor = (level: string) => {
@@ -102,175 +108,175 @@ export function AdminDashboard() {
       case 'debug':
         return 'text-gray-400';
       default:
-        return 'text-white';
+        return 'text-gray-300';
     }
+  };
+
+  const getCacheTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'general': 'General',
+      'soundcloud:profile': 'Profiles',
+      'soundcloud:tracks': 'Tracks',
+      'soundcloud:playlists': 'Playlists',
+      'soundcloud:albums': 'Albums',
+      'soundcloud:followers': 'Followers',
+      'soundcloud:spotlight': 'Spotlight',
+      'soundcloud:search': 'Search',
+      'followings_set': 'Followings',
+    };
+    return labels[type] || type;
   };
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="flex h-screen items-center justify-center" style={{ backgroundColor: '#000000' }}>
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+          <p className="mt-4 text-sm text-gray-400">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-4">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-          <p className="text-gray-400">SoundGround System Monitoring</p>
-        </div>
-        <Link
-          href="/"
-          className="rounded-lg bg-white/10 px-4 py-2 text-white transition hover:bg-white/20"
-        >
-          ← Back to App
-        </Link>
-      </div>
-
-      {/* Tabs */}
-      <div className="mb-6 flex gap-2 border-b border-white/10">
-        {['overview', 'logs', 'cache', 'changelog'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as typeof activeTab)}
-            className={`px-4 py-2 text-sm font-medium capitalize transition ${
-              activeTab === tab
-                ? 'border-b-2 border-purple-500 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
+    <div className="fixed inset-0 text-white overflow-y-auto" style={{ backgroundColor: '#000000' }}>
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Header */}
+        <div className="mb-12 flex items-center justify-between border-b border-gray-800 pb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-400">System monitoring and statistics</p>
+          </div>
+          <Link
+            href="/"
+            className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium transition hover:border-gray-600 hover:bg-gray-800"
           >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Metrics Cards */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-lg bg-white/5 p-6">
-              <div className="text-sm text-gray-400">Total Requests</div>
-              <div className="mt-2 text-3xl font-bold text-white">
-                {metrics?.totalRequests?.toLocaleString() || '0'}
-              </div>
-            </div>
-            <div className="rounded-lg bg-white/5 p-6">
-              <div className="text-sm text-gray-400">Cache Hit Rate</div>
-              <div className="mt-2 text-3xl font-bold text-green-400">
-                {calculateHitRate(cacheStats)}%
-              </div>
-            </div>
-            <div className="rounded-lg bg-white/5 p-6">
-              <div className="text-sm text-gray-400">Uptime</div>
-              <div className="mt-2 text-3xl font-bold text-white">
-                {metrics?.uptime || 'N/A'}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="rounded-lg bg-white/5 p-6">
-            <h2 className="mb-4 text-xl font-bold text-white">Cache Performance by Type</h2>
-            <div className="space-y-3">
-              {cacheStats.map((stat) => (
-                <div key={stat.type} className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-white capitalize">{stat.type}</div>
-                    <div className="text-xs text-gray-400">
-                      {stat.hit_count} hits / {stat.miss_count} misses
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold text-green-400">
-                      {stat.hit_count + stat.miss_count > 0
-                        ? ((stat.hit_count / (stat.hit_count + stat.miss_count)) * 100).toFixed(1)
-                        : '0'}
-                      %
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent Logs Preview */}
-          <div className="rounded-lg bg-white/5 p-6">
-            <h2 className="mb-4 text-xl font-bold text-white">Recent Activity</h2>
-            <div className="space-y-2">
-              {logs.slice(0, 5).map((log, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-sm">
-                  <span className="text-gray-500">{formatTimestamp(log.timestamp)}</span>
-                  <span className={`font-medium ${getLogLevelColor(log.level)}`}>
-                    [{log.level.toUpperCase()}]
-                  </span>
-                  <span className="flex-1 text-gray-300">{log.message}</span>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setActiveTab('logs')}
-              className="mt-4 text-sm text-purple-400 hover:text-purple-300"
-            >
-              View all logs →
-            </button>
-          </div>
+            Back to App
+          </Link>
         </div>
-      )}
 
-      {/* Logs Tab */}
-      {activeTab === 'logs' && (
-        <div className="rounded-lg bg-white/5 p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">System Logs</h2>
+        {/* Tabs */}
+        <div className="mb-8 flex gap-1 border-b border-gray-800">
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'cache', label: 'Cache' },
+            { id: 'logs', label: 'Logs' },
+            { id: 'changelog', label: 'Changelog' },
+          ].map((tab) => (
             <button
-              onClick={fetchData}
-              className="rounded bg-white/10 px-3 py-1 text-sm text-white hover:bg-white/20"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={`px-6 py-3 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? 'border-b-2 border-white text-white'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
             >
-              Refresh
+              {tab.label}
             </button>
-          </div>
-          <div className="max-h-[600px] space-y-2 overflow-y-auto font-mono text-sm">
-            {logs.map((log, idx) => (
-              <div key={idx} className="rounded bg-black/30 p-3">
-                <div className="flex items-start gap-3">
-                  <span className="text-gray-500">{formatTimestamp(log.timestamp)}</span>
-                  <span className={`font-bold ${getLogLevelColor(log.level)}`}>
-                    [{log.level.toUpperCase()}]
-                  </span>
-                  <span className="flex-1 text-gray-200">{log.message}</span>
-                </div>
-                {log.context && Object.keys(log.context).length > 0 && (
-                  <pre className="mt-2 text-xs text-gray-400">
-                    {JSON.stringify(log.context, null, 2)}
-                  </pre>
-                )}
-              </div>
-            ))}
-            {logs.length === 0 && (
-              <div className="text-center text-gray-400">No logs available</div>
-            )}
-          </div>
+          ))}
         </div>
-      )}
 
-      {/* Cache Tab */}
-      {activeTab === 'cache' && (
-        <div className="space-y-6">
-          <div className="rounded-lg bg-white/5 p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Cache Statistics</h2>
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            {/* Key Metrics Grid */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Total Requests</div>
+                <div className="text-3xl font-bold tabular-nums">{metrics?.totalRequests?.toLocaleString() || '0'}</div>
+                <div className="mt-1 text-xs text-gray-500">Since server start</div>
+              </div>
+
+              <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Cache Hit Rate</div>
+                <div className="text-3xl font-bold tabular-nums text-green-400">{calculateHitRate(cacheStats)}%</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {Number(calculateHitRate(cacheStats)) >= 80 ? 'Excellent' : Number(calculateHitRate(cacheStats)) >= 50 ? 'Good' : 'Needs improvement'}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-800 bg-gray-900 p-6">
+                <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Server Uptime</div>
+                <div className="text-3xl font-bold tabular-nums">{metrics?.uptime || 'N/A'}</div>
+                <div className="mt-1 text-xs text-gray-500">Running time</div>
+              </div>
+            </div>
+
+            {/* Cache Performance Summary */}
+            <div>
+              <h2 className="mb-4 text-lg font-semibold">Cache Performance</h2>
+              <div className="space-y-3">
+                {cacheStats.slice(0, 5).map((stat) => {
+                  const total = stat.hit_count + stat.miss_count;
+                  const hitRate = total > 0 ? (stat.hit_count / total) * 100 : 0;
+
+                  return (
+                    <div key={stat.type} className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="text-sm font-medium">{getCacheTypeLabel(stat.type)}</div>
+                        <div className="text-sm font-mono tabular-nums text-gray-400">{hitRate.toFixed(1)}%</div>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800">
+                        <div
+                          className="h-full bg-white transition-all duration-500"
+                          style={{ width: `${hitRate}%` }}
+                        />
+                      </div>
+                      <div className="mt-2 flex gap-6 text-xs text-gray-500">
+                        <div>
+                          <span className="font-mono tabular-nums text-green-400">{stat.hit_count.toLocaleString()}</span> hits
+                        </div>
+                        <div>
+                          <span className="font-mono tabular-nums text-red-400">{stat.miss_count.toLocaleString()}</span> misses
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Recent Logs */}
+            <div>
+              <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
+              {logs.length > 0 ? (
+                <div className="space-y-2">
+                  {logs.slice(0, 5).map((log, idx) => (
+                    <div key={idx} className="flex items-start gap-4 rounded-lg border border-gray-800 bg-gray-900 p-3 font-mono text-xs">
+                      <span className={`${getLogLevelColor(log.level)}`}>{log.level.toUpperCase().padEnd(5)}</span>
+                      <span className="text-gray-500">{formatTimestamp(log.timestamp)}</span>
+                      <span className="flex-1 text-gray-300">{log.message}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-gray-800 bg-gray-900 p-8 text-center text-sm text-gray-500">
+                  No logs available
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Cache Tab */}
+        {activeTab === 'cache' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Cache Statistics</h2>
+                <p className="mt-1 text-sm text-gray-400">
+                  Hit rate shows how often data is served from cache vs fetched from API
+                </p>
+              </div>
               <button
                 onClick={async () => {
-                  if (confirm('Are you sure you want to clear all cache?')) {
+                  if (confirm('Clear all cached data?')) {
                     await fetch('/api/cache', { method: 'DELETE' });
                     fetchData();
                   }
                 }}
-                className="rounded bg-red-500/20 px-4 py-2 text-sm text-red-400 hover:bg-red-500/30"
+                className="rounded-lg border border-red-900 bg-red-950 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-900"
               >
                 Clear Cache
               </button>
@@ -282,31 +288,37 @@ export function AdminDashboard() {
                 const hitRate = total > 0 ? (stat.hit_count / total) * 100 : 0;
 
                 return (
-                  <div key={stat.type} className="rounded-lg bg-black/30 p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-white capitalize">{stat.type}</h3>
-                      <span className="text-2xl font-bold text-green-400">
-                        {hitRate.toFixed(1)}%
-                      </span>
+                  <div key={stat.type} className="rounded-lg border border-gray-800 bg-gray-900 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h3 className="text-base font-semibold">{getCacheTypeLabel(stat.type)}</h3>
+                      <div className="text-2xl font-bold tabular-nums">{hitRate.toFixed(1)}%</div>
                     </div>
-                    <div className="mb-2 h-2 w-full rounded-full bg-gray-700">
+
+                    <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-gray-800">
                       <div
-                        className="h-2 rounded-full bg-green-500"
+                        className="h-full bg-white transition-all duration-500"
                         style={{ width: `${hitRate}%` }}
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <div className="text-gray-400">Hits</div>
-                        <div className="font-bold text-green-400">{stat.hit_count}</div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="rounded border border-green-900 bg-green-950 p-3 text-center">
+                        <div className="text-xs text-gray-400">Hits</div>
+                        <div className="mt-1 font-mono text-xl font-bold tabular-nums text-green-400">
+                          {stat.hit_count.toLocaleString()}
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-gray-400">Misses</div>
-                        <div className="font-bold text-red-400">{stat.miss_count}</div>
+                      <div className="rounded border border-red-900 bg-red-950 p-3 text-center">
+                        <div className="text-xs text-gray-400">Misses</div>
+                        <div className="mt-1 font-mono text-xl font-bold tabular-nums text-red-400">
+                          {stat.miss_count.toLocaleString()}
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-gray-400">Total</div>
-                        <div className="font-bold text-white">{total}</div>
+                      <div className="rounded border border-gray-800 bg-gray-800 p-3 text-center">
+                        <div className="text-xs text-gray-400">Total</div>
+                        <div className="mt-1 font-mono text-xl font-bold tabular-nums text-white">
+                          {total.toLocaleString()}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -314,19 +326,81 @@ export function AdminDashboard() {
               })}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Changelog Tab */}
-      {activeTab === 'changelog' && (
-        <div className="rounded-lg bg-white/5 p-6">
-          <h2 className="mb-4 text-xl font-bold text-white">Changelog</h2>
-          <div className="prose prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap text-sm text-gray-300">{changelog}</pre>
+        {/* Logs Tab */}
+        {activeTab === 'logs' && (
+          <div>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">System Logs</h2>
+                <p className="mt-1 text-sm text-gray-400">Real-time application activity</p>
+              </div>
+              <button
+                onClick={fetchData}
+                className="rounded-lg border border-gray-700 bg-gray-900 px-4 py-2 text-sm font-medium transition hover:border-gray-600 hover:bg-gray-800"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {logs.length > 0 ? (
+              <div className="max-h-[700px] space-y-2 overflow-y-auto">
+                {logs.map((log, idx) => (
+                  <div key={idx} className="rounded-lg border border-gray-800 bg-gray-900 p-4 font-mono text-sm">
+                    <div className="mb-2 flex items-start gap-4">
+                      <span className={`${getLogLevelColor(log.level)}`}>{log.level.toUpperCase().padEnd(5)}</span>
+                      <span className="text-gray-500">{formatTimestamp(log.timestamp)}</span>
+                    </div>
+                    <div className="ml-20 text-gray-300">{log.message}</div>
+                    {log.context && Object.keys(log.context).length > 0 && (
+                      <pre className="ml-20 mt-2 overflow-x-auto rounded bg-black p-2 text-xs text-gray-400">
+                        {JSON.stringify(log.context, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-800 bg-gray-900 p-12 text-center text-sm text-gray-500">
+                No logs available yet
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Changelog Tab */}
+        {activeTab === 'changelog' && (
+          <div>
+            <h2 className="mb-6 text-lg font-semibold">Changelog</h2>
+            <div className="prose prose-invert max-w-none rounded-lg border border-gray-800 bg-gray-900 p-6">
+              <ReactMarkdown
+                components={{
+                  h1: ({ ...props }) => <h1 className="mb-4 mt-0 text-2xl font-bold text-white" {...props} />,
+                  h2: ({ ...props }) => <h2 className="mb-3 mt-8 text-xl font-bold text-white" {...props} />,
+                  h3: ({ ...props }) => <h3 className="mb-2 mt-6 text-base font-semibold text-gray-300" {...props} />,
+                  p: ({ ...props }) => <p className="mb-4 text-sm leading-relaxed text-gray-400" {...props} />,
+                  ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc space-y-1 text-sm text-gray-400" {...props} />,
+                  ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal space-y-1 text-sm text-gray-400" {...props} />,
+                  li: ({ ...props }) => <li className="text-gray-400" {...props} />,
+                  a: ({ ...props }) => (
+                    <a className="text-blue-400 underline hover:text-blue-300" target="_blank" rel="noopener noreferrer" {...props} />
+                  ),
+                  code: ({ ...props }) => <code className="rounded bg-black px-1.5 py-0.5 text-sm text-gray-300" {...props} />,
+                  pre: ({ ...props }) => (
+                    <pre className="mb-4 overflow-x-auto rounded bg-black p-4 text-sm text-gray-300" {...props} />
+                  ),
+                  blockquote: ({ ...props }) => (
+                    <blockquote className="border-l-4 border-gray-700 pl-4 italic text-gray-500" {...props} />
+                  ),
+                }}
+              >
+                {changelog}
+              </ReactMarkdown>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

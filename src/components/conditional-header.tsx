@@ -6,8 +6,8 @@ import { Header } from "./header";
 export function ConditionalHeader() {
   const pathname = usePathname();
   
-  // Don't show header on homepage
-  if (pathname === "/") {
+  // Don't show header on homepage or admin page
+  if (pathname === "/" || pathname === "/admin") {
     return null;
   }
   
