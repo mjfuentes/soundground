@@ -2,10 +2,21 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Middleware to protect authenticated routes
+ * Middleware to protect authenticated routes and track requests
  * Redirects to /login if user is not authenticated
  */
 export function middleware(request: NextRequest) {
+  // Track request for metrics (server-side only)
+  if (typeof window === 'undefined') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { trackRequest } = require('./lib/request-tracker');
+      trackRequest();
+    } catch {
+      // Ignore if tracker not available
+    }
+  }
+
   const sessionCookie = request.cookies.get("session");
   const { pathname } = request.nextUrl;
   
