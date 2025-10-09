@@ -1,14 +1,27 @@
 /**
  * Tests for /api/soundcloud/profile endpoint
+ * @jest-environment node
  */
 
 import { NextRequest } from 'next/server';
 import { GET } from '../profile/route';
-import * as smartClient from '@/lib/soundcloud/smart-client';
 import { createMockUser, createMockTrack, createMockPlaylist } from '@/test-utils';
 
-// Mock the smart client
-jest.mock('@/lib/soundcloud/smart-client');
+const mockResolveProfile = jest.fn();
+const mockGetSpotlight = jest.fn();
+const mockGetPlaylists = jest.fn();
+const mockGetAlbums = jest.fn();
+const mockGetTracks = jest.fn();
+const mockGetReposts = jest.fn();
+
+jest.mock('@/lib/soundcloud/smart-client', () => ({
+  resolveProfile: (...args: unknown[]) => mockResolveProfile(...args),
+  getSpotlight: (...args: unknown[]) => mockGetSpotlight(...args),
+  getPlaylists: (...args: unknown[]) => mockGetPlaylists(...args),
+  getAlbums: (...args: unknown[]) => mockGetAlbums(...args),
+  getTracks: (...args: unknown[]) => mockGetTracks(...args),
+  getReposts: (...args: unknown[]) => mockGetReposts(...args),
+}));
 
 describe('/api/soundcloud/profile', () => {
   const mockUser = createMockUser();
@@ -30,12 +43,12 @@ describe('/api/soundcloud/profile', () => {
 
   it('should fetch and return profile data successfully', async () => {
     // Mock all the API calls
-    jest.spyOn(smartClient, 'resolveProfile').mockResolvedValue(mockUser);
-    jest.spyOn(smartClient, 'getSpotlight').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getPlaylists').mockResolvedValue({ collection: mockPlaylists });
-    jest.spyOn(smartClient, 'getAlbums').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getTracks').mockResolvedValue({ collection: mockTracks });
-    jest.spyOn(smartClient, 'getReposts').mockResolvedValue({ collection: [] });
+    mockResolveProfile.mockResolvedValue(mockUser);
+    mockGetSpotlight.mockResolvedValue({ collection: [] });
+    mockGetPlaylists.mockResolvedValue({ collection: mockPlaylists });
+    mockGetAlbums.mockResolvedValue({ collection: [] });
+    mockGetTracks.mockResolvedValue({ collection: mockTracks });
+    mockGetReposts.mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost/api/soundcloud/profile?url=https://soundcloud.com/testuser');
     const response = await GET(request);
@@ -51,7 +64,7 @@ describe('/api/soundcloud/profile', () => {
   });
 
   it('should handle profile resolution errors', async () => {
-    jest.spyOn(smartClient, 'resolveProfile').mockRejectedValue(new Error('Profile not found'));
+    mockResolveProfile.mockRejectedValue(new Error('Profile not found'));
 
     const request = new NextRequest('http://localhost/api/soundcloud/profile?url=https://soundcloud.com/nonexistent');
     const response = await GET(request);
@@ -63,12 +76,12 @@ describe('/api/soundcloud/profile', () => {
 
   it('should handle partial failures gracefully', async () => {
     // Profile succeeds but some requests fail
-    jest.spyOn(smartClient, 'resolveProfile').mockResolvedValue(mockUser);
-    jest.spyOn(smartClient, 'getSpotlight').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getPlaylists').mockRejectedValue(new Error('Playlists failed'));
-    jest.spyOn(smartClient, 'getAlbums').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getTracks').mockRejectedValue(new Error('Tracks failed'));
-    jest.spyOn(smartClient, 'getReposts').mockResolvedValue({ collection: [] });
+    mockResolveProfile.mockResolvedValue(mockUser);
+    mockGetSpotlight.mockResolvedValue({ collection: [] });
+    mockGetPlaylists.mockRejectedValue(new Error('Playlists failed'));
+    mockGetAlbums.mockResolvedValue({ collection: [] });
+    mockGetTracks.mockRejectedValue(new Error('Tracks failed'));
+    mockGetReposts.mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost/api/soundcloud/profile?url=https://soundcloud.com/testuser');
     const response = await GET(request);
@@ -82,32 +95,32 @@ describe('/api/soundcloud/profile', () => {
   });
 
   it('should limit tracks to 50', async () => {
-    jest.spyOn(smartClient, 'resolveProfile').mockResolvedValue(mockUser);
-    jest.spyOn(smartClient, 'getSpotlight').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getPlaylists').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getAlbums').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getTracks').mockResolvedValue({ collection: mockTracks });
-    jest.spyOn(smartClient, 'getReposts').mockResolvedValue({ collection: [] });
+    mockResolveProfile.mockResolvedValue(mockUser);
+    mockGetSpotlight.mockResolvedValue({ collection: [] });
+    mockGetPlaylists.mockResolvedValue({ collection: [] });
+    mockGetAlbums.mockResolvedValue({ collection: [] });
+    mockGetTracks.mockResolvedValue({ collection: mockTracks });
+    mockGetReposts.mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost/api/soundcloud/profile?url=https://soundcloud.com/testuser');
     await GET(request);
 
     // Verify getTracks was called with limit of 50
-    expect(smartClient.getTracks).toHaveBeenCalledWith(mockUser.id, 50);
+    expect(mockGetTracks).toHaveBeenCalledWith(mockUser.id, 50);
   });
 
   it('should limit reposts to 50', async () => {
-    jest.spyOn(smartClient, 'resolveProfile').mockResolvedValue(mockUser);
-    jest.spyOn(smartClient, 'getSpotlight').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getPlaylists').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getAlbums').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getTracks').mockResolvedValue({ collection: [] });
-    jest.spyOn(smartClient, 'getReposts').mockResolvedValue({ collection: [] });
+    mockResolveProfile.mockResolvedValue(mockUser);
+    mockGetSpotlight.mockResolvedValue({ collection: [] });
+    mockGetPlaylists.mockResolvedValue({ collection: [] });
+    mockGetAlbums.mockResolvedValue({ collection: [] });
+    mockGetTracks.mockResolvedValue({ collection: [] });
+    mockGetReposts.mockResolvedValue({ collection: [] });
 
     const request = new NextRequest('http://localhost/api/soundcloud/profile?url=https://soundcloud.com/testuser');
     await GET(request);
 
     // Verify getReposts was called with limit of 50
-    expect(smartClient.getReposts).toHaveBeenCalledWith(mockUser.id, 50);
+    expect(mockGetReposts).toHaveBeenCalledWith(mockUser.id, 50);
   });
 });

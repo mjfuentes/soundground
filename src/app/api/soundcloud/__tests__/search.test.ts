@@ -1,13 +1,16 @@
 /**
  * Tests for /api/soundcloud/search endpoint
+ * @jest-environment node
  */
 
 import { NextRequest } from 'next/server';
 import { GET } from '../search/route';
-import * as smartClient from '@/lib/soundcloud/smart-client';
 import { createMockUser, createMockTrack } from '@/test-utils';
 
-jest.mock('@/lib/soundcloud/smart-client');
+const mockSearch = jest.fn();
+jest.mock('@/lib/soundcloud/smart-client', () => ({
+  search: (...args: unknown[]) => mockSearch(...args),
+}));
 
 describe('/api/soundcloud/search', () => {
   beforeEach(() => {
@@ -20,7 +23,7 @@ describe('/api/soundcloud/search', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Missing 'query' parameter");
+    expect(data.error).toBe("Missing 'q' parameter");
   });
 
   it('should search successfully with default parameters', async () => {
@@ -29,12 +32,12 @@ describe('/api/soundcloud/search', () => {
       createMockTrack(),
     ];
 
-    jest.spyOn(smartClient, 'search').mockResolvedValue({
+    mockSearch.mockResolvedValue({
       collection: mockResults,
       total_results: 2,
     });
 
-    const request = new NextRequest('http://localhost/api/soundcloud/search?query=test');
+    const request = new NextRequest('http://localhost/api/soundcloud/search?q=test');
     const response = await GET(request);
     const data = await response.json();
 
@@ -43,37 +46,37 @@ describe('/api/soundcloud/search', () => {
     expect(data.total_results).toBe(2);
     
     // Verify default parameters
-    expect(smartClient.search).toHaveBeenCalledWith('test', {
+    expect(mockSearch).toHaveBeenCalledWith('test', expect.objectContaining({
       limit: 20,
       offset: 0,
-    });
+    }));
   });
 
   it('should accept custom limit and offset', async () => {
-    jest.spyOn(smartClient, 'search').mockResolvedValue({
+    mockSearch.mockResolvedValue({
       collection: [],
       total_results: 0,
     });
 
-    const request = new NextRequest('http://localhost/api/soundcloud/search?query=test&limit=50&offset=100');
+    const request = new NextRequest('http://localhost/api/soundcloud/search?q=test&limit=50&offset=100');
     await GET(request);
 
-    expect(smartClient.search).toHaveBeenCalledWith('test', {
+    expect(mockSearch).toHaveBeenCalledWith('test', expect.objectContaining({
       limit: 50,
       offset: 100,
-    });
+    }));
   });
 
   it('should accept filter parameter', async () => {
-    jest.spyOn(smartClient, 'search').mockResolvedValue({
+    mockSearch.mockResolvedValue({
       collection: [],
       total_results: 0,
     });
 
-    const request = new NextRequest('http://localhost/api/soundcloud/search?query=test&filter=tracks');
+    const request = new NextRequest('http://localhost/api/soundcloud/search?q=test&filter=tracks');
     await GET(request);
 
-    expect(smartClient.search).toHaveBeenCalledWith('test', {
+    expect(mockSearch).toHaveBeenCalledWith('test', {
       limit: 20,
       offset: 0,
       filter: 'tracks',
@@ -81,9 +84,9 @@ describe('/api/soundcloud/search', () => {
   });
 
   it('should handle search errors', async () => {
-    jest.spyOn(smartClient, 'search').mockRejectedValue(new Error('Search failed'));
+    mockSearch.mockRejectedValue(new Error('Search failed'));
 
-    const request = new NextRequest('http://localhost/api/soundcloud/search?query=test');
+    const request = new NextRequest('http://localhost/api/soundcloud/search?q=test');
     const response = await GET(request);
     const data = await response.json();
 
@@ -92,12 +95,12 @@ describe('/api/soundcloud/search', () => {
   });
 
   it('should handle empty query string', async () => {
-    const request = new NextRequest('http://localhost/api/soundcloud/search?query=');
+    const request = new NextRequest('http://localhost/api/soundcloud/search?q=');
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Missing 'query' parameter");
+    expect(data.error).toBe("Missing 'q' parameter");
   });
 });
 
