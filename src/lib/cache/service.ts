@@ -46,10 +46,28 @@ export class CacheService {
       return JSON.parse(row.value) as T;
     }
 
+    // Try to infer type from key pattern for accurate miss tracking
+    const inferredType = this.inferTypeFromKey(key);
+    
     // If key exists but expired, delete it
     this.db.prepare('DELETE FROM cache WHERE key = ? AND expires_at <= ?').run(key, now);
-    this.updateStats(DEFAULT_TYPE, 'miss');
+    this.updateStats(inferredType, 'miss');
     return null;
+  }
+
+  /**
+   * Infer cache type from key pattern
+   */
+  private inferTypeFromKey(key: string): string {
+    if (key.startsWith('soundcloud:profile:')) return 'soundcloud:profile';
+    if (key.startsWith('soundcloud:tracks:')) return 'soundcloud:tracks';
+    if (key.startsWith('soundcloud:playlists:')) return 'soundcloud:playlists';
+    if (key.startsWith('soundcloud:albums:')) return 'soundcloud:albums';
+    if (key.startsWith('soundcloud:followers:')) return 'soundcloud:followers';
+    if (key.startsWith('soundcloud:spotlight:')) return 'soundcloud:spotlight';
+    if (key.startsWith('soundcloud:search:')) return 'soundcloud:search';
+    if (key.startsWith('followings_set:')) return 'followings_set';
+    return DEFAULT_TYPE;
   }
 
   /**
@@ -133,6 +151,13 @@ export class CacheService {
    */
   getStats(): CacheStats[] {
     return this.db.prepare('SELECT * FROM cache_stats').all() as CacheStats[];
+  }
+
+  /**
+   * Reset cache statistics
+   */
+  resetStats(): void {
+    this.db.prepare('DELETE FROM cache_stats').run();
   }
 
   /**
