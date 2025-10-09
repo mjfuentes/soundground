@@ -99,7 +99,25 @@ export function FloatingPlayer() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-800 bg-neutral-950 shadow-2xl">
-      <div className="flex h-16 items-center gap-3 px-4">
+      {/* Progress bar - full width on mobile */}
+      <div className="md:hidden px-2 pt-2">
+        <input
+          type="range"
+          min="0"
+          max={duration || 0}
+          value={currentTime}
+          onChange={handleSeek}
+          disabled={!duration || isLoading}
+          className="w-full h-1 appearance-none bg-neutral-800 rounded-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-30 
+            [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
+            [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0"
+          style={{
+            background: `linear-gradient(to right, rgb(255 255 255) 0%, rgb(255 255 255) ${progressPercent}%, rgb(38 38 38) ${progressPercent}%, rgb(38 38 38) 100%)`,
+          }}
+        />
+      </div>
+
+      <div className="flex h-16 items-center gap-2 px-2 md:gap-3 md:px-4">
         {/* Album Art */}
         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden bg-neutral-900">
           {currentItem.artwork ? (
@@ -121,7 +139,7 @@ export function FloatingPlayer() {
         </div>
 
         {/* Track Info */}
-        <div className="min-w-0 flex-1 max-w-xs">
+        <div className="min-w-0 flex-1 md:max-w-xs">
           <Link
             href={`/track/${currentItem.id}`}
             className="truncate text-sm font-medium text-white hover:text-neutral-300 block cursor-pointer"
@@ -137,7 +155,7 @@ export function FloatingPlayer() {
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           <button
             onClick={previous}
             disabled={isLoading}
@@ -178,8 +196,8 @@ export function FloatingPlayer() {
           </button>
         </div>
 
-        {/* Progress Bar */}
-        <div className="flex-1 flex items-center gap-3 min-w-0">
+        {/* Progress Bar - Desktop only */}
+        <div className="hidden md:flex flex-1 items-center gap-3 min-w-0">
           <span className="text-xs text-neutral-500 tabular-nums w-10 text-right">
             {formatTime(currentTime)}
           </span>
@@ -204,8 +222,8 @@ export function FloatingPlayer() {
           </span>
         </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center gap-2">
+        {/* Volume Control - Desktop only */}
+        <div className="hidden lg:flex items-center gap-2">
           <button
             onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
             className="cursor-pointer text-neutral-400 hover:text-white transition-colors"
@@ -244,17 +262,6 @@ export function FloatingPlayer() {
             />
           </div>
         </div>
-
-        {/* Close Button */}
-        <button
-          onClick={stop}
-          className="cursor-pointer text-neutral-400 hover:text-white transition-colors"
-          aria-label="Close player"
-        >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
       {/* Error message overlay */}

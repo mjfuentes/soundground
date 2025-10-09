@@ -299,17 +299,6 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
   return (
     <div className="pb-32">
       <div className="mx-auto max-w-4xl px-6 py-8">
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="group mb-4 flex cursor-pointer items-center gap-1 text-sm font-medium text-neutral-400 transition-all hover:text-white"
-        >
-          <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
-
         <div className="flex flex-col gap-8 md:flex-row md:gap-12">
           {/* Album Artwork - Square 1:1 */}
           <div className="shrink-0 mx-auto md:mx-0">

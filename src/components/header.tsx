@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { SearchBar } from "./search-bar";
 import { SearchDropdown } from "./search-dropdown";
 import { ClientSearchCache } from "@/lib/client-search-cache";
@@ -11,6 +10,7 @@ import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/
 
 function HeaderSearch() {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchResults, setSearchResults] = useState<(SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,6 +18,8 @@ function HeaderSearch() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<{ blur: () => void }>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const [isLongPress, setIsLongPress] = useState(false);
 
   const handleSearch = useCallback(async (query: string, isImmediate = false) => {
     if (!query.trim()) {
@@ -173,16 +175,74 @@ function HeaderSearch() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [router]);
 
+  // Logo click/long-press handlers
+  const handleLogoMouseDown = useCallback(() => {
+    setIsLongPress(false);
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPress(true);
+    }, 500); // 500ms for long press
+  }, []);
+
+  const handleLogoMouseUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleLogoClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isLongPress) {
+      // Long press - go to home
+      router.push('/');
+    } else if (pathname !== '/') {
+      // Click - go back
+      router.back();
+    }
+    setIsLongPress(false);
+  }, [isLongPress, pathname, router]);
+
+  const handleLogoTouchStart = useCallback(() => {
+    setIsLongPress(false);
+    longPressTimer.current = setTimeout(() => {
+      setIsLongPress(true);
+    }, 500);
+  }, []);
+
+  const handleLogoTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    e.preventDefault();
+    if (isLongPress) {
+      router.push('/');
+    } else if (pathname !== '/') {
+      router.back();
+    }
+    setIsLongPress(false);
+  }, [isLongPress, pathname, router]);
+
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-neutral-800 bg-black/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
         <div className="flex items-center gap-2 sm:gap-4">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition flex-shrink-0 soundground-logo">
-            <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 sm:w-7 sm:h-7">
-              <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
-              <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+          <button
+            onClick={handleLogoClick}
+            onMouseDown={handleLogoMouseDown}
+            onMouseUp={handleLogoMouseUp}
+            onMouseLeave={handleLogoMouseUp}
+            onTouchStart={handleLogoTouchStart}
+            onTouchEnd={handleLogoTouchEnd}
+            className="flex items-center justify-center hover:text-white text-neutral-400 transition flex-shrink-0 cursor-pointer p-1"
+            aria-label={pathname === '/' ? 'Home' : 'Back (hold for home)'}
+            title={pathname === '/' ? 'Home' : 'Click: Back | Hold: Home'}
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-          </Link>
+          </button>
           <div className="flex-1 max-w-2xl relative" ref={containerRef}>
             <SearchBar 
               ref={searchBarRef}
@@ -214,12 +274,11 @@ export function Header() {
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-neutral-800 bg-black/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
           <div className="flex items-center gap-2 sm:gap-4">
-            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition flex-shrink-0">
-              <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 sm:w-7 sm:h-7">
-                <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
-                <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+            <div className="flex items-center justify-center text-neutral-400 flex-shrink-0 p-1">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-            </Link>
+            </div>
             <div className="flex-1 max-w-2xl">
               <div className="w-full py-2.5 px-3 sm:px-4 border border-zinc-700 rounded-md"></div>
             </div>
