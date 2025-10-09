@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
 import { usePlayer } from "@/contexts/player-context";
 import { TrackSkeleton } from "@/components/track-skeleton";
+import { TrackCard } from "@/components/track-card";
 import { RichDescription } from "@/components/rich-description";
 import { getHighQualityImage } from "@/lib/image-utils";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
@@ -21,13 +22,6 @@ function formatNumber(num?: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
   return num.toString();
-}
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 function formatTotalDuration(ms: number): string {
@@ -199,33 +193,6 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
     playQueue(playableItems, shuffle);
   };
 
-  const handleTrackClick = (trackIndex: number) => {
-    if (!album || !album.tracks) return;
-
-    const playableTracks = album.tracks.filter(isTrackPlayable);
-    if (playableTracks.length === 0) return;
-
-    const track = album.tracks[trackIndex];
-    if (!isTrackPlayable(track)) return;
-
-    const playableItems = playableTracks.map(t => ({
-      id: t.id,
-      url: t.permalink_url,
-      title: t.title,
-      artist: t.user?.username || "Unknown Artist",
-      artistUrl: t.user?.permalink_url || "https://soundcloud.com",
-      artwork: getHighQualityImage(album.artwork_url) || getHighQualityImage(t.artwork_url) || getHighQualityImage(t.user?.avatar_url),
-      description: t.description,
-      type: "track" as const,
-    }));
-
-    // Find the index in the playable tracks
-    const playableIndex = playableTracks.findIndex(t => t.id === track.id);
-    if (playableIndex !== -1) {
-      playQueue(playableItems.slice(playableIndex), false);
-    }
-  };
-
   const isCurrentAlbum = album?.tracks?.some(t => t.id === currentItem?.id);
 
   const getButtonIcon = () => {
@@ -271,11 +238,11 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="mx-auto max-w-4xl px-6 py-4">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="group mb-8 flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-400 transition-all hover:bg-white/5 hover:text-white"
+          className="group mb-4 flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-400 transition-all hover:bg-white/5 hover:text-white"
         >
           <svg className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -393,63 +360,37 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
           </div>
         </div>
 
-        {/* Tracks List - Album Style (Simple List) */}
+        {/* Tracks List - Using TrackCard */}
         {album.tracks && album.tracks.length > 0 && (
           <div className="mt-12">
             <div className="space-y-1">
-              {album.tracks.map((track, index) => {
-                const isCurrentTrack = currentItem?.id === track.id;
-                const isPlayable = isTrackPlayable(track);
+              {album.tracks.map((track) => {
+                const handleTrackPlay = () => {
+                  if (!isTrackPlayable(track)) return;
+                  
+                  const trackIndex = playableTracks.findIndex(t => t.id === track.id);
+                  if (trackIndex !== -1) {
+                    const playableItems = playableTracks.map(t => ({
+                      id: t.id,
+                      url: t.permalink_url,
+                      title: t.title,
+                      artist: t.user?.username || "Unknown Artist",
+                      artistUrl: t.user?.permalink_url || "https://soundcloud.com",
+                      artwork: getHighQualityImage(album.artwork_url) || getHighQualityImage(t.artwork_url) || getHighQualityImage(t.user?.avatar_url),
+                      description: t.description,
+                      type: "track" as const,
+                    }));
+                    playQueue(playableItems.slice(trackIndex), false);
+                  }
+                };
                 
                 return (
-                  <div
+                  <TrackCard
                     key={track.id}
-                    className={`group flex items-center gap-4 rounded-lg px-4 py-3 transition-colors ${
-                      isCurrentTrack ? 'bg-white/10' : 'hover:bg-white/5'
-                    } ${isPlayable ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                    onClick={() => isPlayable && handleTrackClick(index)}
-                  >
-                    {/* Track Number / Play Icon */}
-                    <div className="flex w-8 items-center justify-center text-sm text-neutral-500">
-                      {isCurrentTrack && isPlaying ? (
-                        <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                        </svg>
-                      ) : (
-                        <span className="group-hover:hidden">{index + 1}</span>
-                      )}
-                      {!isCurrentTrack && isPlayable && (
-                        <svg className="hidden h-4 w-4 text-white group-hover:block" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      )}
-                    </div>
-
-                    {/* Track Title */}
-                    <div className="flex-1 min-w-0">
-                      <p className={`truncate text-sm ${isCurrentTrack ? 'text-white font-medium' : 'text-neutral-300'}`}>
-                        {track.title}
-                      </p>
-                      <p className="text-xs text-neutral-500 truncate">
-                        {track.user?.username || album.user?.username || 'Unknown Artist'}
-                      </p>
-                    </div>
-
-                    {/* Track Duration */}
-                    <div className="text-sm text-neutral-500">
-                      {formatDuration(track.duration)}
-                    </div>
-
-                    {/* Track Stats */}
-                    {track.playback_count !== undefined && track.playback_count > 0 && (
-                      <div className="hidden sm:flex items-center gap-1 text-xs text-neutral-500">
-                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
-                        </svg>
-                        {formatNumber(track.playback_count)}
-                      </div>
-                    )}
-                  </div>
+                    track={track}
+                    playlistTracks={playableTracks}
+                    showStats={false}
+                  />
                 );
               })}
             </div>

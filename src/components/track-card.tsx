@@ -12,6 +12,7 @@ interface TrackCardProps {
   showStats?: boolean;
   playlistTracks?: SoundCloudTrack[]; // All tracks from the playlist for queue
   coverOnly?: boolean;
+  onCardClick?: () => void; // Optional custom click handler for the card
 }
 
 function formatNumber(num?: number): string {
@@ -93,7 +94,7 @@ function getDownloadPlatform(url: string): { platform: string; action: string; i
   return null;
 }
 
-export function TrackCard({ track, showStats = true, playlistTracks, coverOnly = false }: TrackCardProps) {
+export function TrackCard({ track, showStats = true, playlistTracks, coverOnly = false, onCardClick }: TrackCardProps) {
   const router = useRouter();
   const { play, playTrackWithQueue, currentItem, isPlaying, pause, resume } = usePlayer();
 
@@ -103,13 +104,19 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
   const isCurrentTrack = currentItem?.id === track.id;
 
   const handleClick = () => {
+    // If custom click handler provided, use it
+    if (onCardClick) {
+      onCardClick();
+      return;
+    }
+    
     if (!isPlayable && !isPreviewOnly) {
       // Open in SoundCloud if not playable
       window.open(track.permalink_url, '_blank');
       return;
     }
     
-    // Always navigate to track page
+    // Default: navigate to track page
     if (track.id) {
       router.push(`/track/${track.id}`);
     }
@@ -286,7 +293,7 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
       <div className="flex flex-1 flex-col justify-between overflow-hidden">
         <div>
           <div className="flex items-center gap-2">
-            <h4 className="truncate text-sm font-medium text-white group-hover:text-purple-400">
+            <h4 className="truncate text-sm font-medium text-white hover:underline">
               {track.title}
             </h4>
             {!isPlayable && !isPreviewOnly && (
@@ -318,6 +325,24 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
               ) : null;
             })()}
           </div>
+          {track.user?.permalink_url && (
+            <a
+              href={`/${track.user.permalink_url.split('/').pop()}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                router.push(`/${track.user!.permalink_url.split('/').pop()}`);
+              }}
+              className="text-xs text-zinc-500 hover:text-white hover:underline cursor-pointer transition-colors"
+            >
+              {track.user.username || 'Unknown Artist'}
+            </a>
+          )}
+          {!track.user?.permalink_url && (
+            <p className="text-xs text-zinc-500">
+              {track.user?.username || 'Unknown Artist'}
+            </p>
+          )}
           <p className="text-xs text-zinc-400">
             {formatDuration(track.duration)}
             {track.genre && ` • ${track.genre}`}
