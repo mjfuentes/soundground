@@ -40,12 +40,37 @@ For deployment pipelines, slash commands, and automated workflows:
 ## Code Standards
 
 ### TypeScript & React
-- Strict type checking, no `any` types
+- **Strict type checking, no `any` types**
+- **Use centralized types from `/src/types/index.ts`**
 - Next.js 15 App Router conventions
 - Server components by default, client only when needed (`'use client'`)
 - Async/await over promises
 - Small, focused components
 - Semantic HTML + accessibility attributes
+- **Import shared types instead of redefining them**
+
+### Constants & Configuration
+- **Use centralized constants from `/src/constants/index.ts`**
+- No magic numbers or hardcoded strings
+- Examples:
+  ```typescript
+  import { CACHE_TTL, API_ROUTES, ERROR_MESSAGES } from '@/constants';
+  
+  const ttl = CACHE_TTL.PROFILE; // ✅ Good
+  const ttl = 1800000; // ❌ Bad
+  ```
+
+### Logging
+- **Use structured logger from `/src/lib/logger.ts`**
+- **NEVER use console.log, console.warn, console.error**
+- Examples:
+  ```typescript
+  import { createLogger } from '@/lib/logger';
+  
+  const logger = createLogger({ component: 'TrackCard' });
+  logger.info('Track loaded', { trackId: track.id });
+  logger.error('Failed to load', { trackId }, error);
+  ```
 
 ### Styling
 - Tailwind CSS exclusively
@@ -54,8 +79,12 @@ For deployment pipelines, slash commands, and automated workflows:
 
 ### Structure
 - `/src/app/` - Pages and API routes (App Router)
-- `/src/components/` - React components
+- `/src/components/` - React components + tests
 - `/src/lib/` - Utilities and API clients
+- `/src/types/` - Centralized TypeScript types
+- `/src/constants/` - App-wide constants
+- `/src/test-utils/` - Testing utilities
+- `/docs/` - Documentation
 - `/scripts/` - Deployment and validation scripts
 
 ## Automated Workflows
@@ -79,6 +108,8 @@ npm run build            # Production build
 npm run type-check       # TypeScript validation
 npm run lint:fix         # Auto-fix linting issues
 npm run test             # Run test suite with coverage
+npm run test:watch       # Watch mode for development
+npm run test:ci          # CI mode with full coverage
 
 npm run deploy           # Full validation + deploy
 npm run deploy:check     # Validation only
@@ -99,16 +130,57 @@ Stops on first failure.
 ## Development Guidelines
 
 ### API Routes (`/src/app/api/soundcloud/`)
-- Proper error handling and HTTP status codes
-- Cache with `next: { revalidate: 300 }` where applicable
+- **Use structured logger for all logging**
+- **Use constants for error messages and status codes**
+- Proper error handling with try-catch
+- Use HTTP status codes from `@/constants`
+- Cache with appropriate TTLs from `@/constants`
 - Validate inputs with Zod schemas
-- Use TypeScript types
+- Use TypeScript types from `@/types`
+- **Create test file in `__tests__` directory**
+- Example:
+  ```typescript
+  import { createLogger } from '@/lib/logger';
+  import { HTTP_STATUS, ERROR_MESSAGES } from '@/constants';
+  
+  const logger = createLogger({ route: 'profile' });
+  
+  try {
+    // Route logic
+  } catch (error) {
+    logger.error('Route failed', {}, error as Error);
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.API.GENERIC },
+      { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
+    );
+  }
+  ```
 
 ### Components
-- TypeScript interfaces for props
+- **TypeScript interfaces for props (or use types from `@/types`)**
+- **Use structured logger instead of console.log**
+- **Use constants for magic numbers and strings**
 - Loading and error states
 - Next.js Image component for images
 - Semantic HTML and ARIA labels
+- **Create test file in `__tests__` directory**
+- Client components only when necessary (state, events, browser APIs)
+
+### Testing
+- **All new code must include tests**
+- **Test coverage goal: 70%+ overall, 80%+ for new code**
+- Use test utilities from `/src/test-utils/`
+- Test file naming: `ComponentName.test.tsx`
+- Test structure:
+  ```typescript
+  import { renderWithProviders, createMockTrack } from '@/test-utils';
+  
+  describe('ComponentName', () => {
+    it('should do something', () => {
+      // Arrange, Act, Assert
+    });
+  });
+  ```
 
 ### Pre-Deployment Checks
 Automated validation ensures:
@@ -133,24 +205,49 @@ Automated validation ensures:
 ## Quick Reference
 
 ### Adding API Endpoint
-1. Create `/src/app/api/soundcloud/[endpoint]/route.ts`
-2. TypeScript types + error handling
-3. Add caching if appropriate
+1. Create `/src/app/api/[endpoint]/route.ts`
+2. Create `/src/app/api/[endpoint]/__tests__/route.test.ts`
+3. Use types from `/src/types/`
+4. Use constants from `/src/constants/`
+5. Use structured logger
+6. Add error handling with try-catch
+7. Add caching if appropriate (use TTLs from constants)
+8. Write tests covering success, error, and edge cases
 
 ### Adding Component
-1. Create `/src/components/[name].tsx`
-2. TypeScript interface for props
-3. Accessibility attributes
-4. Tailwind styling
+1. Create `/src/components/ComponentName.tsx`
+2. Create `/src/components/__tests__/ComponentName.test.tsx`
+3. Use types from `/src/types/` for props
+4. Use structured logger if needed
+5. Accessibility attributes (ARIA labels)
+6. Tailwind styling (mobile-first)
+7. Write tests covering rendering, interactions, and states
 
 ### Best Practices
-- Semantic commit messages
+- **Use centralized types and constants**
+- **Use structured logger (never console.log)**
+- **Write tests for all new code**
+- Semantic commit messages (conventional commits)
 - Test locally before deploying
-- README.md = single source of truth
+- Documentation updated with code changes
 - Environment variables for secrets
 - Proper error boundaries
 - Optimize images/assets
 - No `any` types
+
+### Code Quality Enforcement
+- **Pre-commit hooks** run automatically:
+  - Lint-staged (auto-fix)
+  - Type check
+  - Tests for changed files
+- **CI/CD pipeline** enforces:
+  - All tests pass
+  - Type check passes
+  - Build succeeds
+  - Code quality checks
+- **Coverage requirements:**
+  - Overall: 70%+
+  - New code: 80%+
 
 ## Fly.io Deployment
 
@@ -186,7 +283,69 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundground
 
 ---
 
+## Documentation
+
+### Available Documentation
+- **Quick Reference**: `/docs/REFERENCE.md` - Quick lookup guide
+- **API Reference**: `/docs/API.md` - Complete API endpoint documentation
+- **Architecture**: `/docs/ARCHITECTURE.md` - System architecture and design decisions
+- **README**: `/README.md` - Project overview and setup
+
+### When to Update Documentation
+- **New API endpoint**: Update `/docs/API.md`
+- **Architecture change**: Update `/docs/ARCHITECTURE.md`
+- **User-facing feature**: Update `/README.md`
+
+## Testing Strategy
+
+### Test Types
+1. **Unit Tests** - Components and utilities
+2. **Integration Tests** - API routes and data flow
+3. **End-to-End Tests** - Critical user flows (future)
+
+### Test Coverage Goals
+- Components: 80%+
+- API Routes: 90%+
+- Utilities: 90%+
+- Overall: 70%+
+
+### Running Tests
+```bash
+npm test                # Run all tests with coverage
+npm run test:watch      # Watch mode during development
+npm run test:ci         # CI mode (used in GitHub Actions)
+```
+
+## CI/CD Pipeline
+
+### GitHub Actions Workflows
+1. **CI** (`.github/workflows/ci.yml`)
+   - Triggers: Push to main, PRs
+   - Steps: Lint, type-check, test, build
+
+2. **Deploy** (`.github/workflows/deploy.yml`)
+   - Triggers: Push to main
+   - Steps: Deploy to Fly.io, health check
+
+3. **PR Checks** (`.github/workflows/pr-checks.yml`)
+   - Triggers: Pull requests
+   - Steps: Bundle size, security audit, code quality
+
+### Pre-commit Hooks
+Located in `.husky/pre-commit`:
+- Lint-staged (auto-fix)
+- Type check
+- Tests for changed files
+- **Note**: Build check runs in CI, not locally
+
 ## Summary
 
 **Remember**: Follow the mandatory task completion requirements at the top of this file for EVERY task. No shortcuts.
+
+### Key Principles
+1. **Type Safety**: Use centralized types from `/src/types/`
+2. **No Magic Values**: Use constants from `/src/constants/`
+3. **Structured Logging**: Use logger from `/src/lib/logger.ts`
+4. **Test Everything**: Write tests for all new code
+5. **Document Changes**: Update relevant documentation
 

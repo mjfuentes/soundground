@@ -122,9 +122,12 @@ export function FloatingPlayer() {
 
         {/* Track Info */}
         <div className="min-w-0 flex-1 max-w-xs">
-          <div className="truncate text-sm font-medium text-white">
+          <Link
+            href={`/track/${currentItem.id}`}
+            className="truncate text-sm font-medium text-white hover:text-neutral-300 block cursor-pointer"
+          >
             {currentItem.title}
-          </div>
+          </Link>
           <Link
             href={`/track/${currentItem.id}`}
             className="truncate text-xs text-neutral-500 hover:text-neutral-300 block cursor-pointer"

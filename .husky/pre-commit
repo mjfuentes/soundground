@@ -3,19 +3,16 @@
 
 echo "🔍 Running pre-commit checks..."
 
-# Run lint-staged
+# Run lint-staged (auto-fix)
 npx lint-staged
 
 # Type check
 echo "📝 Type checking..."
 npm run type-check
 
-# Run tests
+# Run tests (fast, no coverage)
 echo "🧪 Running tests..."
-npm test -- --passWithNoTests --bail
-
-# Build check
-echo "🏗️  Testing build..."
-npm run build
+npm test -- --passWithNoTests --bail --silent --onlyChanged
 
 echo "✅ All checks passed!"
+echo "💡 Build check will run in CI pipeline"

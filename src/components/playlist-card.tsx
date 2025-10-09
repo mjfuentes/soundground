@@ -38,7 +38,16 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
   // Check if any track from this playlist is currently playing
   const isCurrentPlaylist = playlist.tracks?.some(t => t.id === currentItem?.id);
 
-  const handleClick = async () => {
+  const handleClick = () => {
+    // Navigate to SoundCloud page
+    if (playlist.permalink_url) {
+      window.open(playlist.permalink_url, '_blank');
+    }
+  };
+
+  const handlePlayClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation
+    
     try {
       setIsLoading(true);
       
@@ -92,10 +101,9 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
     const imageUrl = getHighQualityImage(playlist.artwork_url) || getHighQualityImage(playlist.tracks?.[0]?.artwork_url);
     
     return (
-      <button
+      <div
         onClick={handleClick}
-        disabled={isLoading}
-        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
         title={playlist.title}
       >
         {imageUrl ? (
@@ -115,20 +123,22 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
           </div>
         )}
         {/* Play Button Overlay */}
-        <div 
-          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+        <button
+          onClick={handlePlayClick}
+          disabled={isLoading}
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isCurrentPlaylist && isPlaying ? (
-            <svg className="h-10 w-10 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
             </svg>
           ) : (
-            <svg className="h-10 w-10 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
           )}
-        </div>
-      </button>
+        </button>
+      </div>
     );
   }
 
@@ -136,10 +146,9 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
   const artworkUrl = getHighQualityImage(playlist.artwork_url) || getHighQualityImage(playlist.tracks?.[0]?.artwork_url);
 
   return (
-    <button
+    <div
       onClick={handleClick}
-      disabled={isLoading}
-      className="group flex w-full cursor-pointer gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="group flex w-full cursor-pointer gap-3 rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
     >
       {/* Artwork */}
       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded bg-gradient-to-br from-purple-500/20 to-purple-600/20">
@@ -159,19 +168,21 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
           </div>
         )}
         {/* Play Button Overlay */}
-        <div 
-          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none"
+        <button
+          onClick={handlePlayClick}
+          disabled={isLoading}
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isCurrentPlaylist && isPlaying ? (
-            <svg className="h-7 w-7 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-7 w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
             </svg>
           ) : (
-            <svg className="h-7 w-7 text-white pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-7 w-7 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
           )}
-        </div>
+        </button>
       </div>
 
       {/* Playlist Info */}
@@ -207,7 +218,7 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 

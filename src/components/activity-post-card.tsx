@@ -55,13 +55,8 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
   const isCurrentTrack = currentItem?.id === track.id;
 
   const handleClick = () => {
-    if (!isPlayable) {
-      // Open in SoundCloud if not playable
-      if (track.permalink_url) {
-        window.open(track.permalink_url, "_blank");
-      }
-      return;
-    }
+    // Navigate to track page
+    router.push(`/track/${track.id}`);
   };
 
   const handlePlayClick = (e: React.MouseEvent) => {

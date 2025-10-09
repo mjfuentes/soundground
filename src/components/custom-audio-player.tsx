@@ -2,6 +2,7 @@
 
 import { usePlayer } from "@/contexts/player-context";
 import Image from "next/image";
+import Link from "next/link";
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return "0:00";
@@ -102,9 +103,12 @@ export function CustomAudioPlayer() {
           <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
             {/* Track info */}
             <div className="min-w-0">
-              <div className="truncate text-base font-semibold text-white">
+              <Link
+                href={`/track/${currentItem.id}`}
+                className="truncate text-base font-semibold text-white hover:text-neutral-300 block cursor-pointer"
+              >
                 {currentItem.title}
-              </div>
+              </Link>
               <a
                 href={currentItem.artistUrl}
                 target="_blank"
