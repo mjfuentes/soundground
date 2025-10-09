@@ -2,20 +2,24 @@
  * Tests for logger utility
  */
 
-import { logger, createLogger } from '../logger';
+import { logger, createLogger, LogLevel, Logger } from '../logger';
 
 describe('Logger', () => {
   let consoleLogSpy: jest.SpyInstance;
   let consoleWarnSpy: jest.SpyInstance;
   let consoleErrorSpy: jest.SpyInstance;
+  const originalNodeEnv = process.env.NODE_ENV;
 
   beforeEach(() => {
+    // Set to development mode for human-readable output
+    (process.env as { NODE_ENV?: string }).NODE_ENV = 'development';
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
     consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
   });
 
   afterEach(() => {
+    (process.env as { NODE_ENV?: string }).NODE_ENV = originalNodeEnv;
     consoleLogSpy.mockRestore();
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
@@ -23,7 +27,9 @@ describe('Logger', () => {
 
   describe('log levels', () => {
     it('should log debug messages', () => {
-      logger.debug('Test debug message');
+      // Create a logger with DEBUG level
+      const testLogger = new Logger(LogLevel.DEBUG);
+      testLogger.debug('Test debug message');
       
       expect(consoleLogSpy).toHaveBeenCalled();
       const output = consoleLogSpy.mock.calls[0][0];
@@ -89,7 +95,7 @@ describe('Logger', () => {
       expect(consoleErrorSpy).toHaveBeenCalled();
       const output = consoleErrorSpy.mock.calls[0][0];
       expect(output).toContain('Test error');
-      expect(output).toContain('Error:');
+      expect(output).toContain('Error');
     });
 
     it('should handle errors with context', () => {

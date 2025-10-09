@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveProfile, getSpotlight, getPlaylists, getAlbums, getTracks, getReposts } from "@/lib/soundcloud/smart-client";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger({ route: "profile" });
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -18,12 +21,12 @@ export async function GET(request: NextRequest) {
         getAlbums(profile.id).catch(() => ({ collection: [] })),
         getTracks(profile.id, 50).catch(() => ({ collection: [] })), // Limit to 50 tracks for performance
         getReposts(profile.id, 50).catch((error) => {
-          console.error(`[Profile API] Failed to fetch reposts for user ${profile.id}:`, error.message);
+          logger.error("Failed to fetch reposts", { userId: profile.id }, error);
           return { collection: [] };
         }), // Limit to 50 reposts
       ]);
 
-      console.log(`[Profile API] Fetched reposts for ${profile.username}: ${reposts.collection.length} items`);
+      logger.info("Fetched reposts", { username: profile.username, count: reposts.collection.length });
 
     return NextResponse.json({
       profile,
@@ -35,7 +38,7 @@ export async function GET(request: NextRequest) {
       // Friends are now loaded separately via /api/soundcloud/friends
     });
   } catch (error) {
-    console.error("Error fetching profile data:", error);
+    logger.error("Failed to fetch profile data", {}, error as Error);
     return NextResponse.json(
       { error: "Failed to fetch SoundCloud profile data" },
       { status: 500 }

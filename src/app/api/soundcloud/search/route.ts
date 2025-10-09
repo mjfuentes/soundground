@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { search } from "@/lib/soundcloud/smart-client";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger({ route: "search" });
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error("Error searching SoundCloud:", error);
+    logger.error("Search failed", { query }, error as Error);
     return NextResponse.json(
       { error: "Failed to search SoundCloud" },
       { status: 500 }

@@ -227,6 +227,7 @@ export function createLogger(context: LogContext): ChildLogger {
   return logger.child(context);
 }
 
-// Export types for use in other modules
+// Export types and classes for use in other modules
 export type { LogContext, ChildLogger };
+export { Logger };
 

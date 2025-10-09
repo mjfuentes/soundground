@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTracks } from "@/lib/soundcloud/smart-client";
 import { isTrackPlayable } from "@/lib/soundcloud/client";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger({ route: "tracks" });
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ collection: playableTracks });
   } catch (error) {
-    console.error("Error fetching tracks:", error);
+    logger.error("Failed to fetch tracks", { userId }, error as Error);
     return NextResponse.json(
       { error: "Failed to fetch tracks" },
       { status: 500 }
