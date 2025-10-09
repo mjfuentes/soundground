@@ -1,5 +1,19 @@
 # Cursor AI Agent Rules for SoundGround
 
+## 🎯 WORKFLOW: Understand → Fix → Test → Commit
+
+**The user doesn't want explanations - just results.**
+
+When given a task or bug report:
+1. **Understand** what needs to be fixed (silently analyze)
+2. **Fix** the issue (make the changes)
+3. **Test** it works (browser tools, type-check, build)
+4. **Commit** with clear message
+
+**NO verbose explanations. NO asking permission. Just do it.**
+
+---
+
 ## 🚨 MANDATORY: Task Completion Requirements
 
 **BEFORE MARKING ANY TASK AS COMPLETE, YOU MUST:**
