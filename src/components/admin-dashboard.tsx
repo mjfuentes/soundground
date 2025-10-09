@@ -269,17 +269,30 @@ export function AdminDashboard() {
                   Hit rate shows how often data is served from cache vs fetched from API
                 </p>
               </div>
-              <button
-                onClick={async () => {
-                  if (confirm('Clear all cached data?')) {
-                    await fetch('/api/cache', { method: 'DELETE' });
-                    fetchData();
-                  }
-                }}
-                className="rounded-lg border border-red-900 bg-red-950 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-900"
-              >
-                Clear Cache
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (confirm('Clear all cached data?')) {
+                      await fetch('/api/cache', { method: 'DELETE' });
+                      fetchData();
+                    }
+                  }}
+                  className="rounded-lg border border-red-900 bg-red-950 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-900"
+                >
+                  Clear Cache
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Reset cache statistics counters?')) {
+                      await fetch('/api/admin/cache-stats/reset', { method: 'POST' });
+                      fetchData();
+                    }
+                  }}
+                  className="rounded-lg border border-yellow-900 bg-yellow-950 px-4 py-2 text-sm font-medium text-yellow-400 transition hover:bg-yellow-900"
+                >
+                  Reset Stats
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
