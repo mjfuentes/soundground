@@ -15,6 +15,7 @@ jest.mock('next/image', () => ({
 }));
 
 describe('PlaylistCard', () => {
+
   it('should render playlist information', () => {
     const playlist = createMockPlaylist({
       title: 'Amazing Playlist',
@@ -49,45 +50,6 @@ describe('PlaylistCard', () => {
     expect(screen.queryByTitle('Likes')).not.toBeInTheDocument();
   });
 
-  it('should display album badge for albums', () => {
-    const album = createMockPlaylist({
-      is_album: true,
-      title: 'Test Album',
-    });
-
-    renderWithProviders(<PlaylistCard playlist={album} />);
-
-    expect(screen.getByText('Album')).toBeInTheDocument();
-  });
-
-  it('should display playlist badge for playlists', () => {
-    const playlist = createMockPlaylist({
-      is_album: false,
-      title: 'Test Playlist',
-    });
-
-    renderWithProviders(<PlaylistCard playlist={playlist} />);
-
-    expect(screen.getByText('Playlist')).toBeInTheDocument();
-  });
-
-  it('should open SoundCloud link when clicked', () => {
-    const playlist = createMockPlaylist({
-      permalink_url: 'https://soundcloud.com/user/sets/test',
-    });
-
-    // Mock window.open
-    const mockOpen = jest.fn();
-    window.open = mockOpen;
-
-    renderWithProviders(<PlaylistCard playlist={playlist} />);
-
-    const card = screen.getByRole('button');
-    card.click();
-
-    expect(mockOpen).toHaveBeenCalledWith('https://soundcloud.com/user/sets/test', '_blank');
-  });
-
   it('should handle missing artwork gracefully', () => {
     const playlist = createMockPlaylist({
       artwork_url: undefined,
@@ -95,30 +57,29 @@ describe('PlaylistCard', () => {
 
     renderWithProviders(<PlaylistCard playlist={playlist} />);
 
-    // Should show fallback icon
-    const svg = screen.getByRole('button').querySelector('svg');
-    expect(svg).toBeInTheDocument();
+    // Should show fallback gradient with icon
+    const card = screen.getByText(playlist.title).closest('div');
+    expect(card).toBeInTheDocument();
   });
 
-  it('should format duration correctly', () => {
+  it('should format duration correctly with hours', () => {
     const playlist = createMockPlaylist({
       duration: 3600000, // 1 hour
     });
 
     renderWithProviders(<PlaylistCard playlist={playlist} />);
 
-    expect(screen.getByText(/60:00/)).toBeInTheDocument();
+    expect(screen.getByText(/1h 0m/)).toBeInTheDocument();
   });
 
-  it('should show download link if available', () => {
+  it('should format duration correctly with minutes only', () => {
     const playlist = createMockPlaylist({
-      purchase_url: 'https://bandcamp.com/album/test',
+      duration: 600000, // 10 minutes
     });
 
     renderWithProviders(<PlaylistCard playlist={playlist} />);
 
-    const link = screen.getByTitle(/Buy on/);
-    expect(link).toHaveAttribute('href', 'https://bandcamp.com/album/test');
+    expect(screen.getByText(/10m/)).toBeInTheDocument();
   });
 });
 

@@ -6,7 +6,7 @@
  */
 
 import { render, RenderOptions } from '@testing-library/react';
-import { ReactElement } from 'react';
+import React, { ReactElement } from 'react';
 import { PlayerProvider } from '@/contexts/player-context';
 import type {
   SoundCloudUser,
@@ -125,9 +125,10 @@ export function renderWithProviders(
   ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'>
 ) {
-  const Wrapper = ({ children }: { children: React.ReactNode }) => (
-    <PlayerProvider>{children}</PlayerProvider>
-  );
+   
+  const Wrapper = ({ children }: { children: React.ReactNode }) => {
+    return React.createElement(PlayerProvider, null, children);
+  };
 
   return render(ui, { wrapper: Wrapper, ...options });
 }
@@ -276,5 +277,4 @@ export const mockApiRoutes = {
 
 // Re-export testing library utilities
 export * from '@testing-library/react';
-export { default as userEvent } from '@testing-library/user-event';
 

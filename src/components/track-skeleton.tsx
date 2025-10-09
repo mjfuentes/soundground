@@ -1,6 +1,6 @@
 export function TrackSkeleton() {
   return (
-    <div className="min-h-screen animate-pulse" style={{ backgroundColor: '#060606' }}>
+    <div className="min-h-screen animate-pulse">
       <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Back Button skeleton */}
         <div className="mb-8 h-4 w-16 rounded bg-neutral-800"></div>

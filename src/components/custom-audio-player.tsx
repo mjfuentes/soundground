@@ -109,14 +109,12 @@ export function CustomAudioPlayer() {
               >
                 {currentItem.title}
               </Link>
-              <a
-                href={currentItem.artistUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/${currentItem.artistUrl.split('/').pop()}`}
                 className="mt-1 block truncate text-sm text-neutral-400 hover:text-white hover:underline"
               >
                 {currentItem.artist}
-              </a>
+              </Link>
             </div>
 
             {/* Transport controls at bottom - small */}

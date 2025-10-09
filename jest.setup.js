@@ -30,4 +30,3 @@ jest.mock('next/navigation', () => ({
     return new URLSearchParams()
   },
 }))
-

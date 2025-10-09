@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { RichDescription } from "./rich-description";
 import { ExpandableSection } from "./expandable-section";
@@ -10,6 +9,7 @@ import { RecentActivityList } from "./recent-activity-list";
 import { ActivityPostCard } from "./activity-post-card";
 import { ProfileWithAutoQueue } from "./profile-with-auto-queue";
 import { ProfileWithCache } from "./profile-with-cache";
+import { ArtistAvatar } from "./artist-avatar";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import { getServerBaseUrl } from "@/lib/server-base-url";
 import { getHighQualityImage } from "@/lib/image-utils";
@@ -71,16 +71,7 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
       {/* Left column - Profile info, Albums/Playlists & Friends */}
       <section className="flex flex-col gap-4">
         {avatar ? (
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-neutral-900">
-            <Image 
-              src={avatar} 
-              alt={`${user.username} avatar`} 
-              fill 
-              className="object-cover transition-all duration-500 ease-in-out" 
-              sizes="(min-width: 768px) 320px, 100vw"
-              priority
-            />
-          </div>
+          <ArtistAvatar avatar={avatar} username={user.username} />
         ) : null}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">

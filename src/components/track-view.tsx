@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import type { SoundCloudTrack } from "@/lib/soundcloud/client";
 import { usePlayer } from "@/contexts/player-context";
@@ -76,7 +77,7 @@ function detectExternalLinks(track: SoundCloudTrack): ExternalLink[] {
       return {
         url,
         platform: 'Hypeddit',
-        action: 'Download',
+        action: 'Free Download',
         icon: (
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
@@ -155,7 +156,11 @@ export function TrackView({ trackId }: TrackViewProps) {
   const [track, setTrack] = useState<SoundCloudTrack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAllLikes, setShowAllLikes] = useState(false);
+
+  // Scroll to top when track page opens
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [trackId]);
 
   useEffect(() => {
     async function fetchTrack() {
@@ -290,22 +295,18 @@ export function TrackView({ trackId }: TrackViewProps) {
 
   const artwork = getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url);
 
-  // Generate placeholder squares for likes (1 per like, max display)
-  const maxDisplayedLikes = showAllLikes ? track.likes_count || 0 : Math.min(track.likes_count || 0, 20);
-  const hasMoreLikes = (track.likes_count || 0) > 20;
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#060606' }}>
+    <div className="min-h-screen">
       <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="mb-8 flex cursor-pointer items-center gap-2 text-sm text-neutral-500 transition-colors hover:text-white"
+          className="group mb-8 flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-400 transition-all hover:bg-white/5 hover:text-white"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          back
+          Back
         </button>
 
         <div className="flex flex-col gap-8 md:flex-row md:gap-12">
@@ -338,12 +339,12 @@ export function TrackView({ trackId }: TrackViewProps) {
             <div className="mb-6">
               <h1 className="mb-2 text-2xl font-normal text-white">{track.title}</h1>
               {track.user?.permalink_url ? (
-                <a
+                <Link
                   href={`/${track.user.permalink_url.split('/').pop()}`}
                   className="cursor-pointer text-neutral-400 transition-colors hover:text-white"
                 >
                   by {track.user.username || "Unknown Artist"}
-                </a>
+                </Link>
               ) : (
                 <p className="text-neutral-400">
                   by {track.user?.username || "Unknown Artist"}
@@ -370,10 +371,10 @@ export function TrackView({ trackId }: TrackViewProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full cursor-pointer items-center justify-center gap-2 border border-white/20 bg-transparent py-3 text-center font-medium text-white transition-colors hover:border-white/40 hover:bg-white/10 md:flex-1 md:px-8"
-                  title={`${link.action} on ${link.platform}`}
+                  title={link.platform === 'Hypeddit' ? link.action : `${link.action} on ${link.platform}`}
                 >
                   {link.icon}
-                  <span>{link.action} on {link.platform}</span>
+                  <span>{link.platform === 'Hypeddit' ? link.action : `${link.action} on ${link.platform}`}</span>
                 </a>
               ))}
             </div>
@@ -392,29 +393,6 @@ export function TrackView({ trackId }: TrackViewProps) {
             {track.description && (
               <div className="mb-8 border-t border-neutral-800 pt-6">
                 <RichDescription text={track.description} />
-              </div>
-            )}
-
-            {/* Likes Section - Bandcamp Style */}
-            {track.likes_count !== undefined && track.likes_count > 0 && (
-              <div className="border-t border-neutral-800 pt-6">
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: maxDisplayedLikes }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-12 w-12 bg-neutral-800"
-                      title="User who liked this track"
-                    />
-                  ))}
-                  {hasMoreLikes && !showAllLikes && (
-                    <button
-                      onClick={() => setShowAllLikes(true)}
-                      className="flex h-12 w-12 cursor-pointer items-center justify-center bg-neutral-700 text-xs text-neutral-400 transition-colors hover:bg-neutral-600 hover:text-white"
-                    >
-                      +{formatNumber((track.likes_count || 0) - 20)}
-                    </button>
-                  )}
-                </div>
               </div>
             )}
 

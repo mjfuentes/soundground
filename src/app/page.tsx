@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 import { SearchDropdown } from "@/components/search-dropdown";
 import { ClientSearchCache } from "@/lib/client-search-cache";
 import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
 export default function Home() {
+  const router = useRouter();
   const [searchResults, setSearchResults] = useState<(SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,15 +89,27 @@ export default function Home() {
       setSelectedIndex((prev) => Math.max(prev - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      // Trigger navigation to selected result
+      // Navigate directly to selected result
       const selectedResult = searchResults[selectedIndex];
       if (selectedResult) {
-        // Signal to dropdown to handle navigation
-        const event = new CustomEvent('navigate-selected', { detail: { index: selectedIndex } });
-        containerRef.current?.dispatchEvent(event);
+        // Check if it's a user/artist
+        if ('followers_count' in selectedResult && 'followings_count' in selectedResult) {
+          const handle = selectedResult.permalink || selectedResult.permalink_url?.split('/').pop();
+          if (handle) {
+            router.push(`/${handle}`);
+          }
+        } else if ('user' in selectedResult && !('is_album' in selectedResult)) {
+          // It's a track
+          router.push(`/track/${selectedResult.id}`);
+        } else if ('is_album' in selectedResult) {
+          // It's a playlist
+          router.push(`/playlist/${selectedResult.id}`);
+        }
+        // Close dropdown
+        setIsDropdownOpen(false);
       }
     }
-  }, [searchResults, selectedIndex]);
+  }, [searchResults, selectedIndex, router]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -110,7 +124,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen items-center justify-center text-white px-6" style={{ backgroundColor: '#060606' }}>
+    <main className="flex min-h-screen items-center justify-center text-white px-6">
       <div className="w-full max-w-4xl">
         {/* Logo and Search in a row */}
         <div className="flex items-center gap-4 mb-6">

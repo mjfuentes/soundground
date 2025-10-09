@@ -97,7 +97,7 @@ function NowPlayingContent() {
 
   if (!currentItem) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#060606' }}>
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-neutral-500">No track playing</div>
       </div>
     );
@@ -349,7 +349,7 @@ function NowPlayingContent() {
 export default function NowPlayingPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#060606' }}>
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-neutral-500">Loading...</div>
       </div>
     }>

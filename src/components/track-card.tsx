@@ -69,7 +69,7 @@ function getDownloadPlatform(url: string): { platform: string; action: string; i
   if (lowerUrl.includes('hypeddit.com')) {
     return {
       platform: 'Hypeddit',
-      action: 'Download',
+      action: 'Free Download',
       icon: (
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
           <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
@@ -172,9 +172,19 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
     const downloadLink = track.purchase_url || track.download_url;
     const downloadPlatform = downloadLink ? getDownloadPlatform(downloadLink) : null;
     
+    const handleCoverClick = (e: React.MouseEvent) => {
+      // If clicking on the play button area (center), don't navigate
+      const target = e.target as HTMLElement;
+      if (target.closest('button[data-play-button]')) {
+        return;
+      }
+      // Navigate to track page in same tab
+      router.push(`/track/${track.id}`);
+    };
+    
     return (
-      <button
-        onClick={handleClick}
+      <div
+        onClick={handleCoverClick}
         className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
         title={track.title}
       >
@@ -196,20 +206,23 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
         )}
         {/* Play Button Overlay */}
         {(isPlayable || isPreviewOnly) && (
-          <div
-            onClick={handlePlayClick}
-            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
-            title="Play track"
-          >
-            {isCurrentTrack && isPlaying ? (
-              <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-              </svg>
-            ) : (
-              <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            )}
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+            <button
+              data-play-button
+              onClick={handlePlayClick}
+              className="pointer-events-auto cursor-pointer rounded-full bg-white/20 p-1.5 backdrop-blur-sm transition hover:scale-110 hover:bg-white/30"
+              aria-label={isCurrentTrack && isPlaying ? "Pause" : "Play"}
+            >
+              {isCurrentTrack && isPlaying ? (
+                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                </svg>
+              ) : (
+                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              )}
+            </button>
           </div>
         )}
         {downloadPlatform && (
@@ -219,12 +232,12 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/80"
-            title={`${downloadPlatform.action} on ${downloadPlatform.platform}`}
+            title={downloadPlatform.platform === 'Hypeddit' ? downloadPlatform.action : `${downloadPlatform.action} on ${downloadPlatform.platform}`}
           >
             {downloadPlatform.icon}
           </a>
         )}
-      </button>
+      </div>
     );
   }
 
@@ -249,20 +262,22 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
         )}
         {/* Play Button Overlay */}
         {(isPlayable || isPreviewOnly) && (
-          <div
-            onClick={handlePlayClick}
-            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
-            title="Play track"
-          >
-            {isCurrentTrack && isPlaying ? (
-              <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-              </svg>
-            ) : (
-              <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+            <button
+              onClick={handlePlayClick}
+              className="pointer-events-auto rounded-full bg-white/20 p-1 backdrop-blur-sm transition hover:scale-110 hover:bg-white/30"
+              aria-label={isCurrentTrack && isPlaying ? "Pause" : "Play"}
+            >
+              {isCurrentTrack && isPlaying ? (
+                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              )}
+            </button>
           </div>
         )}
       </div>
@@ -296,7 +311,7 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="flex-shrink-0 text-amber-400 transition hover:text-amber-300"
-                  title={`${downloadPlatform.action} on ${downloadPlatform.platform}`}
+                  title={downloadPlatform.platform === 'Hypeddit' ? downloadPlatform.action : `${downloadPlatform.action} on ${downloadPlatform.platform}`}
                 >
                   {downloadPlatform.icon}
                 </a>
@@ -357,22 +372,22 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
     );
   }
 
-  const buttonClasses = isPlayable || isPreviewOnly
+  const divClasses = isPlayable || isPreviewOnly
     ? "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-purple-500/50 hover:bg-purple-500/10"
     : "group flex w-full cursor-pointer gap-2.5 rounded-lg border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-orange-500/50 hover:bg-orange-500/10 opacity-75";
 
-  const buttonTitle = isPlayable || isPreviewOnly
-    ? "Play track"
+  const divTitle = isPlayable || isPreviewOnly
+    ? "View track details"
     : "Not streamable - click to open in SoundCloud";
 
   return (
-    <button
+    <div
       onClick={handleClick}
-      className={buttonClasses}
-      title={buttonTitle}
+      className={divClasses}
+      title={divTitle}
     >
       {content}
-    </button>
+    </div>
   );
 }
 

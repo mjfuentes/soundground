@@ -33,6 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${inter.variable} antialiased`}
+        style={{ backgroundColor: '#0f0f0f' }}
       >
         <PlayerProvider>
           <ConditionalHeader />

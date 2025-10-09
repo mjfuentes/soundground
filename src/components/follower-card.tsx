@@ -38,7 +38,7 @@ export function FollowerCard({ follower }: FollowerCardProps) {
     >
       <Link
         href={`/${follower.permalink}`}
-        className="group relative block aspect-square overflow-hidden rounded-sm bg-white/5 transition hover:bg-white/10"
+        className="relative block aspect-square overflow-hidden rounded-sm bg-white/5 transition hover:bg-white/10"
       >
         {follower.avatar_url ? (
           <Image

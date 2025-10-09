@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlbumCard } from "./album-card";
+import { PlaylistCard } from "./playlist-card";
 import { TrackCard } from "./track-card";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
 
@@ -30,7 +30,7 @@ export function ExpandableAlbums({ albums, title }: ExpandableAlbumsProps) {
           if (album.tracks?.length === 1) {
             return <TrackCard key={album.id} track={album.tracks[0]} showStats={false} coverOnly={true} />;
           }
-          return <AlbumCard key={album.id} album={album} showStats={false} coverOnly={true} />;
+          return <PlaylistCard key={album.id} playlist={album} showStats={false} coverOnly={true} />;
         })}
       </div>
       {hasMore && !showAll && (

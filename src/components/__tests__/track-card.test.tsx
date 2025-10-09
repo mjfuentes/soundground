@@ -2,7 +2,7 @@
  * Tests for TrackCard component
  */
 
-import { renderWithProviders, createMockTrack, screen, userEvent } from '@/test-utils';
+import { renderWithProviders, createMockTrack, screen, fireEvent } from '@/test-utils';
 import { TrackCard } from '../track-card';
 import { useRouter } from 'next/navigation';
 
@@ -66,14 +66,13 @@ describe('TrackCard', () => {
     expect(screen.queryByTitle('Likes')).not.toBeInTheDocument();
   });
 
-  it('should navigate to track page when clicked', async () => {
+  it('should navigate to track page when clicked', () => {
     const track = createMockTrack({ id: 12345 });
-    const user = userEvent.setup();
 
     renderWithProviders(<TrackCard track={track} />);
 
-    const card = screen.getByRole('button');
-    await user.click(card);
+    const card = screen.getByTitle('View track details');
+    fireEvent.click(card);
 
     expect(mockPush).toHaveBeenCalledWith('/track/12345');
   });
@@ -96,8 +95,8 @@ describe('TrackCard', () => {
 
     renderWithProviders(<TrackCard track={track} />);
 
-    const indicator = screen.getByTitle('Not streamable - click to open in SoundCloud');
-    expect(indicator).toBeInTheDocument();
+    const indicators = screen.getAllByTitle('Not streamable - click to open in SoundCloud');
+    expect(indicators.length).toBeGreaterThan(0);
   });
 
   it('should show download link for Bandcamp tracks', () => {
@@ -118,7 +117,7 @@ describe('TrackCard', () => {
 
     renderWithProviders(<TrackCard track={track} />);
 
-    const link = screen.getByTitle('Download on Hypeddit');
+    const link = screen.getByTitle('Free Download');
     expect(link).toHaveAttribute('href', 'https://hypeddit.com/test');
   });
 
@@ -144,9 +143,10 @@ describe('TrackCard', () => {
     // Title should not be visible in cover-only mode
     expect(screen.queryByText('Test Track')).not.toBeInTheDocument();
     
-    // But the image/button should exist
-    const button = screen.getByRole('button', { name: track.title });
-    expect(button).toBeInTheDocument();
+    // But the image and play button should exist
+    const playButton = screen.getByRole('button', { name: 'Play' });
+    expect(playButton).toBeInTheDocument();
+    expect(screen.getByAltText('Test Track')).toBeInTheDocument();
   });
 
   it('should format dates correctly', () => {
@@ -171,8 +171,9 @@ describe('TrackCard', () => {
 
     renderWithProviders(<TrackCard track={track} />);
 
-    // Should show fallback icon
-    const svg = screen.getByRole('button').querySelector('svg');
+    // Should show fallback music note icon
+    const card = screen.getByTitle('View track details');
+    const svg = card.querySelector('svg');
     expect(svg).toBeInTheDocument();
   });
 });

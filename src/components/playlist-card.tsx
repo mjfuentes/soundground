@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { SoundCloudPlaylist } from "@/lib/soundcloud/client";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
@@ -32,6 +33,7 @@ function formatDuration(ms: number): string {
 }
 
 export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: PlaylistCardProps) {
+  const router = useRouter();
   const { playQueue, currentItem, isPlaying, pause, resume } = usePlayer();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -39,10 +41,8 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
   const isCurrentPlaylist = playlist.tracks?.some(t => t.id === currentItem?.id);
 
   const handleClick = () => {
-    // Navigate to SoundCloud page
-    if (playlist.permalink_url) {
-      window.open(playlist.permalink_url, '_blank');
-    }
+    // Navigate to playlist page
+    router.push(`/playlist/${playlist.id}`);
   };
 
   const handlePlayClick = async (e: React.MouseEvent) => {
@@ -100,9 +100,19 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
     // Use playlist artwork, or fallback to first track's artwork
     const imageUrl = getHighQualityImage(playlist.artwork_url) || getHighQualityImage(playlist.tracks?.[0]?.artwork_url);
     
+    const handleCoverClick = (e: React.MouseEvent) => {
+      // If clicking on the play button, don't navigate
+      const target = e.target as HTMLElement;
+      if (target.closest('button[data-play-button]')) {
+        return;
+      }
+      // Navigate to playlist page
+      router.push(`/playlist/${playlist.id}`);
+    };
+    
     return (
       <div
-        onClick={handleClick}
+        onClick={handleCoverClick}
         className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
         title={playlist.title}
       >
@@ -123,21 +133,25 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
           </div>
         )}
         {/* Play Button Overlay */}
-        <button
-          onClick={handlePlayClick}
-          disabled={isLoading}
-          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isCurrentPlaylist && isPlaying ? (
-            <svg className="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-            </svg>
-          ) : (
-            <svg className="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          )}
-        </button>
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+          <button
+            data-play-button
+            onClick={handlePlayClick}
+            disabled={isLoading}
+            className="pointer-events-auto cursor-pointer rounded-full bg-white/20 p-1.5 backdrop-blur-sm transition hover:scale-110 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={isCurrentPlaylist && isPlaying ? "Pause" : "Play"}
+          >
+            {isCurrentPlaylist && isPlaying ? (
+              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+              </svg>
+            ) : (
+              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
     );
   }

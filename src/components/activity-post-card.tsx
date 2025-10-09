@@ -12,38 +12,6 @@ interface ActivityPostCardProps {
   track: SoundCloudTrack;
 }
 
-function formatNumber(num?: number): string {
-  if (!num) return "0";
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num.toString();
-}
-
-function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-}
-
-function formatDate(dateString?: string): string | null {
-  if (!dateString) return null;
-  
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return null;
-  
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-  return `${Math.floor(diffDays / 365)} years ago`;
-}
-
 export function ActivityPostCard({ track }: ActivityPostCardProps) {
   const router = useRouter();
   const { play, currentItem, isPlaying, pause, resume } = usePlayer();
@@ -54,8 +22,13 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
   // Check if this is the currently playing track
   const isCurrentTrack = currentItem?.id === track.id;
 
-  const handleClick = () => {
-    // Navigate to track page
+  const handleClick = (e: React.MouseEvent) => {
+    // If clicking on the play button area, don't navigate
+    const target = e.target as HTMLElement;
+    if (target.closest('button[data-play-button]')) {
+      return;
+    }
+    // Navigate to track page in same tab
     router.push(`/track/${track.id}`);
   };
 
@@ -86,7 +59,6 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
   };
 
   const artwork = getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url);
-  const formattedDate = formatDate(track.created_at);
 
   return (
     <div 
@@ -127,23 +99,23 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
       
       {/* Play Button Overlay */}
       {isPlayable && (
-        <div
-          onClick={handlePlayClick}
-          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
-        >
-          {isCurrentTrack && isPlaying ? (
-            <div className="rounded-full bg-white p-3 shadow-xl">
-              <svg className="h-6 w-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+          <button
+            data-play-button
+            onClick={handlePlayClick}
+            className="pointer-events-auto cursor-pointer rounded-full bg-white p-2 shadow-xl transition hover:scale-110"
+            aria-label={isCurrentTrack && isPlaying ? "Pause" : "Play"}
+          >
+            {isCurrentTrack && isPlaying ? (
+              <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
               </svg>
-            </div>
-          ) : (
-            <div className="rounded-full bg-white p-3 shadow-xl">
-              <svg className="h-6 w-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+            ) : (
+              <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
-            </div>
-          )}
+            )}
+          </button>
         </div>
       )}
 

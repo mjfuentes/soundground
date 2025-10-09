@@ -13,14 +13,8 @@ export async function GET(request: NextRequest) {
   try {
     const playlist = await getPlaylistWithTracks(Number(playlistId));
     
-    // Filter out unplayable tracks
-    if (playlist && playlist.tracks) {
-      return NextResponse.json({
-        ...playlist,
-        tracks: playlist.tracks.filter(isTrackPlayable)
-      });
-    }
-    
+    // Don't filter out tracks - let the UI decide
+    // Some tracks may not be playable but we still want to show them
     return NextResponse.json(playlist);
   } catch (error) {
     console.error("Error fetching playlist tracks:", error);

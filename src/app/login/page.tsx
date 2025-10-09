@@ -25,7 +25,7 @@ function LoginContent() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center text-white" style={{ backgroundColor: '#060606' }}>
+    <main className="flex min-h-screen items-center justify-center text-white">
       <div className="mx-auto flex max-w-lg flex-col gap-8 px-6 text-center">
         <div>
           <h1 className="text-5xl font-semibold sm:text-6xl">SoundClopedia</h1>
@@ -66,7 +66,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <main className="flex min-h-screen items-center justify-center text-white" style={{ backgroundColor: '#060606' }}>
+      <main className="flex min-h-screen items-center justify-center text-white">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
       </main>
     }>
