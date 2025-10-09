@@ -48,7 +48,7 @@ function HeaderSearch() {
     setIsSearching(true);
 
     try {
-      const response = await fetch(`/api/soundcloud/search?q=${encodeURIComponent(query)}&limit=20`);
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
       if (response.ok) {
         const data = await response.json();
         const freshResults = data.collection || [];
@@ -189,6 +189,7 @@ function HeaderSearch() {
               onSearch={handleSearch}
               onKeyDown={handleKeyDown}
               value={searchQuery}
+              hasResults={searchResults.length > 0 && isDropdownOpen}
             />
             {isDropdownOpen && (
               <SearchDropdown

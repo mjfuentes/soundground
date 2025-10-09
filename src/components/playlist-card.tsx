@@ -25,11 +25,12 @@ function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
   
   if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
-  return `${minutes}m`;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: PlaylistCardProps) {
@@ -100,20 +101,15 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
     // Use playlist artwork, or fallback to first track's artwork
     const imageUrl = getHighQualityImage(playlist.artwork_url) || getHighQualityImage(playlist.tracks?.[0]?.artwork_url);
     
-    const handleCoverClick = (e: React.MouseEvent) => {
-      // If clicking on the play button, don't navigate
-      const target = e.target as HTMLElement;
-      if (target.closest('button[data-play-button]')) {
-        return;
-      }
-      // Navigate to playlist page
+    const handleCoverClick = () => {
+      // On mobile, always navigate to playlist page
       router.push(`/playlist/${playlist.id}`);
     };
     
     return (
       <div
         onClick={handleCoverClick}
-        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition touch-manipulation"
         title={playlist.title}
       >
         {imageUrl ? (
@@ -132,11 +128,14 @@ export function PlaylistCard({ playlist, showStats = true, coverOnly = false }: 
             </svg>
           </div>
         )}
-        {/* Play Button Overlay */}
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+        {/* Play Button Overlay - hidden on mobile (only shows on desktop hover) */}
+        <div className="absolute inset-0 z-20 hidden sm:flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
           <button
             data-play-button
-            onClick={handlePlayClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlayClick(e);
+            }}
             disabled={isLoading}
             className="pointer-events-auto cursor-pointer rounded-full bg-white/20 p-1.5 backdrop-blur-sm transition hover:scale-110 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={isCurrentPlaylist && isPlaying ? "Pause" : "Play"}

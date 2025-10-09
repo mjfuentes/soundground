@@ -8,6 +8,7 @@ interface SearchBarProps {
   isLoading?: boolean;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   value?: string;
+  hasResults?: boolean; // New prop to indicate if dropdown has results
 }
 
 export interface SearchBarRef {
@@ -19,7 +20,8 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
   debounceMs = 300,
   isLoading = false,
   onKeyDown,
-  value: externalValue
+  value: externalValue,
+  hasResults = false
 }, ref) {
   const [query, setQuery] = useState(externalValue || "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -101,8 +103,9 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
       }
     }
     
-    // On Enter, trigger immediate search (only if parent didn't handle it)
-    if (e.key === 'Enter' && query.trim()) {
+    // On Enter, only trigger search if there are NO results visible
+    // If results are visible, the parent's handler should navigate to the selected item
+    if (e.key === 'Enter' && query.trim() && !hasResults) {
       e.preventDefault();
       setDebouncedQuery(query.trim());
       onSearch(query.trim(), false);
@@ -111,7 +114,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
         inputRef.current?.focus();
       }, 0);
     }
-  }, [onKeyDown, query, onSearch]);
+  }, [onKeyDown, query, onSearch, hasResults]);
 
   return (
     <div className="relative w-full">
@@ -122,7 +125,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
             <span className="text-xs sm:text-sm text-zinc-500">
               search{" "}
               <span className="text-sm sm:text-base font-semibold text-zinc-400">artist</span>
-              {" "}<span className="hidden sm:inline">tracks albums</span>
+              {" "}tracks albums
             </span>
           </div>
         )}

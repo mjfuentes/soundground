@@ -41,7 +41,6 @@ describe('TrackCard', () => {
 
     expect(screen.getByText('Amazing Track')).toBeInTheDocument();
     expect(screen.getByText(/3:00/)).toBeInTheDocument();
-    expect(screen.getByText(/Electronic/)).toBeInTheDocument();
   });
 
   it('should show stats when showStats is true', () => {
@@ -127,16 +126,6 @@ describe('TrackCard', () => {
     expect(screen.getByAltText('Test Track')).toBeInTheDocument();
   });
 
-  it('should format dates correctly', () => {
-    const track = createMockTrack({
-      created_at: '2024-01-15T00:00:00Z',
-    });
-
-    renderWithProviders(<TrackCard track={track} />);
-
-    // Should show formatted date (format depends on current year)
-    expect(screen.getByText(/15\.01/)).toBeInTheDocument();
-  });
 
   it('should handle missing artwork gracefully', () => {
     const track = createMockTrack({

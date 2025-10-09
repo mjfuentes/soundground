@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ConditionalHeader } from "@/components/conditional-header";
 import { PlayerProvider } from "@/contexts/player-context";
@@ -7,6 +7,12 @@ import { FloatingPlayer } from "@/components/floating-player";
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
   display: "swap",
 });
@@ -38,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
         style={{ backgroundColor: '#0f0f0f' }}
       >
         <PlayerProvider>

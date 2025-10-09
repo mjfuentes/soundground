@@ -69,7 +69,7 @@ describe('PlaylistCard', () => {
 
     renderWithProviders(<PlaylistCard playlist={playlist} />);
 
-    expect(screen.getByText(/1h 0m/)).toBeInTheDocument();
+    expect(screen.getByText(/1:00:00/)).toBeInTheDocument();
   });
 
   it('should format duration correctly with minutes only', () => {
@@ -79,7 +79,7 @@ describe('PlaylistCard', () => {
 
     renderWithProviders(<PlaylistCard playlist={playlist} />);
 
-    expect(screen.getByText(/10m/)).toBeInTheDocument();
+    expect(screen.getByText(/10:00/)).toBeInTheDocument();
   });
 });
 

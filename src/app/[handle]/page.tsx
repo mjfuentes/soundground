@@ -19,7 +19,7 @@ export default async function ArtistPage({
   
   return (
     <main className="min-h-screen text-white">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-12 pb-[350px]">
+      <div className="mx-auto flex w-full max-w-5xl flex-col px-6 py-8 pb-32">
         <Suspense fallback={<ProfileSkeletonWrapper handle={handle} />}>
           <SoundcloudProfileLoader handle={handle} />
         </Suspense>

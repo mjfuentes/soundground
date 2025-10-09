@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 import { SearchDropdown } from "@/components/search-dropdown";
 import { ClientSearchCache } from "@/lib/client-search-cache";
+import { trackPageLoad, ClientPerformanceTimer } from "@/lib/client-performance";
 import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
+
+// Track page load performance
+if (typeof window !== 'undefined') {
+  trackPageLoad();
+}
 
 // Import the same filtering/sorting logic used in SearchDropdown
 function isUser(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): result is SoundCloudUser {
@@ -91,7 +97,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialViewportHeight = useRef<number>(0);
 
   const handleSearch = useCallback(async (query: string, isImmediate = false) => {
     if (!query.trim()) {
@@ -121,11 +129,18 @@ export default function Home() {
     // Always show loading indicator when fetching fresh results
     setIsSearching(true);
 
+    // Track search performance
+    const perfTimer = new ClientPerformanceTimer('search', query, { cached: !!cachedResults });
+
     try {
-      const response = await fetch(`/api/soundcloud/search?q=${encodeURIComponent(query)}&limit=20`);
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
       if (response.ok) {
         const data = await response.json();
         const freshResults = data.collection || [];
+        
+        // Track response time from server
+        const serverTime = response.headers.get('X-Response-Time');
+        perfTimer.end({ serverTime, resultCount: freshResults.length });
         
         // Only update UI if results are actually different
         if (!cachedResults || ClientSearchCache.areResultsDifferent(cachedResults, freshResults)) {
@@ -136,12 +151,14 @@ export default function Home() {
         ClientSearchCache.set(query, freshResults);
       } else {
         console.error("Search failed:", response.statusText);
+        perfTimer.end({ error: true, status: response.status });
         if (!cachedResults) {
           setSearchResults([]);
         }
       }
     } catch (error) {
       console.error("Search error:", error);
+      perfTimer.end({ error: true });
       if (!cachedResults) {
         setSearchResults([]);
       }
@@ -206,13 +223,47 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Detect keyboard visibility on mobile
+  useEffect(() => {
+    // Store initial viewport height
+    initialViewportHeight.current = window.visualViewport?.height || window.innerHeight;
+
+    const handleResize = () => {
+      if (!window.visualViewport) return;
+      
+      const currentHeight = window.visualViewport.height;
+      const heightDifference = initialViewportHeight.current - currentHeight;
+      
+      // If viewport shrunk by more than 150px, keyboard is likely visible
+      // This threshold accounts for mobile browser UI changes
+      setIsKeyboardVisible(heightDifference > 150);
+    };
+
+    // Listen to visual viewport resize (better for mobile keyboards)
+    window.visualViewport?.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
-    <main className="flex min-h-screen items-center justify-center text-white px-4 sm:px-6">
+    <main 
+      className={`flex min-h-screen text-white px-4 sm:px-6 transition-all ${
+        isKeyboardVisible 
+          ? 'items-start pt-4' 
+          : 'items-center justify-center'
+      }`}
+    >
       <div className="w-full max-w-4xl mx-auto">
         {/* Logo and Search - Stacked vertically and centered */}
-        <div className="flex flex-col items-center gap-6 mb-6">
-          {/* Logo/Title - Always centered */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 soundground-logo">
+        <div className={`flex flex-col items-center mb-6 transition-all ${
+          isKeyboardVisible ? 'gap-3' : 'gap-6'
+        }`}>
+          {/* Logo/Title - Hide on mobile when keyboard is visible to save space */}
+          <div className={`flex items-center gap-2 sm:gap-3 flex-shrink-0 soundground-logo transition-all ${
+            isKeyboardVisible ? 'scale-75 -mb-2' : ''
+          }`}>
             <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 sm:w-12 sm:h-12">
               <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
               <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
@@ -228,6 +279,7 @@ export default function Home() {
               onSearch={handleSearch} 
               isLoading={isSearching} 
               onKeyDown={handleKeyDown}
+              hasResults={searchResults.length > 0 && isDropdownOpen}
             />
             {isDropdownOpen && (
               <SearchDropdown
@@ -243,12 +295,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Hint text */}
-        <div className="text-center">
-          <p className="text-xs sm:text-sm text-zinc-500">
-            by artists for artists
-          </p>
-        </div>
+        {/* Hint text - Hide when keyboard is visible */}
+        {!isKeyboardVisible && (
+          <div className="text-center">
+            <p className="text-xs sm:text-sm text-zinc-500">
+              by artists for artists
+            </p>
+          </div>
+        )}
       </div>
     </main>
   );

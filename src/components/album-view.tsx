@@ -13,6 +13,8 @@ import { getHighQualityImage } from "@/lib/image-utils";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 import type { ReactElement } from "react";
 
+const MAX_DESCRIPTION_LENGTH_MOBILE = 150;
+
 interface AlbumViewProps {
   playlistId: string;
 }
@@ -22,6 +24,60 @@ function formatNumber(num?: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
   return num.toString();
+}
+
+function formatRoundedPlays(num: number): string {
+  if (num === 0) return "0";
+  if (num < 10) return num.toString();
+  
+  // Round down to appropriate milestone
+  let rounded: number;
+  
+  if (num >= 1000000) {
+    // Millions: round to 1M, 5M, 10M, 50M, 100M, etc.
+    const millions = num / 1000000;
+    if (millions >= 100) rounded = Math.floor(millions / 100) * 100000000;
+    else if (millions >= 50) rounded = Math.floor(millions / 50) * 50000000;
+    else if (millions >= 10) rounded = Math.floor(millions / 10) * 10000000;
+    else if (millions >= 5) rounded = Math.floor(millions / 5) * 5000000;
+    else rounded = Math.floor(millions) * 1000000;
+    return `${(rounded / 1000000).toFixed(0)}M+`;
+  }
+  
+  if (num >= 100000) {
+    // Hundred thousands: round to 100K, 500K
+    const hundredK = num / 100000;
+    if (hundredK >= 5) rounded = Math.floor(hundredK / 5) * 500000;
+    else rounded = Math.floor(hundredK) * 100000;
+    return `${(rounded / 1000).toFixed(0)}K+`;
+  }
+  
+  if (num >= 10000) {
+    // Ten thousands: round to 10K, 50K
+    const tenK = num / 10000;
+    if (tenK >= 5) rounded = Math.floor(tenK / 5) * 50000;
+    else rounded = Math.floor(tenK) * 10000;
+    return `${(rounded / 1000).toFixed(0)}K+`;
+  }
+  
+  if (num >= 1000) {
+    // Thousands: round to 1K, 5K
+    const thousands = num / 1000;
+    if (thousands >= 5) rounded = Math.floor(thousands / 5) * 5000;
+    else rounded = Math.floor(thousands) * 1000;
+    return `${(rounded / 1000).toFixed(0)}K+`;
+  }
+  
+  if (num >= 100) {
+    // Hundreds: round to 100, 500
+    if (num >= 500) rounded = Math.floor(num / 500) * 500;
+    else rounded = Math.floor(num / 100) * 100;
+    return `${rounded}+`;
+  }
+  
+  // Below 100: round down to nearest 5
+  rounded = Math.floor(num / 5) * 5;
+  return `${rounded}+`;
 }
 
 function formatTotalDuration(ms: number): string {
@@ -141,6 +197,7 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
   const [album, setAlbum] = useState<SoundCloudPlaylist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -235,16 +292,19 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
   const playableTracks = album.tracks?.filter(isTrackPlayable) || [];
   const albumType = album.set_type === 'ep' ? 'EP' : album.set_type === 'compilation' ? 'Compilation' : 'Album';
   const purchaseLinks = detectExternalLinks(album);
+  
+  // Calculate total plays from all tracks
+  const totalPlays = album.tracks?.reduce((sum, track) => sum + (track.playback_count || 0), 0) || 0;
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-4xl px-6 py-4">
+    <div className="pb-32">
+      <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="group mb-4 flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-400 transition-all hover:bg-white/5 hover:text-white"
+          className="group mb-4 flex cursor-pointer items-center gap-1 text-sm font-medium text-neutral-400 transition-all hover:text-white"
         >
-          <svg className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back
@@ -252,7 +312,7 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
 
         <div className="flex flex-col gap-8 md:flex-row md:gap-12">
           {/* Album Artwork - Square 1:1 */}
-          <div className="shrink-0">
+          <div className="shrink-0 mx-auto md:mx-0">
             <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
               {artwork ? (
                 <Image
@@ -298,14 +358,14 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
                 <>
                   <button
                     onClick={isCurrentAlbum && isPlaying ? pause : isCurrentAlbum ? resume : () => handlePlayAll(false)}
-                    className="flex cursor-pointer items-center justify-center bg-white p-4 text-black transition-colors hover:bg-neutral-200"
+                    className="flex flex-1 cursor-pointer items-center justify-center bg-white py-3 px-4 text-black transition-colors hover:bg-neutral-200"
                     aria-label={isCurrentAlbum && isPlaying ? "Pause" : "Play"}
                   >
                     {getButtonIcon()}
                   </button>
                   <button
                     onClick={() => handlePlayAll(true)}
-                    className="flex cursor-pointer items-center justify-center bg-white/10 p-4 text-white transition-colors hover:bg-white/20"
+                    className="flex flex-1 cursor-pointer items-center justify-center bg-white/10 py-3 px-4 text-white transition-colors hover:bg-white/20"
                     aria-label="Shuffle"
                   >
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -336,33 +396,53 @@ export function AlbumView({ playlistId }: AlbumViewProps) {
               {album.created_at && <span>{formatDate(album.created_at)}</span>}
               <span>{album.track_count} {album.track_count === 1 ? 'track' : 'tracks'}</span>
               {album.duration > 0 && <span>{formatTotalDuration(album.duration)}</span>}
-              {album.likes_count !== undefined && (
-                <span>{formatNumber(album.likes_count)} likes</span>
+              {totalPlays > 0 && (
+                <span>{formatRoundedPlays(totalPlays)} plays</span>
               )}
             </div>
 
             {/* Description */}
             {album.description && (
               <div className="mb-8 border-t border-neutral-800 pt-6">
-                <RichDescription text={album.description} />
+                {/* Mobile: Truncated description with "Show more" */}
+                <div className="md:hidden">
+                  {isDescriptionExpanded || album.description.length <= MAX_DESCRIPTION_LENGTH_MOBILE ? (
+                    <>
+                      <RichDescription text={album.description} />
+                      {album.description.length > MAX_DESCRIPTION_LENGTH_MOBILE && (
+                        <button
+                          onClick={() => setIsDescriptionExpanded(false)}
+                          className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                        >
+                          Show less
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <RichDescription text={album.description.slice(0, MAX_DESCRIPTION_LENGTH_MOBILE) + '...'} />
+                      <button
+                        onClick={() => setIsDescriptionExpanded(true)}
+                        className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                      >
+                        Show more
+                      </button>
+                    </>
+                  )}
+                </div>
+                {/* Desktop: Full description */}
+                <div className="hidden md:block">
+                  <RichDescription text={album.description} />
+                </div>
               </div>
             )}
 
-            {/* SoundCloud Link */}
-            <a
-              href={album.permalink_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-auto cursor-pointer pt-6 text-xs text-neutral-600 transition-colors hover:text-neutral-400"
-            >
-              View on SoundCloud →
-            </a>
           </div>
         </div>
 
         {/* Tracks List - Using TrackCard */}
         {album.tracks && album.tracks.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-6">
             <div className="space-y-1">
               {album.tracks.map((track) => {
                 const handleTrackPlay = () => {

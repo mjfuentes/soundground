@@ -33,7 +33,8 @@ function ProfileSkeleton({ preview }: { preview: PreviewData | null }) {
       {/* Left Column - Avatar and Profile Info */}
       <section className="flex flex-col gap-4">
         {/* Avatar - show preview or skeleton */}
-        <div className="relative aspect-square overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
+        <div className="h-80 w-80 mx-auto md:mx-0 mb-6">
+          <div className="relative w-full h-full aspect-square overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
           {preview?.avatar ? (
             <>
               <Image
@@ -53,6 +54,7 @@ function ProfileSkeleton({ preview }: { preview: PreviewData | null }) {
               </svg>
             </div>
           )}
+          </div>
         </div>
         
         <div className="flex flex-col gap-4">

@@ -10,6 +10,7 @@ import { ActivityPostCard } from "./activity-post-card";
 import { ProfileWithAutoQueue } from "./profile-with-auto-queue";
 import { ProfileWithCache } from "./profile-with-cache";
 import { ArtistAvatar } from "./artist-avatar";
+import { SmartBackButton } from "./smart-back-button";
 import { isPlaylist } from "@/lib/soundcloud/client";
 import { getServerBaseUrl } from "@/lib/server-base-url";
 import { getHighQualityImage } from "@/lib/image-utils";
@@ -67,11 +68,14 @@ export async function SoundcloudProfileView({ profile }: SoundcloudProfileViewPr
         artistName={user.username}
         artistUrl={user.permalink_url}
       >
+        <SmartBackButton />
         <article className="grid gap-8 md:grid-cols-[minmax(260px,320px)_1fr]">
       {/* Left column - Profile info, Albums/Playlists & Friends */}
       <section className="flex flex-col gap-4">
         {avatar ? (
-          <ArtistAvatar avatar={avatar} username={user.username} />
+          <div className="h-80 w-80 mx-auto md:mx-0 mb-6">
+            <ArtistAvatar avatar={avatar} username={user.username} />
+          </div>
         ) : null}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">

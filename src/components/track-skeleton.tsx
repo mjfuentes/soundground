@@ -1,13 +1,13 @@
 export function TrackSkeleton() {
   return (
-    <div className="min-h-screen animate-pulse">
+    <div className="pb-32 animate-pulse">
       <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Back Button skeleton */}
-        <div className="mb-8 h-4 w-16 rounded bg-neutral-800"></div>
+        <div className="mb-4 h-4 w-16 rounded bg-neutral-800"></div>
 
         <div className="flex flex-col gap-8 md:flex-row md:gap-12">
           {/* Album Art skeleton - Square 1:1 */}
-          <div className="shrink-0">
+          <div className="shrink-0 mx-auto md:mx-0">
             <div className="relative h-80 w-80 overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900">
               <div className="absolute inset-0 flex items-center justify-center">
                 <svg className="h-20 w-20 text-neutral-700" fill="currentColor" viewBox="0 0 24 24">

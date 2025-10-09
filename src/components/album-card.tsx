@@ -97,7 +97,7 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
     return (
       <div
         onClick={handleClick}
-        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition touch-manipulation"
       >
         {coverOnlyArtworkUrl ? (
           <Image
@@ -115,11 +115,14 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
           </div>
         )}
         
-        {/* Play Button Overlay */}
+        {/* Play Button Overlay - hidden on mobile (only shows on desktop hover) */}
         <button
-          onClick={handlePlayClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePlayClick(e);
+          }}
           disabled={isLoading}
-          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute inset-0 hidden sm:flex cursor-pointer items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isCurrentAlbum && isPlaying ? (
             <svg className="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -132,8 +135,8 @@ export function AlbumCard({ album, showStats = true, compact = false, coverOnly 
           )}
         </button>
         
-        {/* Hover card */}
-        <div className="pointer-events-none absolute left-full top-0 z-50 ml-2 hidden w-64 rounded-lg border border-white/20 bg-zinc-900/95 p-3 shadow-xl backdrop-blur-sm group-hover:block">
+        {/* Hover card - only on desktop */}
+        <div className="pointer-events-none absolute left-full top-0 z-50 ml-2 hidden lg:group-hover:block w-64 rounded-lg border border-white/20 bg-zinc-900/95 p-3 shadow-xl backdrop-blur-sm">
           <div className="flex gap-3">
             <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded">
               {coverOnlyArtworkUrl ? (

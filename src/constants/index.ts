@@ -105,7 +105,7 @@ export const API_ROUTES = {
     PLAYLISTS: "/api/soundcloud/playlists",
     ALBUMS: "/api/soundcloud/albums",
     FOLLOWERS: "/api/soundcloud/followers",
-    SEARCH: "/api/soundcloud/search",
+    SEARCH: "/api/search",
     RESOLVE: "/api/soundcloud/resolve",
     STREAM: (trackId: number) => `/api/soundcloud/stream/${trackId}`,
     TRACK: (trackId: number) => `/api/soundcloud/track/${trackId}`,

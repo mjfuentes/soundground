@@ -11,6 +11,8 @@ import { RichDescription } from "@/components/rich-description";
 import { getHighQualityImage } from "@/lib/image-utils";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
 
+const MAX_DESCRIPTION_LENGTH_MOBILE = 150;
+
 interface PlaylistViewProps {
   playlistId: string;
 }
@@ -45,6 +47,7 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
   const [playlist, setPlaylist] = useState<SoundCloudPlaylist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     // Scroll to top when playlist page opens
@@ -140,14 +143,14 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
   const playableTracks = playlist.tracks?.filter(isTrackPlayable) || [];
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-4xl px-6 py-4">
+    <div className="pb-32">
+      <div className="mx-auto max-w-4xl px-6 py-8">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="group mb-4 flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-400 transition-all hover:bg-white/5 hover:text-white"
+          className="group mb-4 flex cursor-pointer items-center gap-1 text-sm font-medium text-neutral-400 transition-all hover:text-white"
         >
-          <svg className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back
@@ -155,7 +158,7 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
 
         <div className="flex flex-col gap-8 md:flex-row md:gap-12">
           {/* Playlist Artwork - Square 1:1 */}
-          <div className="shrink-0">
+          <div className="shrink-0 mx-auto md:mx-0">
             <div className="relative h-80 w-80 overflow-hidden rounded-lg bg-neutral-900">
               {artwork ? (
                 <Image
@@ -211,14 +214,14 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
                 <>
                   <button
                     onClick={isCurrentPlaylist && isPlaying ? pause : isCurrentPlaylist ? resume : () => handlePlayAll(false)}
-                    className="flex cursor-pointer items-center justify-center bg-white p-4 text-black transition-colors hover:bg-neutral-200"
+                    className="flex flex-1 cursor-pointer items-center justify-center bg-white py-3 px-4 text-black transition-colors hover:bg-neutral-200"
                     aria-label={isCurrentPlaylist && isPlaying ? "Pause" : "Play"}
                   >
                     {getButtonIcon()}
                   </button>
                   <button
                     onClick={() => handlePlayAll(true)}
-                    className="flex cursor-pointer items-center justify-center bg-white/10 p-4 text-white transition-colors hover:bg-white/20"
+                    className="flex flex-1 cursor-pointer items-center justify-center bg-white/10 py-3 px-4 text-white transition-colors hover:bg-white/20"
                     aria-label="Shuffle"
                   >
                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -242,25 +245,45 @@ export function PlaylistView({ playlistId }: PlaylistViewProps) {
             {/* Description */}
             {playlist.description && (
               <div className="mb-8 border-t border-neutral-800 pt-6">
-                <RichDescription text={playlist.description} />
+                {/* Mobile: Truncated description with "Show more" */}
+                <div className="md:hidden">
+                  {isDescriptionExpanded || playlist.description.length <= MAX_DESCRIPTION_LENGTH_MOBILE ? (
+                    <>
+                      <RichDescription text={playlist.description} />
+                      {playlist.description.length > MAX_DESCRIPTION_LENGTH_MOBILE && (
+                        <button
+                          onClick={() => setIsDescriptionExpanded(false)}
+                          className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                        >
+                          Show less
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <RichDescription text={playlist.description.slice(0, MAX_DESCRIPTION_LENGTH_MOBILE) + '...'} />
+                      <button
+                        onClick={() => setIsDescriptionExpanded(true)}
+                        className="mt-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+                      >
+                        Show more
+                      </button>
+                    </>
+                  )}
+                </div>
+                {/* Desktop: Full description */}
+                <div className="hidden md:block">
+                  <RichDescription text={playlist.description} />
+                </div>
               </div>
             )}
 
-            {/* SoundCloud Link */}
-            <a
-              href={playlist.permalink_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-auto cursor-pointer pt-6 text-xs text-neutral-600 transition-colors hover:text-neutral-400"
-            >
-              View on SoundCloud →
-            </a>
           </div>
         </div>
 
         {/* Tracks List - Show artwork for playlists, simple list for albums */}
         {playlist.tracks && playlist.tracks.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-6">
             <div className="space-y-1">
               {playlist.tracks.map((track) => {
                 // Skip tracks with no valid data

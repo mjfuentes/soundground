@@ -9,13 +9,13 @@ interface ArtistAvatarProps {
 
 export function ArtistAvatar({ avatar, username }: ArtistAvatarProps) {
   return (
-    <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-neutral-900">
+    <div className="relative w-full h-full aspect-square overflow-hidden rounded-xl border border-white/10 bg-neutral-900">
       <Image 
         src={avatar} 
         alt={`${username} avatar`} 
         fill 
         className="object-cover" 
-        sizes="(min-width: 768px) 320px, 100vw"
+        sizes="320px"
         priority
       />
     </div>

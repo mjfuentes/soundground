@@ -17,6 +17,19 @@ interface SystemMetrics {
   uptime: string;
 }
 
+interface PerformanceStats {
+  route: string;
+  totalRequests: number;
+  avgDuration: number;
+  minDuration: number;
+  maxDuration: number;
+  cacheHitRate: number;
+  p50: number;
+  p95: number;
+  p99: number;
+  lastHour: number;
+}
+
 interface LogEntry {
   timestamp: string;
   level: string;
@@ -25,9 +38,10 @@ interface LogEntry {
 }
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'logs' | 'cache' | 'changelog'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'logs' | 'cache' | 'performance' | 'changelog'>('overview');
   const [cacheStats, setCacheStats] = useState<CacheStats[]>([]);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+  const [performanceStats, setPerformanceStats] = useState<PerformanceStats[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [changelog, setChangelog] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,9 +54,10 @@ export function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [cacheRes, metricsRes, logsRes, changelogRes] = await Promise.all([
+      const [cacheRes, metricsRes, performanceRes, logsRes, changelogRes] = await Promise.all([
         fetch('/api/admin/cache-stats'),
         fetch('/api/admin/metrics'),
+        fetch('/api/admin/performance'),
         fetch('/api/admin/logs'),
         fetch('/api/admin/changelog'),
       ]);
@@ -55,6 +70,11 @@ export function AdminDashboard() {
       if (metricsRes.ok) {
         const data = await metricsRes.json();
         setMetrics(data);
+      }
+
+      if (performanceRes.ok) {
+        const data = await performanceRes.json();
+        setPerformanceStats(data.performanceStats || []);
       }
 
       if (logsRes.ok) {
@@ -159,6 +179,7 @@ export function AdminDashboard() {
         <div className="mb-8 flex gap-1 border-b border-gray-800">
           {[
             { id: 'overview', label: 'Overview' },
+            { id: 'performance', label: 'Performance' },
             { id: 'cache', label: 'Cache' },
             { id: 'logs', label: 'Logs' },
             { id: 'changelog', label: 'Changelog' },
@@ -256,6 +277,78 @@ export function AdminDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Performance Tab */}
+        {activeTab === 'performance' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold">Performance Metrics</h2>
+              <p className="mt-1 text-sm text-gray-400">
+                Response time analysis and cache effectiveness by endpoint
+              </p>
+            </div>
+
+            {performanceStats.length > 0 ? (
+              <div className="space-y-4">
+                {performanceStats.slice(0, 15).map((stat) => (
+                  <div key={stat.route} className="rounded-lg border border-gray-800 bg-gray-900 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <div className="font-mono text-sm text-white">{stat.route}</div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {stat.totalRequests.toLocaleString()} requests • {stat.lastHour} in last hour
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-lg font-semibold ${stat.avgDuration < 100 ? 'text-green-400' : stat.avgDuration < 500 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          {stat.avgDuration}ms
+                        </div>
+                        <div className="text-xs text-gray-500">avg</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-3 border-t border-gray-800 pt-3 text-xs">
+                      <div>
+                        <div className="text-gray-500">Min</div>
+                        <div className="font-mono text-green-400">{stat.minDuration}ms</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">P50</div>
+                        <div className="font-mono text-white">{stat.p50}ms</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">P95</div>
+                        <div className="font-mono text-yellow-400">{stat.p95}ms</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">P99</div>
+                        <div className="font-mono text-orange-400">{stat.p99}ms</div>
+                      </div>
+                      <div>
+                        <div className="text-gray-500">Cache Hit</div>
+                        <div className={`font-mono ${stat.cacheHitRate > 80 ? 'text-green-400' : stat.cacheHitRate > 50 ? 'text-yellow-400' : 'text-red-400'}`}>
+                          {stat.cacheHitRate.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visual progress bar for percentiles */}
+                    <div className="mt-3 h-2 w-full rounded-full bg-gray-800">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"
+                        style={{ width: `${Math.min((stat.p95 / 1000) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-gray-800 bg-gray-900 p-8 text-center text-sm text-gray-500">
+                No performance data available yet. Make some API requests to see metrics.
+              </div>
+            )}
           </div>
         )}
 

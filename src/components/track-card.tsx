@@ -23,10 +23,15 @@ function formatNumber(num?: number): string {
 }
 
 function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function formatDate(dateString?: string): string | null {
@@ -177,20 +182,16 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
   if (coverOnly) {
     const imageUrl = getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url);
     
-    const handleCoverClick = (e: React.MouseEvent) => {
-      // If clicking on the play button area (center), don't navigate
-      const target = e.target as HTMLElement;
-      if (target.closest('button[data-play-button]')) {
-        return;
-      }
-      // Navigate to track page in same tab
+    const handleCoverClick = () => {
+      // On mobile, always navigate to track page
+      // On desktop, navigate unless hovering over play button
       router.push(`/track/${track.id}`);
     };
     
     return (
       <div
         onClick={handleCoverClick}
-        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition"
+        className="group relative aspect-square w-full cursor-pointer overflow-hidden rounded-lg bg-white/5 transition touch-manipulation"
         title={track.title}
       >
         {imageUrl ? (
@@ -209,12 +210,15 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
             </svg>
           </div>
         )}
-        {/* Play Button Overlay */}
+        {/* Play Button Overlay - hidden on mobile (only shows on desktop hover) */}
         {(isPlayable || isPreviewOnly) && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+          <div className="absolute inset-0 z-20 hidden sm:flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
             <button
               data-play-button
-              onClick={handlePlayClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayClick(e);
+              }}
               className="pointer-events-auto cursor-pointer rounded-full bg-white/20 p-1.5 backdrop-blur-sm transition hover:scale-110 hover:bg-white/30"
               aria-label={isCurrentTrack && isPlaying ? "Pause" : "Play"}
             >
@@ -315,11 +319,6 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
           )}
           <p className="text-xs text-zinc-400">
             {formatDuration(track.duration)}
-            {track.genre && ` • ${track.genre}`}
-            {(() => {
-              const formattedDate = formatDate(track.created_at);
-              return formattedDate ? <> • <span className="font-bold text-zinc-300">{formattedDate}</span></> : null;
-            })()}
           </p>
         </div>
 
