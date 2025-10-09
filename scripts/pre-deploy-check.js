@@ -51,7 +51,7 @@ const checks = [
     name: 'Test suite',
     fn: () => {
       log('  Running tests...', colors.yellow);
-      execSync('npm test -- --passWithNoTests', { stdio: 'inherit' });
+      execSync('npm test -- --passWithNoTests --forceExit', { stdio: 'inherit' });
     },
   },
   {

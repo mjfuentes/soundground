@@ -40,3 +40,9 @@ jest.mock('next/navigation', () => ({
     return new URLSearchParams()
   },
 }))
+
+// Global teardown to close database connections
+afterAll(async () => {
+  // Force close any remaining database connections
+  await new Promise(resolve => setTimeout(resolve, 100))
+})
