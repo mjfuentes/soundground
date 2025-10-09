@@ -99,28 +99,6 @@ describe('TrackCard', () => {
     expect(indicators.length).toBeGreaterThan(0);
   });
 
-  it('should show download link for Bandcamp tracks', () => {
-    const track = createMockTrack({
-      purchase_url: 'https://artist.bandcamp.com/track/test',
-    });
-
-    renderWithProviders(<TrackCard track={track} />);
-
-    const link = screen.getByTitle('Buy on Bandcamp');
-    expect(link).toHaveAttribute('href', 'https://artist.bandcamp.com/track/test');
-  });
-
-  it('should show download link for Hypeddit tracks', () => {
-    const track = createMockTrack({
-      purchase_url: 'https://hypeddit.com/test',
-    });
-
-    renderWithProviders(<TrackCard track={track} />);
-
-    const link = screen.getByTitle('Free Download');
-    expect(link).toHaveAttribute('href', 'https://hypeddit.com/test');
-  });
-
   it('should format large numbers correctly', () => {
     const track = createMockTrack({
       likes_count: 1500000, // 1.5M

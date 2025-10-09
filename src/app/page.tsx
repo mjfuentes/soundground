@@ -207,23 +207,23 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen items-center justify-center text-white px-6">
-      <div className="w-full max-w-4xl">
-        {/* Logo and Search in a row */}
-        <div className="flex items-center gap-4 mb-6">
-          {/* Logo/Title */}
-          <div className="flex items-center gap-2 flex-shrink-0 soundground-logo">
-            <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <main className="flex min-h-screen items-center justify-center text-white px-4 sm:px-6">
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Logo and Search - Stacked vertically and centered */}
+        <div className="flex flex-col items-center gap-6 mb-6">
+          {/* Logo/Title - Always centered */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 soundground-logo">
+            <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 sm:w-12 sm:h-12">
               <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
               <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
-            <h1 className="text-2xl font-bold text-white whitespace-nowrap">
+            <h1 className="text-3xl sm:text-4xl font-bold text-white whitespace-nowrap">
               SoundGround
             </h1>
           </div>
 
-          {/* Search */}
-          <div className="relative flex-1" ref={containerRef}>
+          {/* Search - Full width on mobile, centered */}
+          <div className="relative w-full max-w-2xl" ref={containerRef}>
             <SearchBar 
               onSearch={handleSearch} 
               isLoading={isSearching} 
@@ -237,6 +237,7 @@ export default function Home() {
                 onClose={handleCloseDropdown}
                 selectedIndex={selectedIndex}
                 containerRef={containerRef}
+                isMobile={true}
               />
             )}
           </div>
@@ -244,7 +245,7 @@ export default function Home() {
 
         {/* Hint text */}
         <div className="text-center">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs sm:text-sm text-zinc-500">
             by artists for artists
           </p>
         </div>

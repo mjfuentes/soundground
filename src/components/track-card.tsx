@@ -176,8 +176,6 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
   // Cover-only mode: just the artwork
   if (coverOnly) {
     const imageUrl = getHighQualityImage(track.artwork_url) || getHighQualityImage(track.user?.avatar_url);
-    const downloadLink = track.purchase_url || track.download_url;
-    const downloadPlatform = downloadLink ? getDownloadPlatform(downloadLink) : null;
     
     const handleCoverClick = (e: React.MouseEvent) => {
       // If clicking on the play button area (center), don't navigate
@@ -231,18 +229,6 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
               )}
             </button>
           </div>
-        )}
-        {downloadPlatform && (
-          <a
-            href={downloadLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm transition hover:bg-black/80"
-            title={downloadPlatform.platform === 'Hypeddit' ? downloadPlatform.action : `${downloadPlatform.action} on ${downloadPlatform.platform}`}
-          >
-            {downloadPlatform.icon}
-          </a>
         )}
       </div>
     );
@@ -308,22 +294,6 @@ export function TrackCard({ track, showStats = true, playlistTracks, coverOnly =
                 Preview
               </span>
             )}
-            {(() => {
-              const downloadLink = track.purchase_url || track.download_url;
-              const downloadPlatform = downloadLink ? getDownloadPlatform(downloadLink) : null;
-              return downloadPlatform ? (
-                <a
-                  href={downloadLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex-shrink-0 text-amber-400 transition hover:text-amber-300"
-                  title={downloadPlatform.platform === 'Hypeddit' ? downloadPlatform.action : `${downloadPlatform.action} on ${downloadPlatform.platform}`}
-                >
-                  {downloadPlatform.icon}
-                </a>
-              ) : null;
-            })()}
           </div>
           {track.user?.permalink_url && (
             <a

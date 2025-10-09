@@ -72,12 +72,12 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
           alt={track.title}
           fill
           className="object-cover"
-          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+          sizes="(min-width: 768px) 120px, 33vw"
           unoptimized
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">
-          <svg className="h-16 w-16 text-purple-400/30" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="h-8 w-8 sm:h-12 sm:w-12 text-purple-400/30" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
           </svg>
         </div>
@@ -103,15 +103,15 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
           <button
             data-play-button
             onClick={handlePlayClick}
-            className="pointer-events-auto cursor-pointer rounded-full bg-white p-2 shadow-xl transition hover:scale-110"
+            className="pointer-events-auto cursor-pointer rounded-full bg-white p-1.5 sm:p-2 shadow-xl transition hover:scale-110"
             aria-label={isCurrentTrack && isPlaying ? "Pause" : "Play"}
           >
             {isCurrentTrack && isPlaying ? (
-              <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-black" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
               </svg>
             ) : (
-              <svg className="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-black" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
             )}
@@ -120,8 +120,8 @@ export function ActivityPostCard({ track }: ActivityPostCardProps) {
       )}
 
       {/* Track Info - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-2">
-        <h3 className="text-xs font-semibold text-white drop-shadow-lg line-clamp-2">
+      <div className="absolute bottom-0 left-0 right-0 p-1.5 sm:p-2">
+        <h3 className="text-[10px] sm:text-xs font-semibold text-white drop-shadow-lg line-clamp-2">
           {track.title}
         </h3>
       </div>

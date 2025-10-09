@@ -175,16 +175,13 @@ function HeaderSearch() {
 
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-neutral-800 bg-black/95 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-6 py-3">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition flex-shrink-0 soundground-logo">
-            <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 sm:w-7 sm:h-7">
               <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
               <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
-            <span className="text-xl font-bold text-white">
-              SoundGround
-            </span>
           </Link>
           <div className="flex-1 max-w-2xl relative" ref={containerRef}>
             <SearchBar 
@@ -200,6 +197,7 @@ function HeaderSearch() {
                 query={searchQuery}
                 onClose={handleCloseDropdown}
                 selectedIndex={selectedIndex}
+                isMobile={false}
               />
             )}
           </div>
@@ -213,17 +211,16 @@ export function Header() {
   return (
     <Suspense fallback={
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-neutral-800 bg-black/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-6 py-3">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition flex-shrink-0">
-              <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 sm:w-7 sm:h-7">
                 <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
                 <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
-              <span className="text-xl font-bold text-white">SoundGround</span>
             </Link>
             <div className="flex-1 max-w-2xl">
-              <div className="w-full py-2.5 px-4 border border-zinc-700 rounded-md"></div>
+              <div className="w-full py-2.5 px-3 sm:px-4 border border-zinc-700 rounded-md"></div>
             </div>
           </div>
         </div>

@@ -43,9 +43,13 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
     }
   }, [externalValue]);
 
-  // Auto-focus on mount
+  // Auto-focus on mount (desktop only)
   useEffect(() => {
-    inputRef.current?.focus();
+    // Only auto-focus on desktop to avoid keyboard popping up on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isMobile) {
+      inputRef.current?.focus();
+    }
   }, []);
 
   // Debounce the search query
@@ -114,11 +118,11 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
       <div className="relative">
         {/* Custom placeholder with emphasized "artist" */}
         {!query && (
-          <div className="absolute inset-0 flex items-center pl-4 pointer-events-none">
-            <span className="text-sm text-zinc-500">
+          <div className="absolute inset-0 flex items-center pl-3 sm:pl-4 pointer-events-none">
+            <span className="text-xs sm:text-sm text-zinc-500">
               search{" "}
-              <span className="text-base font-semibold text-zinc-400">artist</span>
-              {" "}tracks albums
+              <span className="text-sm sm:text-base font-semibold text-zinc-400">artist</span>
+              {" "}<span className="hidden sm:inline">tracks albums</span>
             </span>
           </div>
         )}
@@ -128,7 +132,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
           value={query}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          className={`w-full py-2.5 px-4 text-base bg-transparent border rounded-md text-white caret-white focus:outline-none transition-all duration-200 ${
+          className={`w-full py-2.5 px-3 sm:px-4 text-sm sm:text-base bg-transparent border rounded-md text-white caret-white focus:outline-none transition-all duration-200 ${
             isLoading 
               ? 'border-zinc-600' 
               : 'border-zinc-700 focus:border-zinc-500'

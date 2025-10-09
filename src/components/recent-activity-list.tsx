@@ -17,9 +17,9 @@ export function RecentActivityList({ tracks }: RecentActivityListProps) {
   const hasMore = tracks.length > DEFAULT_SHOWN;
 
   return (
-    <div className="flex flex-col gap-6">
-      <h3 className="text-2xl font-bold text-white">Recent Uploads</h3>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-3">
+      <h3 className="text-xl font-semibold text-white">Recent Uploads</h3>
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
         {displayedTracks.map((track: SoundCloudTrack) => (
           <ActivityPostCard key={track.id} track={track} />
         ))}

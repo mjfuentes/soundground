@@ -14,6 +14,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "SoundGround - Sounds from the Underground",
   description: "Discover and explore SoundCloud artists. Dig deep into artist profiles, explore connections, and uncover hidden gems in the underground music scene.",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   icons: {
     icon: [
       { url: "/logo.png" },

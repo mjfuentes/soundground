@@ -13,6 +13,7 @@ interface SearchDropdownProps {
   onClose: () => void;
   selectedIndex?: number;
   containerRef?: React.RefObject<HTMLDivElement | null>;
+  isMobile?: boolean;
 }
 
 function isUser(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): result is SoundCloudUser {
@@ -108,7 +109,7 @@ function sortSearchResults(results: (SoundCloudUser | SoundCloudTrack | SoundClo
 
 const MAX_RESULTS = 5;
 
-export function SearchDropdown({ results, isLoading, query, onClose, selectedIndex = 0, containerRef }: SearchDropdownProps) {
+export function SearchDropdown({ results, isLoading, query, onClose, selectedIndex = 0, containerRef, isMobile = false }: SearchDropdownProps) {
   const router = useRouter();
 
   // Filter out low-quality results first, then sort, then limit to MAX_RESULTS
@@ -165,20 +166,25 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
 
   if (!query) return null;
 
+  // On mobile, make dropdown scrollable and limit height to avoid keyboard overlay
+  const dropdownClassName = isMobile 
+    ? "absolute top-full left-0 right-0 mt-2 max-h-[50vh] overflow-y-auto bg-black/98 backdrop-blur-md border border-zinc-800 rounded-md shadow-xl z-50"
+    : "absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-md shadow-xl overflow-hidden z-50";
+
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-md shadow-xl overflow-hidden z-50">
+    <div className={dropdownClassName}>
       {sortedResults.length === 0 && !isLoading ? (
         <div className="py-8 text-center">
           <p className="text-xs text-zinc-500">No results</p>
         </div>
       ) : (
         <div className="py-1">
-          {/* Pad results to always show MAX_RESULTS items */}
-          {Array.from({ length: MAX_RESULTS }).map((_, index) => {
+          {/* Pad results to always show MAX_RESULTS items (only on desktop) */}
+          {Array.from({ length: isMobile ? sortedResults.length : MAX_RESULTS }).map((_, index) => {
             const result = sortedResults[index];
             
             if (!result) {
-              // Empty placeholder to maintain fixed height
+              // Empty placeholder to maintain fixed height (desktop only)
               return <div key={`empty-${index}`} className="h-14"></div>;
             }
 
@@ -188,11 +194,11 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className={`w-full px-3 py-2 transition-colors flex items-center gap-3 text-left cursor-pointer ${
-                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50'
+                  className={`w-full px-3 sm:px-3 py-3 sm:py-2 transition-colors flex items-center gap-3 text-left cursor-pointer touch-manipulation ${
+                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50 active:bg-zinc-800/60'
                   }`}
                 >
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0 bg-zinc-800/30">
+                  <div className="relative h-12 w-12 sm:h-10 sm:w-10 rounded-full overflow-hidden flex-shrink-0 bg-zinc-800/30">
                     {result.avatar_url && (
                       <Image
                         src={result.avatar_url}
@@ -203,7 +209,7 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{result.username}</div>
+                    <div className="text-sm sm:text-sm font-medium text-white truncate">{result.username}</div>
                     <div className="text-xs text-zinc-500">{result.followers_count?.toLocaleString() || 0} followers</div>
                   </div>
                 </button>
@@ -214,11 +220,11 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className={`w-full px-3 py-2 transition-colors flex items-center gap-3 text-left cursor-pointer ${
-                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50'
+                  className={`w-full px-3 sm:px-3 py-3 sm:py-2 transition-colors flex items-center gap-3 text-left cursor-pointer touch-manipulation ${
+                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50 active:bg-zinc-800/60'
                   }`}
                 >
-                  <div className="relative h-10 w-10 rounded overflow-hidden flex-shrink-0 bg-zinc-800/30">
+                  <div className="relative h-12 w-12 sm:h-10 sm:w-10 rounded overflow-hidden flex-shrink-0 bg-zinc-800/30">
                     {result.artwork_url && (
                       <Image
                         src={result.artwork_url}
@@ -229,7 +235,7 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{result.title}</div>
+                    <div className="text-sm sm:text-sm font-medium text-white truncate">{result.title}</div>
                     <div className="text-xs text-zinc-500 truncate">{result.user?.username || 'Unknown'}</div>
                   </div>
                 </button>
@@ -240,11 +246,11 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
                 <button
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className={`w-full px-3 py-2 transition-colors flex items-center gap-3 text-left cursor-pointer ${
-                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50'
+                  className={`w-full px-3 sm:px-3 py-3 sm:py-2 transition-colors flex items-center gap-3 text-left cursor-pointer touch-manipulation ${
+                    isSelected ? 'bg-zinc-800/70' : 'hover:bg-zinc-800/50 active:bg-zinc-800/60'
                   }`}
                 >
-                  <div className="relative h-10 w-10 rounded overflow-hidden flex-shrink-0 bg-zinc-800/30">
+                  <div className="relative h-12 w-12 sm:h-10 sm:w-10 rounded overflow-hidden flex-shrink-0 bg-zinc-800/30">
                     {result.artwork_url && (
                       <Image
                         src={result.artwork_url}
@@ -255,7 +261,7 @@ export function SearchDropdown({ results, isLoading, query, onClose, selectedInd
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{result.title}</div>
+                    <div className="text-sm sm:text-sm font-medium text-white truncate">{result.title}</div>
                     <div className="text-xs text-zinc-500 truncate">{result.user?.username || 'Unknown'}</div>
                   </div>
                 </button>
