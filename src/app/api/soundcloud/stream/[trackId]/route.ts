@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTrack, getTrackStreams } from "@/lib/soundcloud/smart-client";
+import { resolveStreamRedirect } from "@/lib/soundcloud/official-client";
 import { apiV2Get } from "@/lib/soundcloud/client";
 import { hasApiV2ClientId, hasOfficialCredentials } from "@/lib/soundcloud/config";
 import type { SoundCloudTrack } from "@/lib/soundcloud/client";
@@ -14,39 +15,42 @@ interface StreamPayload {
 }
 
 /**
- * Official API path: /tracks/{urn}/streams returns direct URLs.
+ * Official API path: /tracks/{urn}/streams returns URLs on
+ * api.soundcloud.com that require the OAuth header — a browser <audio>
+ * tag cannot send it and would get a 401. Resolve the redirect
+ * server-side and hand the browser the signed CDN URL instead.
  * Prefer progressive MP3 (best for HTML5 audio), then HLS.
  */
 async function resolveOfficialStream(trackId: number): Promise<StreamPayload | null> {
   const streams = await getTrackStreams(trackId);
 
-  if (streams.http_mp3_128_url) {
-    return {
-      stream_url: streams.http_mp3_128_url,
-      format: { protocol: "progressive", mime_type: "audio/mpeg" },
-      quality: "sq",
-    };
-  }
-  if (streams.hls_mp3_128_url) {
-    return {
-      stream_url: streams.hls_mp3_128_url,
-      format: { protocol: "hls", mime_type: "audio/mpeg" },
-      quality: "sq",
-    };
-  }
-  if (streams.hls_aac_160_url) {
-    return {
-      stream_url: streams.hls_aac_160_url,
-      format: { protocol: "hls", mime_type: 'audio/mp4; codecs="mp4a.40.2"' },
-      quality: "hq",
-    };
-  }
-  if (streams.preview_mp3_128_url) {
-    return {
-      stream_url: streams.preview_mp3_128_url,
-      format: { protocol: "progressive", mime_type: "audio/mpeg" },
-      quality: "preview",
-    };
+  const candidates: Array<{ url?: string; payload: Omit<StreamPayload, "stream_url"> }> = [
+    {
+      url: streams.http_mp3_128_url,
+      payload: { format: { protocol: "progressive", mime_type: "audio/mpeg" }, quality: "sq" },
+    },
+    {
+      url: streams.hls_mp3_128_url,
+      payload: { format: { protocol: "hls", mime_type: "audio/mpeg" }, quality: "sq" },
+    },
+    {
+      url: streams.hls_aac_160_url,
+      payload: { format: { protocol: "hls", mime_type: 'audio/mp4; codecs="mp4a.40.2"' }, quality: "hq" },
+    },
+    {
+      url: streams.preview_mp3_128_url,
+      payload: { format: { protocol: "progressive", mime_type: "audio/mpeg" }, quality: "preview" },
+    },
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate.url) continue;
+    try {
+      const playableUrl = await resolveStreamRedirect(candidate.url);
+      return { stream_url: playableUrl, ...candidate.payload };
+    } catch (error) {
+      logger.warn("Failed to resolve stream candidate, trying next", { trackId }, error as Error);
+    }
   }
   return null;
 }

@@ -16,7 +16,23 @@ interface ClientCredentialsToken {
   token_type: string;
 }
 
-let cachedToken: { token: string; expiresAt: number } | null = null;
+interface CachedToken {
+  token: string;
+  expiresAt: number;
+}
+
+// The token cache lives on globalThis: in dev, each route bundle can get its
+// own copy of this module, and per-copy caches would multiply token mints —
+// SoundCloud caps minting at 50 per 12h per app.
+const TOKEN_CACHE_KEY = Symbol.for("soundground.sc-token-cache");
+
+function getCachedToken(): CachedToken | null {
+  return (globalThis as Record<symbol, unknown>)[TOKEN_CACHE_KEY] as CachedToken | null ?? null;
+}
+
+function setCachedToken(token: CachedToken | null): void {
+  (globalThis as Record<symbol, unknown>)[TOKEN_CACHE_KEY] = token;
+}
 
 /**
  * Get an access token using the Client Credentials flow.
@@ -24,6 +40,7 @@ let cachedToken: { token: string; expiresAt: number } | null = null;
  */
 export async function getClientCredentialsToken(): Promise<string> {
   // Return cached token if still valid (1min safety buffer)
+  const cachedToken = getCachedToken();
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60000) {
     return cachedToken.token;
   }
@@ -49,6 +66,7 @@ export async function getClientCredentialsToken(): Promise<string> {
       Authorization: `Basic ${basicAuth}`,
     },
     body: new URLSearchParams({ grant_type: "client_credentials" }),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!response.ok) {
@@ -58,10 +76,10 @@ export async function getClientCredentialsToken(): Promise<string> {
 
   const data: ClientCredentialsToken = await response.json();
 
-  cachedToken = {
+  setCachedToken({
     token: data.access_token,
     expiresAt: Date.now() + data.expires_in * 1000,
-  };
+  });
 
   return data.access_token;
 }
@@ -74,8 +92,8 @@ export function hasClientCredentials(): boolean {
 }
 
 /**
- * Test-only helper to reset the module-level token cache.
+ * Test-only helper to reset the token cache.
  */
 export function resetTokenCacheForTesting(): void {
-  cachedToken = null;
+  setCachedToken(null);
 }

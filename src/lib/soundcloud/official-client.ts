@@ -227,18 +227,27 @@ function mapFollower(raw: RawUser): SoundCloudFollower {
 // Transport
 // ---------------------------------------------------------------------------
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 async function apiGet<T>(
   endpoint: string,
-  searchParams: Record<string, string | number | boolean> = {}
+  searchParams?: Record<string, string | number | boolean>
 ): Promise<T> {
   const token = await getClientCredentialsToken();
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${OFFICIAL_API_BASE}${endpoint}`;
 
+  // CAUTION: got's `searchParams` REPLACES the URL's own query string.
+  // next_href URLs arrive with their cursor in the query — passing even an
+  // empty searchParams object would strip it and reset pagination to page
+  // one, which (combined with caching) once produced an infinite crawl
+  // loop. Only pass searchParams when we are explicitly building the query.
   const text = await got(url, {
-    searchParams,
+    ...(searchParams ? { searchParams } : {}),
     headers: { Authorization: `OAuth ${token}` },
+    timeout: { request: REQUEST_TIMEOUT_MS },
+    retry: { limit: 1 },
   }).text();
 
   return JSON.parse(text) as T;
@@ -330,6 +339,35 @@ export async function getTrack(trackId: number): Promise<SoundCloudTrack | null>
     console.error(`[official] Error fetching track ${trackId}:`, error);
     return null;
   }
+}
+
+/**
+ * Resolve the final (CDN) URL behind an authenticated stream URL.
+ * The URLs from /tracks/{urn}/streams point at api.soundcloud.com and
+ * require the OAuth header — a browser <audio> tag cannot send it and
+ * gets a 401. Following the redirect server-side yields a signed CDN URL
+ * the browser can play directly.
+ */
+export async function resolveStreamRedirect(streamUrl: string): Promise<string> {
+  const token = await getClientCredentialsToken();
+  const response = await got(streamUrl, {
+    headers: { Authorization: `OAuth ${token}` },
+    timeout: { request: REQUEST_TIMEOUT_MS },
+    retry: { limit: 1 },
+    followRedirect: false,
+  });
+  const location = response.headers.location;
+  if (location) {
+    return location;
+  }
+  // Some variants respond 200 with a JSON body containing the URL.
+  try {
+    const body = JSON.parse(response.body) as { url?: string };
+    if (body.url) return body.url;
+  } catch {
+    // Not JSON — fall through.
+  }
+  throw new Error("Could not resolve stream URL to a playable location");
 }
 
 /**

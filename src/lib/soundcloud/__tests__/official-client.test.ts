@@ -133,6 +133,26 @@ describe('official-client', () => {
       const [url] = gotMock.mock.calls[0];
       expect(url).toBe('https://api.soundcloud.com/next-page');
     });
+
+    it('REGRESSION: never passes searchParams for next_href requests (got would strip the cursor)', async () => {
+      // got's searchParams option REPLACES the URL's query string. Passing
+      // even {} for a next_href request strips the pagination cursor,
+      // resetting to page one — which once produced an infinite crawl loop.
+      mockResponse({ collection: [] });
+      const nextHref =
+        'https://api.soundcloud.com/users/soundcloud:users:9/followings?linked_partitioning=true&cursor=1736764361290&page_size=200';
+      await officialClient.getFollowings(9, 200, nextHref);
+      const [url, opts] = gotMock.mock.calls[0];
+      expect(url).toBe(nextHref);
+      expect(opts.searchParams).toBeUndefined();
+    });
+
+    it('applies a request timeout to every call', async () => {
+      mockResponse({ collection: [] });
+      await officialClient.getFollowers(9);
+      const [, opts] = gotMock.mock.calls[0];
+      expect(opts.timeout?.request).toBeGreaterThan(0);
+    });
   });
 
   describe('search', () => {

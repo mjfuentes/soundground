@@ -5,41 +5,63 @@ import { getCacheService } from "@/lib/cache";
 const FRIENDS_PER_BATCH = 48;
 const FOLLOWINGS_CACHE_TTL = 600; // 10 minutes - followings don't change often
 
+// Hard crawl budget: pagination must be un-hangable no matter what the API
+// returns. 25 pages x 200 = 5,000 followings covered; beyond that we work
+// with a partial set rather than risk an unbounded loop.
+const MAX_FOLLOWING_PAGES = 25;
+
 async function getAllFollowingIds(userIdNum: number): Promise<{ ids: Set<number>; total: number }> {
   const cache = getCacheService();
   const cacheKey = `user:${userIdNum}:all-following-ids`;
-  
+
   // Try to get from cache first
   const cached = cache.get<{ ids: number[]; total: number }>(cacheKey);
   if (cached) {
     return { ids: new Set(cached.ids), total: cached.total };
   }
-  
+
   // Not in cache, fetch all followings
   const followingIds = new Set<number>();
+  const seenHrefs = new Set<string>();
   let followingsNextHref: string | undefined = undefined;
   let totalFollowings = 0;
+  let pages = 0;
 
   // Fetch all followings (needed for comparison)
   let followingsResponse = await getFollowings(userIdNum, 200);
   followingsResponse.collection.forEach(f => followingIds.add(f.id));
   totalFollowings += followingsResponse.collection.length;
   followingsNextHref = followingsResponse.next_href;
+  pages++;
 
-  while (followingsNextHref) {
+  while (followingsNextHref && pages < MAX_FOLLOWING_PAGES) {
+    // A repeated cursor means pagination is not advancing — bail out
+    // instead of looping forever (this froze the machine once; see the
+    // searchParams caution in official-client.ts).
+    if (seenHrefs.has(followingsNextHref)) {
+      console.warn(`[Friends API] Repeated pagination cursor for user ${userIdNum} — stopping crawl at ${totalFollowings} followings`);
+      break;
+    }
+    seenHrefs.add(followingsNextHref);
+
     followingsResponse = await getFollowings(userIdNum, 200, followingsNextHref);
     followingsResponse.collection.forEach(f => followingIds.add(f.id));
     totalFollowings += followingsResponse.collection.length;
     followingsNextHref = followingsResponse.next_href;
+    pages++;
   }
-  
+
+  if (followingsNextHref && pages >= MAX_FOLLOWING_PAGES) {
+    console.warn(`[Friends API] Hit crawl budget (${MAX_FOLLOWING_PAGES} pages) for user ${userIdNum} — using partial followings set`);
+  }
+
   // Cache the complete set
   cache.set(
     cacheKey,
     { ids: Array.from(followingIds), total: totalFollowings },
     { ttl: FOLLOWINGS_CACHE_TTL * 1000, type: "followings_set" } // Convert seconds to ms
   );
-  
+
   return { ids: followingIds, total: totalFollowings };
 }
 

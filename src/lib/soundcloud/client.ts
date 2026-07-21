@@ -32,19 +32,30 @@ function requireApiV2ClientId(): string {
   return clientId;
 }
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 /**
  * Raw GET against api-v2 with the fallback client_id attached.
  * Exposed for the stream route's transcoding fallback.
+ *
+ * Query params are appended via the URL object rather than got's
+ * `searchParams` option — that option REPLACES the URL's existing query,
+ * which would strip the cursor from next_href pagination URLs.
  */
 export async function apiV2Get<T>(
   endpoint: string,
   params: Record<string, string | number> = {}
 ): Promise<T> {
-  const url = endpoint.startsWith("http")
-    ? endpoint
-    : `${SOUNDCLOUD_API_BASE}${endpoint}`;
-  const text = await got(url, {
-    searchParams: { ...params, client_id: requireApiV2ClientId() },
+  const url = new URL(
+    endpoint.startsWith("http") ? endpoint : `${SOUNDCLOUD_API_BASE}${endpoint}`
+  );
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, String(value));
+  }
+  url.searchParams.set("client_id", requireApiV2ClientId());
+  const text = await got(url.toString(), {
+    timeout: { request: REQUEST_TIMEOUT_MS },
+    retry: { limit: 1 },
   }).text();
   return JSON.parse(text) as T;
 }
