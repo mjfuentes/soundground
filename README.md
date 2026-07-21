@@ -10,11 +10,10 @@ Discover and explore SoundCloud artists. Dig deep into artist profiles, explore 
 - **Track Player** - Built-in audio player with queue management and playback controls
 - **External Platform Links** - Automatic detection of Bandcamp, Beatport, and Hypeddit links for buying or downloading tracks
 - **Smart Caching** - SQLite-based caching system for fast repeated loads
-- **SoundCloud OAuth** - Secure authentication with SoundCloud
 
 ## Tech Stack
 
-- **Next.js 15** with App Router
+- **Next.js 16** with App Router
 - **TypeScript**
 - **Tailwind CSS**
 - **SoundCloud API** (proxied through backend)
@@ -29,15 +28,13 @@ npm install
 ```
 
 2. Get SoundCloud API credentials:
-   - Contact [SoundCloud Support](https://developers.soundcloud.com/) via chat bot
-   - Request API credentials for Client Credentials flow (public access only)
-   - You'll receive `client_id` and `client_secret`
+   - Register an app at [developers.soundcloud.com](https://developers.soundcloud.com/docs/api/register-app) (requires an Artist Pro account)
+   - You'll receive a `client_id` and `client_secret` instantly
 
-3. Configure environment (`.env.local`):
+3. Configure environment — copy `.env.example` to `.env` and fill in:
 ```bash
 SOUNDCLOUD_CLIENT_ID=your_client_id
-SOUNDCLOUD_CLIENT_SECRET=your_client_secret  # Optional but recommended
-JWT_SECRET=$(openssl rand -base64 32)
+SOUNDCLOUD_CLIENT_SECRET=your_client_secret
 ```
 
 4. Run:
@@ -45,17 +42,18 @@ JWT_SECRET=$(openssl rand -base64 32)
 npm run dev
 ```
 
-**Note**: App works in two modes:
-- **With `client_secret`**: Uses OAuth Client Credentials (better rate limits, recommended)
-- **Without `client_secret`**: Falls back to public `client_id` only (works but deprecated)
+**Note**: The app talks to the **official SoundCloud API** (client-credentials flow).
+There are no built-in fallback credentials — without configuration, API calls fail
+loudly by design. An unofficial api-v2 fallback exists behind the opt-in
+`SOUNDCLOUD_APIV2_CLIENT_ID` env var (see `.env.example`).
 
 ## API Routes
 
-**Auth**: `/api/auth/{login,callback,logout,me}`  
-**SoundCloud**: `/api/soundcloud/{profile,followers,resolve,spotlight,playlists,albums,tracks}`  
+**SoundCloud**: `/api/soundcloud/{profile,followers,friends,resolve,spotlight,playlists,albums,tracks,search,stream}`  
 **Cache**: `/api/cache`
 
-All routes except auth require valid session.
+The app is read-only; no user accounts. (The former user-OAuth flow and the admin
+dashboard are parked under `attic/` — see `attic/README.md`.)
 
 ## Caching
 
@@ -73,15 +71,11 @@ Slash command: `/push` - full deploy pipeline.
 
 ```bash
 # Set secrets
-flyctl secrets set SOUNDCLOUD_CLIENT_ID=xxx SOUNDCLOUD_CLIENT_SECRET=xxx \
-  SOUNDCLOUD_REDIRECT_URI=https://soundground.net/api/auth/callback \
-  JWT_SECRET=$(openssl rand -base64 32) -a soundground
+flyctl secrets set SOUNDCLOUD_CLIENT_ID=xxx SOUNDCLOUD_CLIENT_SECRET=xxx -a soundground
 
 # Deploy
 npm run deploy
 ```
-
-Update SoundCloud app to include production redirect URI.
 
 ## Scripts
 

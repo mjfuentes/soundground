@@ -9,10 +9,8 @@
 // SoundCloud API Configuration
 // ============================================================================
 
-export const SOUNDCLOUD_API_BASE = "https://api-v2.soundcloud.com";
-export const SOUNDCLOUD_AUTH_BASE = "https://secure.soundcloud.com";
-
-export const DEFAULT_CLIENT_ID = "REMOVED_CLIENT_ID";
+// Note: API base URLs and credential handling live in lib/soundcloud/config.ts.
+// Credentials come exclusively from the environment — never hardcode them here.
 
 // ============================================================================
 // Cache Configuration
@@ -86,19 +84,12 @@ export const SESSION_CONFIG = {
 
 export const ROUTES = {
   HOME: "/",
-  LOGIN: "/login",
   PROFILE: (handle: string) => `/${handle}`,
   TRACK: (trackId: number) => `/track/${trackId}`,
   PLAY: "/play",
 } as const;
 
 export const API_ROUTES = {
-  AUTH: {
-    LOGIN: "/api/auth/login",
-    LOGOUT: "/api/auth/logout",
-    CALLBACK: "/api/auth/callback",
-    ME: "/api/auth/me",
-  },
   SOUNDCLOUD: {
     PROFILE: "/api/soundcloud/profile",
     TRACKS: "/api/soundcloud/tracks",

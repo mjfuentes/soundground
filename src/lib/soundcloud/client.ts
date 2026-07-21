@@ -1,35 +1,52 @@
-import got from "got";
-import { getClientCredentialsToken, hasClientCredentials } from "./client-credentials";
+/**
+ * UNOFFICIAL api-v2 FALLBACK client (api-v2.soundcloud.com).
+ *
+ * This is NOT the primary data source — the official API client
+ * (./official-client.ts) is. api-v2 is the undocumented endpoint the
+ * SoundCloud web app uses; it is kept only as a clearly-labeled fallback
+ * (it exposes a few things the official API lacks: spotlight, media
+ * transcodings) and as reference for the pre-2026 data layer.
+ *
+ * It authenticates with a web client_id you must supply yourself via the
+ * SOUNDCLOUD_APIV2_CLIENT_ID env var (opt-in). There is NO hardcoded
+ * default: without that var every call here fails loudly.
+ *
+ * This module also owns the shared response type definitions
+ * (SoundCloudUser, SoundCloudTrack, ...) that both providers map into.
+ */
 
-const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID || "REMOVED_CLIENT_ID";
+import got from "got";
+
 const SOUNDCLOUD_API_BASE = "https://api-v2.soundcloud.com";
 
-/**
- * Get authorization headers - prefers OAuth token over client_id
- */
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  // Try to use Client Credentials token if available
-  if (hasClientCredentials()) {
-    try {
-      const token = await getClientCredentialsToken();
-      return { Authorization: `OAuth ${token}` };
-    } catch (error) {
-      console.warn("Failed to get client credentials token, falling back to client_id:", error);
-    }
+/** Lazily resolve the opt-in api-v2 client_id; throw loudly when unset. */
+function requireApiV2ClientId(): string {
+  const clientId = process.env.SOUNDCLOUD_APIV2_CLIENT_ID;
+  if (!clientId) {
+    throw new Error(
+      "SOUNDCLOUD_APIV2_CLIENT_ID is not configured. The unofficial api-v2 " +
+        "fallback is opt-in; prefer the official API via SOUNDCLOUD_CLIENT_ID / " +
+        "SOUNDCLOUD_CLIENT_SECRET. See .env.example."
+    );
   }
-  
-  // Fallback to client_id in query params (deprecated but works)
-  return {};
+  return clientId;
 }
 
 /**
- * Get search params with auth - either empty (for OAuth header) or client_id
+ * Raw GET against api-v2 with the fallback client_id attached.
+ * Exposed for the stream route's transcoding fallback.
  */
-function getAuthParams(params: Record<string, string | number> = {}): Record<string, string | number> {
-  if (!hasClientCredentials()) {
-    return { ...params, client_id: SOUNDCLOUD_CLIENT_ID };
-  }
-  return params;
+export async function apiV2Get<T>(
+  endpoint: string,
+  params: Record<string, string | number> = {}
+): Promise<T> {
+  const url = endpoint.startsWith("http")
+    ? endpoint
+    : `${SOUNDCLOUD_API_BASE}${endpoint}`;
+  const text = await got(url, {
+    searchParams: { ...params, client_id: requireApiV2ClientId() },
+  }).text();
+  return JSON.parse(text) as T;
 }
 
 export interface SoundCloudUser {
@@ -126,29 +143,13 @@ export interface SoundCloudPlaylist {
 }
 
 export async function resolveProfile(url: string): Promise<SoundCloudUser> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({ url });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/resolve`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as SoundCloudUser;
+  return apiV2Get<SoundCloudUser>("/resolve", { url });
 }
 
 export type SpotlightItem = SoundCloudTrack | SoundCloudPlaylist;
 
 export async function getSpotlight(userId: number): Promise<{ collection: SpotlightItem[] }> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams();
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/spotlight`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SpotlightItem[] };
+  return apiV2Get<{ collection: SpotlightItem[] }>(`/users/${userId}/spotlight`);
 }
 
 // Type guard to check if an item is a playlist
@@ -157,64 +158,27 @@ export function isPlaylist(item: SpotlightItem): item is SoundCloudPlaylist {
 }
 
 export async function getPlaylists(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({ limit });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/playlists_without_albums`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SoundCloudPlaylist[] };
+  return apiV2Get<{ collection: SoundCloudPlaylist[] }>(
+    `/users/${userId}/playlists_without_albums`,
+    { limit }
+  );
 }
 
 export async function getAlbums(userId: number, limit = 200): Promise<{ collection: SoundCloudPlaylist[] }> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({ limit });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/albums`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SoundCloudPlaylist[] };
+  return apiV2Get<{ collection: SoundCloudPlaylist[] }>(`/users/${userId}/albums`, { limit });
 }
 
 export async function getTracks(userId: number, limit = 200): Promise<{ collection: SoundCloudTrack[] }> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({ limit });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/tracks`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SoundCloudTrack[] };
+  return apiV2Get<{ collection: SoundCloudTrack[] }>(`/users/${userId}/tracks`, { limit });
 }
 
 export async function getReposts(userId: number, limit = 200): Promise<{ collection: SoundCloudTrack[] }> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({ limit });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/track_reposts`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SoundCloudTrack[] };
+  return apiV2Get<{ collection: SoundCloudTrack[] }>(`/users/${userId}/track_reposts`, { limit });
 }
 
 export async function getTrack(trackId: number): Promise<SoundCloudTrack | null> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({});
-  
   try {
-    const text = await got(`${SOUNDCLOUD_API_BASE}/tracks/${trackId}`, {
-      searchParams,
-      headers,
-    }).text();
-
-    return JSON.parse(text) as SoundCloudTrack;
+    return await apiV2Get<SoundCloudTrack>(`/tracks/${trackId}`);
   } catch (error) {
     console.error(`Error fetching track ${trackId}:`, error);
     return null;
@@ -231,65 +195,37 @@ export interface SoundCloudFollower {
 }
 
 export async function getFollowers(userId: number, limit = 200, nextHref?: string): Promise<{ collection: SoundCloudFollower[]; next_href?: string }> {
-  const headers = await getAuthHeaders();
-  
   if (nextHref) {
-    // Use the nextHref directly
-    const url = hasClientCredentials() ? nextHref : `${nextHref}&client_id=${SOUNDCLOUD_CLIENT_ID}`;
-    const text = await got(url, { headers }).text();
-    return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+    return apiV2Get<{ collection: SoundCloudFollower[]; next_href?: string }>(nextHref);
   }
-  
-  // Initial request
-  const searchParams = getAuthParams({ limit });
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followers`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+  return apiV2Get<{ collection: SoundCloudFollower[]; next_href?: string }>(
+    `/users/${userId}/followers`,
+    { limit }
+  );
 }
 
 export async function getFollowings(userId: number, limit = 200, nextHref?: string): Promise<{ collection: SoundCloudFollower[]; next_href?: string }> {
-  const headers = await getAuthHeaders();
-  
   if (nextHref) {
-    // Use the nextHref directly
-    const url = hasClientCredentials() ? nextHref : `${nextHref}&client_id=${SOUNDCLOUD_CLIENT_ID}`;
-    const text = await got(url, { headers }).text();
-    return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+    return apiV2Get<{ collection: SoundCloudFollower[]; next_href?: string }>(nextHref);
   }
-  
-  // Initial request
-  const searchParams = getAuthParams({ limit });
-  const text = await got(`${SOUNDCLOUD_API_BASE}/users/${userId}/followings`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as { collection: SoundCloudFollower[]; next_href?: string };
+  return apiV2Get<{ collection: SoundCloudFollower[]; next_href?: string }>(
+    `/users/${userId}/followings`,
+    { limit }
+  );
 }
 
 export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCloudPlaylist> {
-  const headers = await getAuthHeaders();
-  const searchParams = getAuthParams({
+  const playlist = await apiV2Get<SoundCloudPlaylist>(`/playlists/${playlistId}`, {
     linked_partitioning: 1, // Enable full track list
   });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/playlists/${playlistId}`, {
-    searchParams,
-    headers,
-  }).text();
 
-  const playlist = JSON.parse(text) as SoundCloudPlaylist;
-  
   // Some tracks in the playlist might be incomplete (missing title, user, duration)
   // Fetch full details for each incomplete track
   if (playlist.tracks && playlist.tracks.length > 0) {
     const trackPromises = playlist.tracks.map(async (track) => {
       // Check if track has all required fields
       const isComplete = track.title && track.user && track.duration !== undefined;
-      
+
       if (!isComplete && track.id) {
         // Fetch full track details
         try {
@@ -301,14 +237,17 @@ export async function getPlaylistWithTracks(playlistId: number): Promise<SoundCl
           return track;
         }
       }
-      
+
       return track;
     });
-    
+
     // Wait for all track fetches to complete
     const fetchedTracks = await Promise.all(trackPromises);
     // Filter out any null tracks that couldn't be fetched
-    playlist.tracks = fetchedTracks.filter((t): t is SoundCloudTrack => t !== null);
+    return {
+      ...playlist,
+      tracks: fetchedTracks.filter((t): t is SoundCloudTrack => t !== null),
+    };
   }
 
   return playlist;
@@ -329,21 +268,11 @@ export async function search(
     filter?: 'tracks' | 'users' | 'playlists' | 'albums';
   } = {}
 ): Promise<SoundCloudSearchResult> {
-  const headers = await getAuthHeaders();
   const { limit = 20, offset = 0, filter } = options;
-  
-  const searchParams = getAuthParams({
+  return apiV2Get<SoundCloudSearchResult>("/search", {
     q: query,
     limit,
     offset,
     ...(filter && { filter }),
   });
-  
-  const text = await got(`${SOUNDCLOUD_API_BASE}/search`, {
-    searchParams,
-    headers,
-  }).text();
-
-  return JSON.parse(text) as SoundCloudSearchResult;
 }
-

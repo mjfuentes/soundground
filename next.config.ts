@@ -15,23 +15,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Improve Fast Refresh stability
   experimental: {
     // Optimize package imports
     optimizePackageImports: ['@/components', '@/lib', '@/contexts'],
     // Enable view transitions
     viewTransition: true,
-  },
-  // Reduce webpack errors during hot reload
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
-      // Ignore specific modules that cause issues during HMR
-      config.watchOptions = {
-        ...config.watchOptions,
-        ignored: /node_modules/,
-      };
-    }
-    return config;
   },
 };
 

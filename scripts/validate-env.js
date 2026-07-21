@@ -18,11 +18,15 @@ function log(message, color = colors.reset) {
 
 // Define required environment variables
 const requiredEnvVars = [
-  // Add your required env vars here
-  // Example: 'SOUNDCLOUD_API_KEY',
+  'SOUNDCLOUD_CLIENT_ID',
+  'SOUNDCLOUD_CLIENT_SECRET',
 ];
 
 const optionalEnvVars = [
+  'SOUNDCLOUD_APIV2_CLIENT_ID',
+  'JWT_SECRET',
+  'CACHE_DB_PATH',
+  'NEXT_PUBLIC_BASE_URL',
   'VERCEL_URL',
   'FLY_APP_NAME',
   'NODE_ENV',

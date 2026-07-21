@@ -133,23 +133,6 @@ class Logger {
         console.error(formatted);
         break;
     }
-
-    // Store log for admin dashboard (server-side only)
-    if (typeof window === 'undefined') {
-      try {
-        // Dynamic import to avoid circular dependencies
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { addLog } = require('./log-store');
-        addLog({
-          timestamp: entry.timestamp,
-          level: entry.level,
-          message: entry.message,
-          context: entry.context,
-        });
-      } catch {
-        // Ignore errors (log-store might not be available yet)
-      }
-    }
   }
 
   /**

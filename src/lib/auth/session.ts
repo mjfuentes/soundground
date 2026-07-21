@@ -1,8 +1,20 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const SECRET_KEY = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-const key = new TextEncoder().encode(SECRET_KEY);
+/**
+ * Session signing key. Resolved lazily so that merely importing this module
+ * (e.g. during build) never throws — but any actual session operation fails
+ * loudly when JWT_SECRET is not configured. No default secret, ever.
+ */
+function getKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "JWT_SECRET is not configured. Sessions are disabled until it is set in the environment (see .env.example)."
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export interface SessionData {
   accessToken: string;
@@ -20,7 +32,7 @@ export async function createSession(data: SessionData): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(key);
+    .sign(getKey());
 }
 
 /**
@@ -28,7 +40,7 @@ export async function createSession(data: SessionData): Promise<string> {
  */
 export async function verifySession(token: string): Promise<SessionData | null> {
   try {
-    const { payload } = await jwtVerify(token, key);
+    const { payload } = await jwtVerify(token, getKey());
     return payload as unknown as SessionData;
   } catch {
     return null;

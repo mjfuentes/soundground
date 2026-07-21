@@ -1,5 +1,4 @@
 import { getCacheService } from '@/lib/cache';
-import { PerformanceTimer } from '@/lib/performance-tracker';
 import * as client from './client';
 
 // Cache TTLs (in milliseconds)
@@ -171,7 +170,7 @@ export async function getPlaylistWithTracks(playlistId: number): Promise<client.
 }
 
 /**
- * Cached version of search with performance tracking
+ * Cached version of search
  */
 export async function search(
   query: string,
@@ -182,26 +181,13 @@ export async function search(
   } = {}
 ): Promise<client.SoundCloudSearchResult> {
   const cache = getCacheService();
-  const timer = new PerformanceTimer('soundcloud:search', 'CACHE');
   const { limit = 20, offset = 0, filter } = options;
   const cacheKey = `search:${query}:${limit}:${offset}:${filter || 'all'}`;
-  
-  // Check cache first
-  const cached = cache.get<client.SoundCloudSearchResult>(cacheKey);
-  
-  if (cached) {
-    timer.setCacheHit(true);
-    timer.end(200);
-    return cached;
-  }
-  
-  // Cache miss - fetch from API
-  timer.setCacheHit(false);
-  const result = await client.search(query, options);
-  cache.set(cacheKey, result, { ttl: CACHE_TTL.SEARCH, type: CACHE_TYPE.SEARCH });
-  timer.end(200);
-  
-  return result;
+  return cache.getOrSet(
+    cacheKey,
+    () => client.search(query, options),
+    { ttl: CACHE_TTL.SEARCH, type: CACHE_TYPE.SEARCH }
+  );
 }
 
 /**

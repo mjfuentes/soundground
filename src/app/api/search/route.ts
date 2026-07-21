@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { search } from "@/lib/soundcloud/smart-client";
 import { createLogger } from "@/lib/logger";
-import { PerformanceTimer } from "@/lib/performance-tracker";
 import { stabilizeSearchResults } from "@/lib/search-stabilizer";
 
 const logger = createLogger({ route: "search" });
 
 export async function GET(request: NextRequest) {
-  const timer = new PerformanceTimer('/api/search', 'GET');
-  
   const searchParams = request.nextUrl.searchParams;
   const query = searchParams.get("q");
   const limit = searchParams.get("limit");
@@ -17,7 +14,6 @@ export async function GET(request: NextRequest) {
   const stabilize = searchParams.get("stabilize") !== "false"; // Default true
 
   if (!query) {
-    timer.end(400);
     return NextResponse.json({ error: "Missing 'q' parameter" }, { status: 400 });
   }
 
@@ -30,31 +26,25 @@ export async function GET(request: NextRequest) {
     });
 
     // Stabilize results using fuzzy matching and historical data
-    const stabilizedResults = stabilize 
+    const stabilizedResults = stabilize
       ? stabilizeSearchResults(query, rawResults.collection || [])
       : rawResults.collection || [];
 
-    const duration = timer.end(200);
-    
-    // Return stabilized results
     const response = NextResponse.json({
       collection: stabilizedResults,
       total_results: stabilizedResults.length,
       next_href: rawResults.next_href,
       query_urn: rawResults.query_urn
     });
-    
-    response.headers.set('X-Response-Time', `${duration}ms`);
+
     response.headers.set('X-Stabilized', stabilize ? 'true' : 'false');
-    
+
     return response;
   } catch (error) {
     logger.error("Search failed", { query }, error as Error);
-    timer.end(500);
     return NextResponse.json(
       { error: "Failed to search" },
       { status: 500 }
     );
   }
 }
-

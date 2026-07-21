@@ -23,7 +23,7 @@ const customJestConfig = {
     '**/__tests__/**/*.(test|spec).(ts|tsx|js)',
     '**/*.(test|spec).(ts|tsx|js)',
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/attic/'],
   transformIgnorePatterns: [
     'node_modules/(?!(got|@sindresorhus|@szmarczak|cacheable-request|normalize-url|responselike|cacheable-lookup|lowercase-keys|form-data-encoder|p-cancelable|resolve-alpn|jose)/)',
     '^.+\\.module\\.(css|sass|scss)$',
@@ -33,6 +33,14 @@ const customJestConfig = {
   },
 }
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-module.exports = createJestConfig(customJestConfig)
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async.
+// next/jest 16 prepends its own catch-all node_modules ignore pattern, which would
+// defeat the ESM whitelist above (jose, got, ...) — so replace the patterns after generation.
+module.exports = async () => {
+  const config = await createJestConfig(customJestConfig)()
+  return {
+    ...config,
+    transformIgnorePatterns: customJestConfig.transformIgnorePatterns,
+  }
+}
 
