@@ -56,17 +56,20 @@ export class CacheService {
   }
 
   /**
-   * Infer cache type from key pattern
+   * Infer cache type from key pattern (for miss accounting — hits carry
+   * their stored type). Keys look like "profile:<url>" from the api-v2
+   * cached client or "official:profile:<url>" from the official one.
    */
   private inferTypeFromKey(key: string): string {
-    if (key.startsWith('soundcloud:profile:')) return 'soundcloud:profile';
-    if (key.startsWith('soundcloud:tracks:')) return 'soundcloud:tracks';
-    if (key.startsWith('soundcloud:playlists:')) return 'soundcloud:playlists';
-    if (key.startsWith('soundcloud:albums:')) return 'soundcloud:albums';
-    if (key.startsWith('soundcloud:followers:')) return 'soundcloud:followers';
-    if (key.startsWith('soundcloud:spotlight:')) return 'soundcloud:spotlight';
-    if (key.startsWith('soundcloud:search:')) return 'soundcloud:search';
-    if (key.startsWith('followings_set:')) return 'followings_set';
+    const k = key.startsWith('official:') ? key.slice('official:'.length) : key;
+    if (k.startsWith('profile:')) return 'soundcloud:profile';
+    if (k.startsWith('tracks:') || k.startsWith('track:') || k.startsWith('reposts:')) return 'soundcloud:tracks';
+    if (k.startsWith('playlists:') || k.startsWith('playlist:') || k.startsWith('albums:')) return 'soundcloud:playlists';
+    if (k.startsWith('followers:') || k.startsWith('followings:')) return 'soundcloud:followers';
+    if (k.startsWith('spotlight:')) return 'soundcloud:spotlight';
+    if (k.startsWith('search:')) return 'soundcloud:search';
+    if (k.startsWith('streams:')) return 'soundcloud:streams';
+    if (k.startsWith('user:') && k.endsWith(':all-following-ids')) return 'followings_set';
     return DEFAULT_TYPE;
   }
 
