@@ -140,12 +140,25 @@ export function FloatingPlayer() {
 
         {/* Track Info */}
         <div className="min-w-0 flex-1 md:max-w-xs">
-          <Link
-            href={`/track/${currentItem.id}`}
-            className="truncate text-sm font-medium text-white hover:text-neutral-300 block cursor-pointer"
-          >
-            {currentItem.title}
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={`/track/${currentItem.id}`}
+              className="truncate text-sm font-medium text-white hover:text-neutral-300 block cursor-pointer"
+            >
+              {currentItem.title}
+            </Link>
+            {/* SoundCloud attribution backlink (required by API ToU) */}
+            <a
+              href={currentItem.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open on SoundCloud"
+              title="Open on SoundCloud"
+              className="flex-none text-[10px] text-neutral-500 hover:text-white"
+            >
+              ↗
+            </a>
+          </div>
           <Link
             href={`/track/${currentItem.id}`}
             className="truncate text-xs text-neutral-500 hover:text-neutral-300 block cursor-pointer"

@@ -220,6 +220,10 @@ function mapFollower(raw: RawUser): SoundCloudFollower {
     avatar_url: raw.avatar_url,
     followers_count: raw.followers_count ?? 0,
     track_count: raw.track_count,
+    // Present on full user objects in follow pages; saves the crawler a
+    // per-artist profile request when populated.
+    city: raw.city,
+    country_code: raw.country,
   };
 }
 
@@ -270,6 +274,11 @@ export async function resolveProfile(url: string): Promise<SoundCloudUser> {
   return mapUser(raw);
 }
 
+export async function getUser(userId: number): Promise<SoundCloudUser> {
+  const raw = await apiGet<RawUser>(`/users/${userUrn(userId)}`);
+  return mapUser(raw);
+}
+
 /**
  * The official API has no spotlight endpoint; the facade falls back to
  * api-v2 when that is configured, or an empty collection otherwise.
@@ -286,6 +295,18 @@ async function getUserPlaylists(userId: number, limit: number): Promise<SoundClo
     )
   );
   return (data.collection ?? []).map(mapPlaylist);
+}
+
+/**
+ * All of a user's sets (playlists AND albums) in one request. The cached
+ * wrapper fetches this once and filters, instead of hitting the same
+ * endpoint twice for getPlaylists + getAlbums.
+ */
+export async function getAllUserPlaylists(
+  userId: number,
+  limit = 200
+): Promise<{ collection: SoundCloudPlaylist[] }> {
+  return { collection: await getUserPlaylists(userId, limit) };
 }
 
 export async function getPlaylists(

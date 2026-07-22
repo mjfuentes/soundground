@@ -21,17 +21,51 @@ interface CachedToken {
   expiresAt: number;
 }
 
-// The token cache lives on globalThis: in dev, each route bundle can get its
-// own copy of this module, and per-copy caches would multiply token mints —
-// SoundCloud caps minting at 50 per 12h per app.
+// Two cache tiers, because SoundCloud caps minting at 50 per 12h per app:
+// - globalThis: dev route bundles can each get their own module copy
+// - cache.db: SHARED ACROSS PROCESSES — the dev server, crawler CLI,
+//   aggregation scripts and builds all reuse one mint instead of each
+//   minting their own (which is how the cap got hit on day one).
 const TOKEN_CACHE_KEY = Symbol.for("soundground.sc-token-cache");
+const TOKEN_DB_KEY = "official:client-credentials-token";
 
 function getCachedToken(): CachedToken | null {
-  return (globalThis as Record<symbol, unknown>)[TOKEN_CACHE_KEY] as CachedToken | null ?? null;
+  const inMemory = (globalThis as Record<symbol, unknown>)[TOKEN_CACHE_KEY] as
+    | CachedToken
+    | null
+    | undefined;
+  if (inMemory) return inMemory;
+  try {
+    // Lazy require avoids a module cycle (cache -> soundcloud is never imported).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCacheService } = require("@/lib/cache") as typeof import("@/lib/cache");
+    const persisted = getCacheService().get<CachedToken>(TOKEN_DB_KEY);
+    if (persisted) {
+      (globalThis as Record<symbol, unknown>)[TOKEN_CACHE_KEY] = persisted;
+      return persisted;
+    }
+  } catch {
+    // cache.db unavailable (e.g. read-only env) — in-memory tier still works
+  }
+  return null;
 }
 
 function setCachedToken(token: CachedToken | null): void {
   (globalThis as Record<symbol, unknown>)[TOKEN_CACHE_KEY] = token;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCacheService } = require("@/lib/cache") as typeof import("@/lib/cache");
+    if (token) {
+      getCacheService().set(TOKEN_DB_KEY, token, {
+        ttl: Math.max(0, token.expiresAt - Date.now()),
+        type: "auth:token",
+      });
+    } else {
+      getCacheService().delete(TOKEN_DB_KEY);
+    }
+  } catch {
+    // best effort — persistence is an optimization
+  }
 }
 
 /**

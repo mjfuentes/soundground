@@ -15,15 +15,22 @@ import type {
   SpotlightItem,
 } from './client';
 
-// Cache TTLs (in milliseconds)
+// Cache freshness windows (ms). Metadata additionally gets STALE_RETENTION:
+// past freshness it is served instantly while a background refresh runs
+// (stale-while-revalidate). Streams get none — their URLs are short-lived
+// tokens and a stale one is a broken player.
+const DAY = 24 * 60 * 60 * 1000;
+
 const CACHE_TTL = {
-  PROFILE: 10 * 60 * 1000, // 10 minutes
-  PLAYLISTS: 20 * 60 * 1000, // 20 minutes
-  TRACKS: 20 * 60 * 1000, // 20 minutes
-  FOLLOWERS: 30 * 60 * 1000, // 30 minutes
-  SEARCH: 5 * 60 * 1000, // 5 minutes
-  STREAMS: 30 * 60 * 1000, // 30 minutes (stream URLs are short-lived tokens)
+  PROFILE: 1 * DAY, // metadata changes slowly; SWR refreshes on first visit past this
+  PLAYLISTS: 3 * DAY,
+  TRACKS: 3 * DAY, // tracks are rarely deleted; a day-stale track list is fine
+  FOLLOWERS: 1 * DAY,
+  SEARCH: 5 * 60 * 1000, // 5 minutes — search should stay current
+  STREAMS: 30 * 60 * 1000, // 30 minutes
 };
+
+const STALE_RETENTION = 90 * DAY; // instantly servable for months; refreshed on access
 
 const CACHE_TYPE = {
   PROFILE: 'soundcloud:profile',
@@ -38,7 +45,15 @@ export async function resolveProfile(url: string): Promise<SoundCloudUser> {
   return getCacheService().getOrSet(
     `official:profile:${url}`,
     () => client.resolveProfile(url),
-    { ttl: CACHE_TTL.PROFILE, type: CACHE_TYPE.PROFILE }
+    { ttl: CACHE_TTL.PROFILE, type: CACHE_TYPE.PROFILE, staleTtl: STALE_RETENTION }
+  );
+}
+
+export async function getUser(userId: number): Promise<SoundCloudUser> {
+  return getCacheService().getOrSet(
+    `official:user:${userId}`,
+    () => client.getUser(userId),
+    { ttl: CACHE_TTL.PROFILE, type: CACHE_TYPE.PROFILE, staleTtl: STALE_RETENTION }
   );
 }
 
@@ -47,26 +62,65 @@ export async function getSpotlight(): Promise<{ collection: SpotlightItem[] }> {
   return client.getSpotlight();
 }
 
+// ---------------------------------------------------------------------------
+// Write-through seeding — the crawler fetches profiles and tracks anyway, so
+// it stores them under the app's cache keys: every crawl warms the profile
+// pages for the whole orbit.
+// ---------------------------------------------------------------------------
+
+export function seedUserCache(user: SoundCloudUser): void {
+  const options = { ttl: CACHE_TTL.PROFILE, type: CACHE_TYPE.PROFILE, staleTtl: STALE_RETENTION };
+  const service = getCacheService();
+  service.set(`official:user:${user.id}`, user, options);
+  if (user.permalink) {
+    service.set(`official:profile:https://soundcloud.com/${user.permalink}`, user, options);
+  }
+}
+
+export function seedTracksCache(userId: number, tracks: readonly SoundCloudTrack[]): void {
+  const options = { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS, staleTtl: STALE_RETENTION };
+  const service = getCacheService();
+  // The profile page requests limit 50; seed both common shapes.
+  service.set(`official:tracks:${userId}:200`, { collection: tracks }, options);
+  service.set(`official:tracks:${userId}:50`, { collection: tracks.slice(0, 50) }, options);
+}
+
+export function seedRepostsCache(userId: number, reposts: readonly SoundCloudTrack[]): void {
+  const options = { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS, staleTtl: STALE_RETENTION };
+  const service = getCacheService();
+  service.set(`official:reposts:${userId}:200`, { collection: reposts }, options);
+  service.set(`official:reposts:${userId}:50`, { collection: reposts.slice(0, 50) }, options);
+}
+
+/**
+ * Playlists and albums share one upstream request: the API has a single
+ * /users/{urn}/playlists endpoint, so fetch + cache it once and filter.
+ */
+async function getAllUserPlaylistsCached(
+  userId: number,
+  limit: number
+): Promise<{ collection: SoundCloudPlaylist[] }> {
+  return getCacheService().getOrSet(
+    `official:user-playlists:${userId}:${limit}`,
+    () => client.getAllUserPlaylists(userId, limit),
+    { ttl: CACHE_TTL.PLAYLISTS, type: CACHE_TYPE.PLAYLISTS, staleTtl: STALE_RETENTION }
+  );
+}
+
 export async function getPlaylists(
   userId: number,
   limit = 200
 ): Promise<{ collection: SoundCloudPlaylist[] }> {
-  return getCacheService().getOrSet(
-    `official:playlists:${userId}:${limit}`,
-    () => client.getPlaylists(userId, limit),
-    { ttl: CACHE_TTL.PLAYLISTS, type: CACHE_TYPE.PLAYLISTS }
-  );
+  const all = await getAllUserPlaylistsCached(userId, limit);
+  return { collection: all.collection.filter((p) => !p.is_album) };
 }
 
 export async function getAlbums(
   userId: number,
   limit = 200
 ): Promise<{ collection: SoundCloudPlaylist[] }> {
-  return getCacheService().getOrSet(
-    `official:albums:${userId}:${limit}`,
-    () => client.getAlbums(userId, limit),
-    { ttl: CACHE_TTL.PLAYLISTS, type: CACHE_TYPE.PLAYLISTS }
-  );
+  const all = await getAllUserPlaylistsCached(userId, limit);
+  return { collection: all.collection.filter((p) => p.is_album) };
 }
 
 export async function getTracks(
@@ -76,7 +130,7 @@ export async function getTracks(
   return getCacheService().getOrSet(
     `official:tracks:${userId}:${limit}`,
     () => client.getTracks(userId, limit),
-    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS }
+    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS, staleTtl: STALE_RETENTION }
   );
 }
 
@@ -87,7 +141,7 @@ export async function getReposts(
   return getCacheService().getOrSet(
     `official:reposts:${userId}:${limit}`,
     () => client.getReposts(userId, limit),
-    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS }
+    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS, staleTtl: STALE_RETENTION }
   );
 }
 
@@ -95,7 +149,7 @@ export async function getTrack(trackId: number): Promise<SoundCloudTrack | null>
   return getCacheService().getOrSet(
     `official:track:${trackId}`,
     () => client.getTrack(trackId),
-    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS }
+    { ttl: CACHE_TTL.TRACKS, type: CACHE_TYPE.TRACKS, staleTtl: STALE_RETENTION }
   );
 }
 
@@ -118,7 +172,7 @@ export async function getFollowers(
   return getCacheService().getOrSet(
     cacheKey,
     () => client.getFollowers(userId, limit, nextHref),
-    { ttl: CACHE_TTL.FOLLOWERS, type: CACHE_TYPE.FOLLOWERS }
+    { ttl: CACHE_TTL.FOLLOWERS, type: CACHE_TYPE.FOLLOWERS, staleTtl: STALE_RETENTION }
   );
 }
 
@@ -133,7 +187,7 @@ export async function getFollowings(
   return getCacheService().getOrSet(
     cacheKey,
     () => client.getFollowings(userId, limit, nextHref),
-    { ttl: CACHE_TTL.FOLLOWERS, type: CACHE_TYPE.FOLLOWERS }
+    { ttl: CACHE_TTL.FOLLOWERS, type: CACHE_TYPE.FOLLOWERS, staleTtl: STALE_RETENTION }
   );
 }
 
@@ -143,7 +197,7 @@ export async function getPlaylistWithTracks(
   return getCacheService().getOrSet(
     `official:playlist:${playlistId}:tracks`,
     () => client.getPlaylistWithTracks(playlistId),
-    { ttl: CACHE_TTL.PLAYLISTS, type: CACHE_TYPE.PLAYLISTS }
+    { ttl: CACHE_TTL.PLAYLISTS, type: CACHE_TYPE.PLAYLISTS, staleTtl: STALE_RETENTION }
   );
 }
 

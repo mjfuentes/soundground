@@ -59,6 +59,17 @@ function initializeSchema(database: Database.Database): void {
       last_accessed INTEGER
     );
   `);
+
+  // Stale-while-revalidate support: fresh_until marks the freshness window;
+  // expires_at becomes the hard retention deadline. Pre-migration rows get
+  // fresh_until = expires_at (fresh right up to deletion — old behavior).
+  const cacheColumns = database.prepare(`PRAGMA table_info(cache)`).all() as { name: string }[];
+  if (!cacheColumns.some((column) => column.name === "fresh_until")) {
+    database.exec(`
+      ALTER TABLE cache ADD COLUMN fresh_until INTEGER;
+      UPDATE cache SET fresh_until = expires_at WHERE fresh_until IS NULL;
+    `);
+  }
 }
 
 // Clean up expired entries periodically

@@ -203,6 +203,8 @@ export interface SoundCloudFollower {
   avatar_url?: string;
   followers_count: number;
   track_count?: number;
+  city?: string | null;
+  country_code?: string | null;
 }
 
 export async function getFollowers(userId: number, limit = 200, nextHref?: string): Promise<{ collection: SoundCloudFollower[]; next_href?: string }> {
