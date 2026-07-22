@@ -7,7 +7,12 @@ export function ConditionalHeader() {
   const pathname = usePathname();
 
   // Don't show the legacy header on browse surfaces — they render BrowseHeader themselves
-  if (pathname === "/" || pathname.startsWith("/genre/") || pathname.startsWith("/city/")) {
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/genre/") ||
+    pathname.startsWith("/city/") ||
+    pathname.startsWith("/scene/")
+  ) {
     return null;
   }
   

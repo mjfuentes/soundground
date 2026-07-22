@@ -38,6 +38,14 @@ describe("PlayButton", () => {
     expect(clickEvent.defaultPrevented).toBe(true);
   });
 
+  it("requests a scene queue for scene scope", async () => {
+    render(<PlayButton scope={{ scene: "berlin-dub-techno" }} label="Berlin Dub Techno" />);
+    fireEvent.click(screen.getByRole("button"));
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith("/api/browse/queue?scene=berlin-dub-techno"),
+    );
+  });
+
   it("requests an artist queue for artist scope", async () => {
     render(<PlayButton scope={{ artist: 42 }} label="Yagya" />);
     fireEvent.click(screen.getByRole("button"));

@@ -1,97 +1,14 @@
 import type Database from "better-sqlite3";
-import { aggregate } from "@/lib/browse/aggregate";
+import type { RosterEntry } from "@/lib/browse/aggregate";
 import { openGraphDatabase } from "../database";
 import { GraphRepository } from "../repository";
-import { computeScenes, DEFAULT_SCENE_COMPUTE_CONFIG, type SceneComputeConfig } from "../scenes";
-import type { RosterEntry } from "@/lib/browse/aggregate";
-
-const urn = (id: number) => `soundcloud:users:${id}`;
-
-const TEST_CONFIG: SceneComputeConfig = {
-  ...DEFAULT_SCENE_COMPUTE_CONFIG,
-  community: {
-    ...DEFAULT_SCENE_COMPUTE_CONFIG.community,
-    resolutions: [1],
-    dustThreshold: 3,
-  },
-  naming: {
-    ...DEFAULT_SCENE_COMPUTE_CONFIG.naming,
-    minDocFrequency: 1,
-    maxDocFraction: 1,
-    minLocatedMembers: 2,
-  },
-  rosterSize: 10,
-};
-
-/**
- * Two communities: a Berlin dub techno circle (1–5, crawled, plus frontier
- * artist 21 and zero-track account 22) and a London jungle circle (11–15,
- * crawled), joined by a single weak bridge follow.
- */
-function buildTwoSceneGraph(db: Database.Database): void {
-  const repo = new GraphRepository(db, () => "2026-07-22T00:00:00.000Z");
-
-  const put = (id: number, city: string | null, tracks: number | null, followers: number) =>
-    repo.upsertArtist({
-      urn: urn(id),
-      permalink: `artist-${id}`,
-      cityRaw: city,
-      countryCode: city === "Berlin" ? "DE" : city ? "GB" : null,
-      trackCount: tracks,
-      followersCount: followers,
-      depth: 0,
-    });
-
-  for (const id of [1, 2, 3, 4, 5]) put(id, "Berlin", 10, id === 1 ? 90000 : 100);
-  for (const id of [11, 12, 13, 14, 15]) put(id, "London", 10, 100);
-  put(21, null, null, 50); // frontier: never crawled, unknown tracks
-  put(22, null, 0, 10); // zero-track account: member but never rostered
-
-  for (const id of [1, 2, 3, 4, 5, 11, 12, 13, 14, 15]) {
-    repo.markCrawled(urn(id));
-    repo.recordTerm({
-      artistUrn: urn(id),
-      term: id < 10 ? "dub techno" : "jungle",
-      kind: "genre",
-      evidence: 3,
-    });
-  }
-
-  const follow = (src: number, dst: number) =>
-    repo.recordEdge({ srcUrn: urn(src), dstUrn: urn(dst), type: "follow", weight: 1, source: "t" });
-
-  const cliques = [
-    [1, 2, 3, 4, 5],
-    [11, 12, 13, 14, 15],
-  ];
-  for (const clique of cliques) {
-    for (const src of clique) {
-      for (const dst of clique) {
-        if (src !== dst) follow(src, dst);
-      }
-    }
-  }
-  // Reposts into 2 make it the scene's most-endorsed artist.
-  for (const src of [1, 3, 4]) {
-    repo.recordEdge({ srcUrn: urn(src), dstUrn: urn(2), type: "repost", weight: 3, source: "t" });
-  }
-  // Frontier + zero-track members hang off the dub techno circle.
-  for (const src of [1, 2, 3]) follow(src, 21);
-  for (const src of [1, 2]) follow(src, 22);
-  // Weak bridge between the two scenes.
-  follow(1, 11);
-}
-
-function buildAggregatedTwoSceneDb(): Database.Database {
-  const db = openGraphDatabase(":memory:");
-  buildTwoSceneGraph(db);
-  aggregate(
-    db,
-    { minGenreArtists: 2, minCityArtists: 2, minTagEvidence: 2, rosterSize: 12 },
-    () => "2026-07-22T00:00:00.000Z",
-  );
-  return db;
-}
+import { computeScenes } from "../scenes";
+import {
+  buildAggregatedTwoSceneDb,
+  buildTwoSceneGraph,
+  TEST_SCENE_CONFIG as TEST_CONFIG,
+  urn,
+} from "./two-scene-fixture";
 
 interface SceneRow {
   id: number;
@@ -211,6 +128,22 @@ describe("computeScenes", () => {
       expect(scene.slug).toBeNull();
     }
     db.close();
+  });
+
+  it("assigns collision-free slugs even against suffixed names", () => {
+    const { assignSlugs } = jest.requireActual<typeof import("../scenes")>("../scenes");
+    // "Techno 5"'s base slug collides with the suffixed fallback of the
+    // second "Techno" (id 5) — the fallback must keep incrementing.
+    const slugs = assignSlugs([
+      { id: 42, name: "Techno 5" },
+      { id: 1, name: "Techno" },
+      { id: 5, name: "Techno" },
+      { id: 7, name: null },
+    ]);
+    const named = [slugs.get(42), slugs.get(1), slugs.get(5)];
+    expect(new Set(named).size).toBe(3);
+    expect(named).toContain("techno-5");
+    expect(slugs.get(7)).toBeNull();
   });
 
   it("handles an empty graph", () => {

@@ -59,9 +59,34 @@ export interface CityDetail extends CitySummary {
   otherCities: LinkedCount[];
 }
 
+export interface SceneSummary {
+  id: number;
+  slug: string;
+  name: string;
+  /** Dominant city, when one holds the scene ("Berlin"). */
+  cityName: string | null;
+  /** Top scene vocabulary (display names), most defining first. */
+  tags: string[];
+  /** Crawled members only — the honest displayed count. */
+  memberCount: number;
+  activity: string | null;
+  activeNow: boolean;
+  coverUrns: string[];
+}
+
+export interface SceneDetail extends SceneSummary {
+  /** Ranked by within-scene weighted in-degree. */
+  roster: RosterArtist[];
+  /** Genres this scene's members belong to. */
+  genres: LinkedCount[];
+  /** Cities this scene's members declare. */
+  cities: LinkedCount[];
+}
+
 export interface BrowseStatus {
   hasData: boolean;
   aggregatedAt: string | null;
   genreCount: number;
   cityCount: number;
+  sceneCount: number;
 }

@@ -37,6 +37,7 @@ describe("browse store", () => {
       aggregatedAt: "2026-07-21T12:00:00.000Z",
       genreCount: 2,
       cityCount: 1,
+      sceneCount: 0,
     });
   });
 

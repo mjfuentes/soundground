@@ -5,6 +5,7 @@ import { BrowseHeader } from "@/components/browse/browse-header";
 import { EntityHero } from "@/components/browse/entity-hero";
 import { IntersectionList, RelatedChips } from "@/components/browse/sidebar-sections";
 import { resolveRoster } from "@/lib/browse/resolve-artists";
+import { scenesForGenre } from "@/lib/browse/scene-store";
 import { getGenreDetail, listGenres } from "@/lib/browse/store";
 
 export const revalidate = 3600;
@@ -36,6 +37,7 @@ export default async function GenrePage({ params }: PageProps) {
   }
 
   const roster = await resolveRoster(genre.roster);
+  const scenes = scenesForGenre(genre.slug);
 
   return (
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
@@ -65,6 +67,16 @@ export default async function GenrePage({ params }: PageProps) {
         </div>
 
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">
+          {scenes.length > 0 && (
+            <IntersectionList
+              heading="Scenes inside this genre"
+              items={scenes.map((scene) => ({
+                label: scene.name,
+                suffix: `${scene.count}`,
+                href: `/scene/${scene.slug}`,
+              }))}
+            />
+          )}
           {genre.cities.length > 0 && (
             <IntersectionList
               heading="Strongest in these cities"

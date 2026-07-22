@@ -7,7 +7,7 @@ import type Database from "better-sqlite3";
 import { openGraphDatabase } from "@/lib/graph/database";
 import { GraphRepository } from "@/lib/graph/repository";
 import { aggregate, type AggregateConfig } from "../aggregate";
-import type { CitySummary, GenreSummary } from "../types";
+import type { CitySummary, GenreSummary, SceneSummary } from "../types";
 import type { ResolvedRosterArtist } from "../resolve-artists";
 
 export const FIXTURE_CONFIG: AggregateConfig = {
@@ -103,6 +103,18 @@ export const sampleCity: CitySummary = {
   activity: "2 this week",
   activeNow: false,
   coverUrns: ["soundcloud:users:1", "soundcloud:users:2"],
+};
+
+export const sampleScene: SceneSummary = {
+  id: 1,
+  slug: "berlin-dub-techno",
+  name: "Berlin Dub Techno",
+  cityName: "Berlin",
+  tags: ["Dub Techno", "Deep Techno", "Ambient"],
+  memberCount: 5,
+  activity: "active now",
+  activeNow: true,
+  coverUrns: ["soundcloud:users:2", "soundcloud:users:1", "soundcloud:users:3"],
 };
 
 export const sampleResolvedArtist: ResolvedRosterArtist = {

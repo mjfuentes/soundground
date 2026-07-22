@@ -1,7 +1,7 @@
 /**
  * Scene queue builder (ideas/0003 Phase 4 — "listen to a scene").
  *
- * GET /api/browse/queue?genre=<slug> | ?city=<slug> | ?artist=<id>
+ * GET /api/browse/queue?genre=<slug> | ?city=<slug> | ?scene=<slug> | ?artist=<id>
  * Returns playable items from the scope's connection-ranked roster:
  * top artists' latest streamable tracks, round-robin interleaved so no
  * single artist dominates the mix. Track fetches go through the cached
@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getSceneDetail } from "@/lib/browse/scene-store";
 import { getCityDetail, getGenreDetail } from "@/lib/browse/store";
 import { getTracks } from "@/lib/soundcloud/official-cached-client";
 import { urnToId } from "@/lib/soundcloud/official-client";
@@ -20,11 +21,12 @@ const querySchema = z
   .object({
     genre: z.string().min(1).max(100).optional(),
     city: z.string().min(1).max(100).optional(),
+    scene: z.string().min(1).max(100).optional(),
     artist: z.coerce.number().int().positive().optional(),
   })
   .refine(
-    (query) => [query.genre, query.city, query.artist].filter(Boolean).length === 1,
-    "Pass exactly one of: genre, city, artist",
+    (query) => [query.genre, query.city, query.scene, query.artist].filter(Boolean).length === 1,
+    "Pass exactly one of: genre, city, scene, artist",
   );
 
 const SCENE_ARTIST_COUNT = 8;
@@ -103,7 +105,11 @@ export async function GET(request: NextRequest) {
       userIds = [query.artist];
       perArtist = TRACKS_PER_SOLO_ARTIST;
     } else {
-      const detail = query.genre ? getGenreDetail(query.genre) : getCityDetail(query.city!);
+      const detail = query.genre
+        ? getGenreDetail(query.genre)
+        : query.scene
+          ? getSceneDetail(query.scene)
+          : getCityDetail(query.city!);
       if (!detail) {
         return NextResponse.json({ error: "Unknown scene" }, { status: 404 });
       }

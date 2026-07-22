@@ -271,7 +271,7 @@ function buildRoster(
 }
 
 /** Unique slugs among named scenes; collisions get the stable ID appended. */
-function assignSlugs(
+export function assignSlugs(
   names: readonly { id: number; name: string | null }[],
 ): Map<number, string | null> {
   const used = new Set<string>();
@@ -281,8 +281,13 @@ function assignSlugs(
       slugs.set(id, null);
       continue;
     }
+    // The suffixed fallback can itself collide (a scene literally named
+    // "Techno 5" vs the fifth "Techno") — keep incrementing until unused.
     const base = slugify(name);
-    const slug = used.has(base) ? `${base}-${id}` : base;
+    let slug = base;
+    for (let suffix = id; used.has(slug); suffix += 1) {
+      slug = `${base}-${suffix}`;
+    }
     used.add(slug);
     slugs.set(id, slug);
   }

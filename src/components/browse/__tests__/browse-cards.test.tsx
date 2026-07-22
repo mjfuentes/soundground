@@ -3,10 +3,12 @@ import { ArtistRow } from "../artist-row";
 import { BrowseHeader } from "../browse-header";
 import { CityCard } from "../city-card";
 import { GenreCard } from "../genre-card";
+import { SceneCard } from "../scene-card";
 import {
   sampleCity,
   sampleGenre,
   sampleResolvedArtist,
+  sampleScene,
 } from "@/lib/browse/__tests__/fixtures";
 
 jest.mock("@/contexts/player-context", () => ({
@@ -34,6 +36,26 @@ describe("GenreCard", () => {
     );
     expect(screen.queryByText("active now")).not.toBeInTheDocument();
     expect(screen.queryByText(/strongest in/)).not.toBeInTheDocument();
+  });
+});
+
+describe("SceneCard", () => {
+  it("links to the scene page and shows the scene's own vocabulary", () => {
+    render(<SceneCard scene={sampleScene} />);
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/scene/berlin-dub-techno");
+    expect(screen.getByText("Berlin Dub Techno")).toBeInTheDocument();
+    expect(screen.getByText("Dub Techno · Deep Techno · Ambient")).toBeInTheDocument();
+    expect(screen.getByText("5 artists mapped")).toBeInTheDocument();
+    expect(screen.getByText("active now")).toBeInTheDocument();
+    expect(screen.getByText("↳ centered in Berlin")).toBeInTheDocument();
+  });
+
+  it("hides the city line and activity when absent", () => {
+    render(
+      <SceneCard scene={{ ...sampleScene, cityName: null, activity: null, activeNow: false }} />,
+    );
+    expect(screen.queryByText(/centered in/)).not.toBeInTheDocument();
+    expect(screen.queryByText("active now")).not.toBeInTheDocument();
   });
 });
 

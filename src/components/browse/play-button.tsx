@@ -6,6 +6,7 @@ import { usePlayer } from "@/contexts/player-context";
 export interface PlayScope {
   genre?: string;
   city?: string;
+  scene?: string;
   artist?: number;
 }
 
@@ -38,6 +39,7 @@ export function PlayButton({ scope, label, variant = "hint", size = 40 }: PlayBu
       const params = new URLSearchParams();
       if (scope.genre) params.set("genre", scope.genre);
       if (scope.city) params.set("city", scope.city);
+      if (scope.scene) params.set("scene", scope.scene);
       if (scope.artist) params.set("artist", String(scope.artist));
       const response = await fetch(`/api/browse/queue?${params}`);
       if (!response.ok) {

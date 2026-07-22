@@ -19,7 +19,7 @@ const DEBOUNCE_MS = 300;
 const MAX_QUICK_JUMPS = 4;
 
 interface BrowseIndexEntry {
-  kind: "genre" | "city";
+  kind: "genre" | "city" | "scene";
   slug: string;
   name: string;
 }

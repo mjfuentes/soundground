@@ -89,6 +89,7 @@ export function directedStrengths(
 ): DirectedStrengths {
   const strengths: DirectedStrengths = new Map();
   for (const { src, dst, follow, reposts } of pairs) {
+    if (src === dst) continue; // self-follow/self-repost artifacts carry no tie
     const factor = factors.get(src) ?? 1;
     const strength = (follow ? 1 : 0) + factor * Math.log2(1 + reposts);
     if (strength <= 0) continue;

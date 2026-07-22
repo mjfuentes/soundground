@@ -28,7 +28,8 @@ const NULL_RECHECK_MS = 30_000;
 let cachedDb: Database.Database | null | undefined;
 let lastNullProbeAt = 0;
 
-function getDb(now: number = Date.now()): Database.Database | null {
+/** Shared read-only connection; also used by scene-store. Not for pages. */
+export function getDb(now: number = Date.now()): Database.Database | null {
   if (cachedDb) return cachedDb;
   if (cachedDb === null && now - lastNullProbeAt < NULL_RECHECK_MS) return null;
 
@@ -58,10 +59,12 @@ export function __resetStoreForTests(): void {
   lastNullProbeAt = 0;
 }
 
-interface ActivityCounts {
+export interface ActivityCounts {
   activeNow: boolean;
   uploadsThisWeek: number;
 }
+
+export const ACTIVITY_WINDOWS = { dayMs: DAY_MS, weekMs: WEEK_MS };
 
 function activityFor(
   db: Database.Database,
@@ -85,13 +88,13 @@ function activityFor(
   return { activeNow: (row.day ?? 0) > 0, uploadsThisWeek: row.week ?? 0 };
 }
 
-function activityLine(counts: ActivityCounts): string | null {
+export function activityLine(counts: ActivityCounts): string | null {
   if (counts.activeNow) return "active now";
   if (counts.uploadsThisWeek > 0) return `${counts.uploadsThisWeek} this week`;
   return null;
 }
 
-function parseRoster(rosterJson: string): RosterArtist[] {
+export function parseRoster(rosterJson: string): RosterArtist[] {
   const entries = JSON.parse(rosterJson) as RosterEntry[];
   return entries.map((entry) => ({
     urn: entry.urn,
@@ -107,7 +110,7 @@ function parseRoster(rosterJson: string): RosterArtist[] {
   }));
 }
 
-const genreName = (db: Database.Database, slug: string): string =>
+export const genreName = (db: Database.Database, slug: string): string =>
   ((db.prepare(`SELECT name FROM browse_genres WHERE slug = ?`).get(slug) as { name: string } | undefined)
     ?.name ?? slug);
 
@@ -167,9 +170,17 @@ function citySummary(db: Database.Database, row: CityRow, now: number): CitySumm
 }
 
 export interface BrowseIndexEntry {
-  kind: "genre" | "city";
+  kind: "genre" | "city" | "scene";
   slug: string;
   name: string;
+}
+
+/** Scene tables ship after browse tables; older databases may lack them. */
+export function hasSceneTables(db: Database.Database): boolean {
+  const row = db
+    .prepare(`SELECT COUNT(*) AS n FROM sqlite_master WHERE name = 'scenes'`)
+    .get() as { n: number };
+  return row.n > 0;
 }
 
 /** Lightweight name index for search quick-jumps (no activity computation). */
@@ -182,7 +193,15 @@ export function listBrowseIndex(): BrowseIndexEntry[] {
   const cities = db
     .prepare(`SELECT slug, name FROM browse_cities ORDER BY artist_count DESC`)
     .all() as { slug: string; name: string }[];
+  const scenes = hasSceneTables(db)
+    ? (db
+        .prepare(
+          `SELECT slug, name FROM scenes WHERE name IS NOT NULL ORDER BY member_count DESC`,
+        )
+        .all() as { slug: string; name: string }[])
+    : [];
   return [
+    ...scenes.map((s) => ({ kind: "scene" as const, ...s })),
     ...genres.map((g) => ({ kind: "genre" as const, ...g })),
     ...cities.map((c) => ({ kind: "city" as const, ...c })),
   ];
@@ -190,17 +209,23 @@ export function listBrowseIndex(): BrowseIndexEntry[] {
 
 export function getBrowseStatus(): BrowseStatus {
   const db = getDb();
-  if (!db) return { hasData: false, aggregatedAt: null, genreCount: 0, cityCount: 0 };
+  if (!db) {
+    return { hasData: false, aggregatedAt: null, genreCount: 0, cityCount: 0, sceneCount: 0 };
+  }
   const meta = db.prepare(`SELECT value FROM browse_meta WHERE key = 'aggregated_at'`).get() as
     | { value: string }
     | undefined;
   const genres = db.prepare(`SELECT COUNT(*) AS n FROM browse_genres`).get() as { n: number };
   const cities = db.prepare(`SELECT COUNT(*) AS n FROM browse_cities`).get() as { n: number };
+  const scenes = hasSceneTables(db)
+    ? (db.prepare(`SELECT COUNT(*) AS n FROM scenes WHERE name IS NOT NULL`).get() as { n: number })
+    : { n: 0 };
   return {
     hasData: genres.n > 0 || cities.n > 0,
     aggregatedAt: meta?.value ?? null,
     genreCount: genres.n,
     cityCount: cities.n,
+    sceneCount: scenes.n,
   };
 }
 

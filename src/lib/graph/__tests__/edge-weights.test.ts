@@ -75,6 +75,11 @@ describe("directedStrengths", () => {
     expect(strengths.get("hub")?.get("b")).toBe(0.5 * Math.log2(4));
   });
 
+  it("drops self-pairs", () => {
+    const pairs = [pair({ src: "a", dst: "a", follow: true, reposts: 2 })];
+    expect(directedStrengths(pairs, new Map()).size).toBe(0);
+  });
+
   it("never discounts the follow component", () => {
     const pairs = [pair({ src: "hub", dst: "b", follow: true, reposts: 1 })];
     const strengths = directedStrengths(pairs, new Map([["hub", 0.25]]));

@@ -38,6 +38,14 @@ jest.mock("@/lib/browse/store", () => ({
   listGenres: jest.fn(() => [{ slug: "dub-techno" }]),
 }));
 
+jest.mock("@/lib/browse/scene-store", () => ({
+  scenesForGenre: jest.fn((slug: string) =>
+    slug === "dub-techno"
+      ? [{ slug: "berlin-dub-techno", name: "Berlin Dub Techno", count: 3 }]
+      : [],
+  ),
+}));
+
 jest.mock("@/lib/browse/resolve-artists", () => ({
   resolveRoster: jest.fn(async () => [sampleResolvedArtist]),
 }));
@@ -52,6 +60,15 @@ describe("GenrePage", () => {
     expect(screen.getByText("Artist One")).toBeInTheDocument();
     expect(screen.getByText("Dub Techno in Berlin")).toBeInTheDocument();
     expect(screen.getByText("Ambient")).toBeInTheDocument();
+  });
+
+  it("links the scenes detected inside the genre", async () => {
+    render(await GenrePage(props("dub-techno")));
+    expect(screen.getByText("Scenes inside this genre")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Berlin Dub Techno/ })).toHaveAttribute(
+      "href",
+      "/scene/berlin-dub-techno",
+    );
   });
 
   it("404s on unknown slugs", async () => {

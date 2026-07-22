@@ -18,6 +18,11 @@ jest.mock("@/lib/browse/store", () => ({
   getCityDetail: (...args: unknown[]) => mockGetCityDetail(...args),
 }));
 
+const mockGetSceneDetail = jest.fn();
+jest.mock("@/lib/browse/scene-store", () => ({
+  getSceneDetail: (...args: unknown[]) => mockGetSceneDetail(...args),
+}));
+
 const track = (id: number, ownerId: number, overrides: Record<string, unknown> = {}) => ({
   id,
   title: `Track ${id}`,
@@ -83,6 +88,22 @@ describe("/api/browse/queue", () => {
 
     const data = await (await GET(req("?genre=dub-techno"))).json();
     expect(data.items.map((item: { id: number }) => item.id)).toEqual([13]);
+  });
+
+  it("builds a queue from a scene roster", async () => {
+    mockGetSceneDetail.mockReturnValue({ roster: [rosterEntry(3), rosterEntry(4)] });
+    mockGetTracks.mockImplementation(async (userId: number) => ({
+      collection: [track(userId * 10 + 1, userId)],
+    }));
+
+    const data = await (await GET(req("?scene=berlin-dub-techno"))).json();
+    expect(mockGetSceneDetail).toHaveBeenCalledWith("berlin-dub-techno");
+    expect(data.items.map((item: { id: number }) => item.id)).toEqual([31, 41]);
+  });
+
+  it("404s for an unknown scene slug", async () => {
+    mockGetSceneDetail.mockReturnValue(null);
+    expect((await GET(req("?scene=nope"))).status).toBe(404);
   });
 
   it("builds a solo queue for an artist id", async () => {

@@ -3,13 +3,16 @@ import { BrowseHeader } from "@/components/browse/browse-header";
 import { CityCard } from "@/components/browse/city-card";
 import { GenreCard } from "@/components/browse/genre-card";
 import { HomeSearch } from "@/components/browse/home-search";
+import { SceneCard } from "@/components/browse/scene-card";
 import { ShowMore } from "@/components/browse/show-more";
 import { resolveAvatarMap } from "@/lib/browse/resolve-artists";
+import { listScenes } from "@/lib/browse/scene-store";
 import { getBrowseStatus, listCities, listGenres } from "@/lib/browse/store";
 
 export const revalidate = 3600;
 
 /** Cards shown before "show more"; only these get live-resolved cover art. */
+const TOP_SCENES = 6;
 const TOP_GENRES = 12;
 const TOP_CITIES = 9;
 
@@ -36,13 +39,17 @@ function StillCrawling() {
 
 export default async function Home() {
   const status = getBrowseStatus();
+  const scenes = listScenes();
   const genres = listGenres();
   const cities = listCities();
+  const topScenes = scenes.slice(0, TOP_SCENES);
+  const restScenes = scenes.slice(TOP_SCENES);
   const topGenres = genres.slice(0, TOP_GENRES);
   const restGenres = genres.slice(TOP_GENRES);
   const topCities = cities.slice(0, TOP_CITIES);
   const restCities = cities.slice(TOP_CITIES);
   const avatars = await resolveAvatarMap([
+    ...topScenes.flatMap((scene) => scene.coverUrns),
     ...topGenres.flatMap((genre) => genre.coverUrns),
     ...topCities.flatMap((city) => city.coverUrns),
   ]);
@@ -52,7 +59,15 @@ export default async function Home() {
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
       <BrowseHeader
         countsLine={
-          status.hasData ? `${status.genreCount} genres · ${status.cityCount} cities` : undefined
+          status.hasData
+            ? [
+                status.sceneCount > 0 ? `${status.sceneCount} scenes` : null,
+                `${status.genreCount} genres`,
+                `${status.cityCount} cities`,
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : undefined
         }
       />
       <HomeSearch />
@@ -71,6 +86,23 @@ export default async function Home() {
         </div>
 
         {!status.hasData && <StillCrawling />}
+
+        {scenes.length > 0 && (
+          <section id="scenes" className="mb-11 scroll-mt-24">
+            <SectionRule title="Scenes" hint="communities detected in the graph — not tags" />
+            <ShowMore
+              gridClassName="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
+              label="scenes"
+              restCount={restScenes.length}
+              preview={topScenes.map((scene) => (
+                <SceneCard key={scene.slug} scene={scene} coverUrls={coversFor(scene.coverUrns)} />
+              ))}
+              rest={restScenes.map((scene) => (
+                <SceneCard key={scene.slug} scene={scene} />
+              ))}
+            />
+          </section>
+        )}
 
         {genres.length > 0 && (
           <section id="genres" className="mb-11 scroll-mt-24">
