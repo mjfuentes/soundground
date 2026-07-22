@@ -126,7 +126,7 @@ interface GenreRow {
 interface CityRow {
   slug: string;
   name: string;
-  country_code: string | null;
+  country: string | null;
   artist_count: number;
   top_genre_slug: string | null;
   roster: string;
@@ -158,7 +158,7 @@ function citySummary(db: Database.Database, row: CityRow, now: number): CitySumm
   return {
     slug: row.slug,
     name: row.name,
-    countryCode: row.country_code,
+    country: row.country,
     artistCount: row.artist_count,
     topGenre: row.top_genre_slug ? genreName(db, row.top_genre_slug) : null,
     activity: activityLine(counts),

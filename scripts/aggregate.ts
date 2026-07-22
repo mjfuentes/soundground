@@ -9,6 +9,7 @@
 import { parseArgs } from "util";
 import { openGraphDatabase } from "@/lib/graph/database";
 import { aggregate, DEFAULT_AGGREGATE_CONFIG } from "@/lib/browse/aggregate";
+import { loadCityCanon } from "@/lib/browse/canon";
 
 function log(message: string): void {
   process.stdout.write(`[aggregate] ${message}\n`);
@@ -31,9 +32,12 @@ function main(): void {
     ...(values["min-city-artists"] ? { minCityArtists: Number(values["min-city-artists"]) } : {}),
   };
 
+  const canon = loadCityCanon();
+  log(`canon: ${canon.aliases.size} city aliases · ${canon.nonPlaces.size} non-places`);
+
   const db = openGraphDatabase(values.db);
   try {
-    const report = aggregate(db, config);
+    const report = aggregate(db, config, undefined, canon);
     log(
       `${report.genres} genres · ${report.cities} cities · ` +
         `${report.genreMemberships} genre memberships · ${report.cityMemberships} city memberships`,

@@ -22,7 +22,7 @@ export function CityCard({ city, coverUrls = [] }: CityCardProps) {
             {city.name}
           </div>
           <div className="mt-1 font-sg-mono text-[11px] text-sg-dim">
-            {city.countryCode ? `${city.countryCode} · ` : ""}
+            {city.country ? `${city.country} · ` : ""}
             {city.artistCount} artists
           </div>
         </div>

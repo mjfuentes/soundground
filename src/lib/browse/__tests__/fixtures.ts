@@ -97,7 +97,7 @@ export const sampleGenre: GenreSummary = {
 export const sampleCity: CitySummary = {
   slug: "berlin",
   name: "Berlin",
-  countryCode: "DE",
+  country: "DE",
   artistCount: 3,
   topGenre: "Dub Techno",
   activity: "2 this week",

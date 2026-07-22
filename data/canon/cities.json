@@ -1,0 +1,41 @@
+{
+  "$comment": "City curation canon (ideas/0003 Phase 2, opened Jul 2026 when the data demanded it). Hand- or agent-maintained; the aggregation pipeline stays deterministic and only consumes this file. Keys are matched after mechanical folding, so spelling/case/punctuation variants of these entries are covered automatically.",
+  "nonPlaces": [
+    "worldwide",
+    "world",
+    "earth",
+    "planet earth",
+    "everywhere",
+    "nowhere",
+    "somewhere",
+    "global",
+    "internet",
+    "the internet",
+    "online",
+    "cyberspace",
+    "space",
+    "outer space",
+    "moon",
+    "universe",
+    "milky way"
+  ],
+  "cityAliases": {
+    "nyc": "New York",
+    "new york city": "New York",
+    "ny": "New York",
+    "la": "Los Angeles",
+    "sf": "San Francisco",
+    "philly": "Philadelphia",
+    "atl": "Atlanta",
+    "cdmx": "Mexico City",
+    "ciudad de mexico": "Mexico City",
+    "koln": "Cologne",
+    "munchen": "Munich",
+    "wien": "Vienna",
+    "st petersburg": "Saint Petersburg",
+    "st pete": "Saint Petersburg",
+    "bombay": "Mumbai",
+    "bs as": "Buenos Aires",
+    "caba": "Buenos Aires"
+  }
+}

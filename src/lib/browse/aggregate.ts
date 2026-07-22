@@ -10,6 +10,7 @@
  */
 
 import type { Database } from "better-sqlite3";
+import { EMPTY_CITY_CANON, type CityCanon } from "./canon";
 import { isFormatTerm } from "./format-terms";
 import { foldTerm, mostFrequent, slugify, titleCase } from "./slug";
 
@@ -96,7 +97,7 @@ const DERIVED_SCHEMA = `
   CREATE TABLE browse_cities (
     slug TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    country_code TEXT,
+    country TEXT,
     artist_count INTEGER NOT NULL,
     top_genre_slug TEXT,
     roster TEXT NOT NULL
@@ -144,6 +145,7 @@ export function aggregate(
   db: Database,
   config: AggregateConfig = DEFAULT_AGGREGATE_CONFIG,
   now: () => string = () => new Date().toISOString(),
+  canon: CityCanon = EMPTY_CITY_CANON,
 ): AggregateReport {
   const terms = db.prepare(`SELECT artist_urn, term, kind, evidence FROM artist_terms`).all() as TermRow[];
   const artists = db
@@ -157,17 +159,23 @@ export function aggregate(
 
   // --- City discovery from self-declared locations (before genres: genre
   // terms colliding with city names get excluded). "Brooklyn, NY" folds on
-  // its first comma segment so metro variants merge mechanically. ---
+  // its first comma segment so metro variants merge mechanically; the canon
+  // adds the judgment folding can't: non-places ("Worldwide" declarers stay
+  // in the graph, just unlocated) and alias merges ("NYC" → "New York"). ---
   const cityGroups = new Map<string, { spellings: Map<string, number>; urns: string[] }>();
+  const canonicalNames = new Map<string, string>(); // group key -> canon-forced display name
   for (const artist of artists) {
     const raw = artist.city_raw?.trim();
     if (!raw) continue;
     const cityPart = raw.split(",")[0].trim();
-    const key = foldTerm(cityPart);
-    if (!key) continue;
+    const foldKey = foldTerm(cityPart);
+    if (!foldKey || canon.nonPlaces.has(foldKey)) continue;
+    const canonical = canon.aliases.get(foldKey);
+    const key = canonical ? foldTerm(canonical) : foldKey;
+    if (canonical) canonicalNames.set(key, canonical);
     if (!cityGroups.has(key)) cityGroups.set(key, { spellings: new Map(), urns: [] });
     const group = cityGroups.get(key)!;
-    bump(group.spellings, cityPart);
+    bump(group.spellings, canonical ?? cityPart);
     group.urns.push(artist.urn);
   }
 
@@ -239,7 +247,7 @@ export function aggregate(
   const qualifyingCities = [...cityGroups.entries()]
     .filter(([, g]) => g.urns.length >= config.minCityArtists)
     .map(([key, g]) => {
-      const name = mostFrequent(g.spellings) ?? key;
+      const name = canonicalNames.get(key) ?? mostFrequent(g.spellings) ?? key;
       const countries = new Map<string, number>();
       for (const urn of g.urns) {
         const cc = artistByUrn.get(urn)?.country_code;
@@ -247,11 +255,12 @@ export function aggregate(
       }
       // Country only when the vote is meaningful: most sightings carry no
       // country at all, and a lone stray vote must not label the city.
+      // The API supplies full names ("United States"), not ISO codes.
       const totalVotes = [...countries.values()].reduce((sum, n) => sum + n, 0);
       const top = mostFrequent(countries);
       const topVotes = top ? (countries.get(top) ?? 0) : 0;
-      const countryCode = top && topVotes >= 3 && topVotes * 2 > totalVotes ? top : null;
-      return { key, name, slug: slugify(name), urns: g.urns, countryCode };
+      const country = top && topVotes >= 3 && topVotes * 2 > totalVotes ? top : null;
+      return { key, name, slug: slugify(name), urns: g.urns, country };
     })
     .sort((a, b) => b.urns.length - a.urns.length);
 
@@ -377,7 +386,7 @@ export function aggregate(
        VALUES (?, ?, ?, ?, ?, ?)`,
     );
     const insertCity = db.prepare(
-      `INSERT INTO browse_cities (slug, name, country_code, artist_count, top_genre_slug, roster)
+      `INSERT INTO browse_cities (slug, name, country, artist_count, top_genre_slug, roster)
        VALUES (?, ?, ?, ?, ?, ?)`,
     );
     const insertGenreCity = db.prepare(
@@ -452,7 +461,7 @@ export function aggregate(
       insertCity.run(
         city.slug,
         city.name,
-        city.countryCode,
+        city.country,
         members.size,
         mostFrequent(genreCounts),
         JSON.stringify(withOtherGenres(rankRoster(members))),

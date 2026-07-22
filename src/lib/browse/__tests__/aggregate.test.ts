@@ -1,5 +1,7 @@
 import type Database from "better-sqlite3";
+import { GraphRepository } from "@/lib/graph/repository";
 import { aggregate } from "../aggregate";
+import type { CityCanon } from "../canon";
 import { buildFixtureGraph, FIXTURE_CONFIG } from "./fixtures";
 
 describe("aggregate", () => {
@@ -13,7 +15,17 @@ describe("aggregate", () => {
     db.close();
   });
 
-  const run = () => aggregate(db, FIXTURE_CONFIG, () => "2026-07-21T12:00:00.000Z");
+  const run = (canon?: CityCanon) =>
+    aggregate(db, FIXTURE_CONFIG, () => "2026-07-21T12:00:00.000Z", canon);
+
+  const addArtist = (id: number, city: string) => {
+    new GraphRepository(db, () => "2026-07-20T00:00:00.000Z").upsertArtist({
+      urn: `soundcloud:users:${id}`,
+      permalink: `artist-${id}`,
+      cityRaw: city,
+      depth: 1,
+    });
+  };
 
   it("merges spelling variants into one genre with the dominant spelling title-cased", () => {
     run();
@@ -32,8 +44,42 @@ describe("aggregate", () => {
     run();
     const berlin = db.prepare(`SELECT * FROM browse_cities WHERE slug = 'berlin'`).get() as Record<string, unknown>;
     expect(berlin.name).toBe("Berlin");
-    expect(berlin.country_code).toBe("DE");
+    expect(berlin.country).toBe("DE");
     expect(berlin.artist_count).toBe(3);
+  });
+
+  it("merges canon aliases under the canonical name", () => {
+    addArtist(31, "NYC");
+    addArtist(32, "New York");
+    addArtist(33, "new york city");
+    run({
+      nonPlaces: new Set(),
+      aliases: new Map([
+        ["nyc", "New York"],
+        ["newyorkcity", "New York"],
+      ]),
+    });
+    const newYork = db
+      .prepare(`SELECT * FROM browse_cities WHERE slug = 'new-york'`)
+      .get() as Record<string, unknown>;
+    expect(newYork.name).toBe("New York");
+    expect(newYork.artist_count).toBe(3);
+    expect(db.prepare(`SELECT * FROM browse_cities WHERE slug = 'nyc'`).get()).toBeUndefined();
+  });
+
+  it("drops non-places from geography but keeps the artists browsable", () => {
+    addArtist(41, "Worldwide");
+    addArtist(42, "Worldwide");
+    const canon: CityCanon = { nonPlaces: new Set(["worldwide"]), aliases: new Map() };
+    const report = run(canon);
+    expect(
+      db.prepare(`SELECT * FROM browse_cities WHERE slug = 'worldwide'`).get(),
+    ).toBeUndefined();
+    expect(
+      db.prepare(`SELECT * FROM artist_cities WHERE artist_urn = 'soundcloud:users:41'`).get(),
+    ).toBeUndefined();
+    // Non-places never surface in the below-threshold curation report either.
+    expect(report.belowThresholdCities.map((c) => c.city)).not.toContain("Worldwide");
   });
 
   it("excludes below-threshold cities", () => {

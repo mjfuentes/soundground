@@ -41,7 +41,7 @@ export default async function CityPage({ params }: PageProps) {
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
       <BrowseHeader breadcrumb={`City / ${city.name}`} />
       <EntityHero
-        kicker={city.countryCode ? `City · ${city.countryCode}` : "City"}
+        kicker={city.country ? `City · ${city.country}` : "City"}
         name={city.name}
         activity={city.activity}
         activeNow={city.activeNow}

@@ -20,7 +20,8 @@ export interface GenreSummary {
 export interface CitySummary {
   slug: string;
   name: string;
-  countryCode: string | null;
+  /** Full country name ("United States") — the API supplies names, not codes. */
+  country: string | null;
   artistCount: number;
   topGenre: string | null;
   activity: string | null;
