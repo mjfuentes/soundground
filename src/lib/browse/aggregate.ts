@@ -10,21 +10,8 @@
  */
 
 import type { Database } from "better-sqlite3";
-import { foldTerm, slugify } from "./slug";
-
-/**
- * Format/media noise that artists put in genre fields but that are not
- * genres ("podcast" declared by 121 artists in the Berlin crawl). This is
- * deliberately NOT genre-taxonomy curation — only distribution-format
- * vocabulary. Genre vocabulary itself stays fully data-driven.
- */
-const FORMAT_TERMS = new Set(
-  [
-    "podcast", "mix", "dj mix", "dj set", "live", "live set", "radio",
-    "radio show", "premiere", "music", "free download", "promo", "demo",
-    "snippet", "preview", "exclusive", "mixtape", "mastering", "recording",
-  ].map(foldTerm),
-);
+import { isFormatTerm } from "./format-terms";
+import { foldTerm, mostFrequent, slugify, titleCase } from "./slug";
 
 export interface AggregateConfig {
   /** Distinct artists declaring a term as track genre for it to become a category. */
@@ -136,18 +123,6 @@ const DERIVED_SCHEMA = `
   );
 `;
 
-/** Most frequent value wins; ties broken alphabetically for determinism. */
-function mostFrequent(counts: Map<string, number>): string | null {
-  return (
-    [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? null
-  );
-}
-
-/** Terms are stored lowercased; title-case them for display ("dub techno" → "Dub Techno"). */
-function titleCase(term: string): string {
-  return term.replace(/[a-z0-9]+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
-}
-
 const bump = (map: Map<string, number>, key: string, by = 1) =>
   map.set(key, (map.get(key) ?? 0) + by);
 
@@ -221,7 +196,7 @@ export function aggregate(
   );
   const isCityDominated = (key: string) =>
     (cityCounts.get(key) ?? 0) >= (genreDeclarers.get(key)?.size ?? 0);
-  const isExcludedGenreKey = (key: string) => FORMAT_TERMS.has(key) || isCityDominated(key);
+  const isExcludedGenreKey = (key: string) => isFormatTerm(key) || isCityDominated(key);
 
   const overThreshold = [...genreDeclarers.entries()].filter(
     ([, urns]) => urns.size >= config.minGenreArtists,
@@ -231,7 +206,7 @@ export function aggregate(
     .map(([key, urns]) => ({
       term: mostFrequent(spellingCounts.get(key)!) ?? key,
       artists: urns.size,
-      reason: FORMAT_TERMS.has(key) ? ("format" as const) : ("city" as const),
+      reason: isFormatTerm(key) ? ("format" as const) : ("city" as const),
     }))
     .sort((a, b) => b.artists - a.artists);
 

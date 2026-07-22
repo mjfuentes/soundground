@@ -63,6 +63,29 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS idx_queue_status ON crawl_queue (status, enqueued_at);
 
+  -- Scene engine output (ideas/0004 A1). Persistent, replaced per run with
+  -- IDs carried across runs via max-Jaccard matching — never re-numbered.
+  CREATE TABLE IF NOT EXISTS scenes (
+    id INTEGER PRIMARY KEY,
+    slug TEXT UNIQUE,
+    name TEXT,                          -- NULL = unnamed, excluded from UI
+    city_name TEXT,
+    tags TEXT NOT NULL DEFAULT '[]',
+    member_count INTEGER NOT NULL,      -- crawled members only (honest display count)
+    total_count INTEGER NOT NULL,       -- including the uncrawled frontier
+    roster TEXT NOT NULL DEFAULT '[]',
+    resolution REAL,
+    computed_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS scene_members (
+    scene_id INTEGER NOT NULL,
+    artist_urn TEXT NOT NULL,
+    in_scene_degree REAL NOT NULL,
+    PRIMARY KEY (scene_id, artist_urn)
+  );
+  CREATE INDEX IF NOT EXISTS idx_scene_members_artist ON scene_members (artist_urn);
+
   CREATE TABLE IF NOT EXISTS crawl_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     started_at TEXT NOT NULL,

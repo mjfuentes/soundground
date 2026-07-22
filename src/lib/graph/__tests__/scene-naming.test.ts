@@ -1,0 +1,139 @@
+import {
+  DEFAULT_SCENE_NAMING_CONFIG,
+  displayFromSpellings,
+  nameScenes,
+  type SceneDoc,
+  type SceneNamingConfig,
+} from "../scene-naming";
+
+const config = (overrides: Partial<SceneNamingConfig> = {}): SceneNamingConfig => ({
+  ...DEFAULT_SCENE_NAMING_CONFIG,
+  minDocFrequency: 1,
+  maxDocFraction: 1,
+  minLocatedMembers: 2,
+  ...overrides,
+});
+
+const doc = (
+  key: number,
+  terms: Record<string, number>,
+  topCity: SceneDoc["topCity"] = null,
+): SceneDoc => ({ key, termWeights: new Map(Object.entries(terms)), topCity });
+
+const display = displayFromSpellings(new Map([["dubtechno", "Dub Techno"]]));
+
+describe("nameScenes", () => {
+  it("names a scene by its distinctive term, not the ubiquitous one", () => {
+    // "electronic" dominates every scene's counts; the max-document-fraction
+    // filter keeps it out of the vocabulary entirely.
+    const docs = [
+      doc(1, { dubtechno: 40, electronic: 100 }),
+      doc(2, { jungle: 40, electronic: 100 }),
+      doc(3, { ambient: 40, electronic: 100 }),
+    ];
+    const names = nameScenes(docs, display, config({ maxDocFraction: 0.9 }));
+    expect(names.get(1)?.name).toBe("Dub Techno");
+    expect(names.get(2)?.name).toBe("Jungle");
+    expect(names.get(1)?.tags).not.toContain("Electronic");
+  });
+
+  it("drops terms below the minimum document frequency", () => {
+    const docs = [
+      doc(1, { typo: 100, dubtechno: 50 }),
+      doc(2, { dubtechno: 40 }),
+      doc(3, { dubtechno: 30 }),
+      doc(4, { jungle: 30 }),
+    ];
+    const names = nameScenes(docs, display, config({ minDocFrequency: 3 }));
+    expect(names.get(1)?.name).toBe("Dub Techno");
+    // "jungle" (df=1) fell out of vocabulary → scene 4 stays unnamed.
+    expect(names.get(4)?.name).toBeNull();
+  });
+
+  it("never uses format terms", () => {
+    const docs = [
+      doc(1, { podcast: 500, dubtechno: 10 }),
+      doc(2, { jungle: 10 }),
+    ];
+    const names = nameScenes(docs, display, config());
+    expect(names.get(1)?.name).toBe("Dub Techno");
+  });
+
+  it("never uses year tags or platform podcast categories", () => {
+    const docs = [
+      doc(1, { "2026": 900, learning: 500, dubtechno: 10 }),
+      doc(2, { jungle: 10 }),
+    ];
+    const names = nameScenes(docs, display, config());
+    expect(names.get(1)?.name).toBe("Dub Techno");
+    expect(names.get(1)?.tags).not.toContain("2026");
+  });
+
+  it("prefixes the dominant city", () => {
+    const docs = [
+      doc(1, { dubtechno: 40 }, { name: "Berlin", share: 0.6, locatedMembers: 10 }),
+      doc(2, { jungle: 40 }),
+    ];
+    expect(nameScenes(docs, display, config()).get(1)?.name).toBe("Berlin Dub Techno");
+  });
+
+  it("skips the city prefix below the share threshold or with few located members", () => {
+    const docs = [
+      doc(1, { dubtechno: 40 }, { name: "Berlin", share: 0.3, locatedMembers: 10 }),
+      doc(2, { jungle: 40 }, { name: "Tokyo", share: 0.9, locatedMembers: 1 }),
+    ];
+    const names = nameScenes(docs, display, config());
+    expect(names.get(1)?.name).toBe("Dub Techno");
+    expect(names.get(2)?.name).toBe("Jungle");
+  });
+
+  it("does not repeat the city as a term after the prefix", () => {
+    const docs = [
+      doc(1, { berlin: 100, dubtechno: 90 }, { name: "Berlin", share: 0.8, locatedMembers: 10 }),
+      doc(2, { jungle: 40 }),
+    ];
+    expect(nameScenes(docs, display, config()).get(1)?.name).toBe("Berlin Dub Techno");
+  });
+
+  it("suppresses redundant sub-terms in the name", () => {
+    // "techno" is contained in "dubtechno" — one idea, not two.
+    const docs = [
+      doc(1, { dubtechno: 50, techno: 45, ambient: 40 }),
+      doc(2, { jungle: 10, techno: 5 }),
+    ];
+    const name = nameScenes(docs, display, config()).get(1)?.name;
+    expect(name).toBe("Dub Techno · Ambient");
+  });
+
+  it("keeps weak secondary terms out of the name but in the tags", () => {
+    const docs = [
+      doc(1, { dubtechno: 100, dub: 60, ambient: 2 }),
+      doc(2, { jungle: 50 }),
+    ];
+    const result = nameScenes(docs, display, config());
+    expect(result.get(1)?.name).toBe("Dub Techno");
+    expect(result.get(1)?.tags).toContain("Ambient");
+  });
+
+  it("leaves scenes without vocabulary unnamed", () => {
+    const docs = [doc(1, {}), doc(2, { jungle: 10 })];
+    const result = nameScenes(docs, display, config());
+    expect(result.get(1)?.name).toBeNull();
+    expect(result.get(1)?.tags).toEqual([]);
+  });
+
+  it("caps tags at the configured count", () => {
+    const terms = Object.fromEntries(
+      Array.from({ length: 15 }, (_, i) => [`genre${i}`, 20 - i]),
+    );
+    const docs = [doc(1, terms), doc(2, { jungle: 5 })];
+    expect(nameScenes(docs, display, config()).get(1)?.tags).toHaveLength(10);
+  });
+});
+
+describe("displayFromSpellings", () => {
+  it("prefers the observed spelling and falls back to title-cased fold", () => {
+    expect(display("dubtechno")).toBe("Dub Techno");
+    expect(display("jungle")).toBe("Jungle");
+  });
+});
