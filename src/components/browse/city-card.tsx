@@ -12,7 +12,7 @@ interface CityCardProps {
 export function CityCard({ city, coverUrls = [] }: CityCardProps) {
   return (
     <Link
-      href={`/city/${city.slug}`}
+      href={`/place/${city.slug}`}
       className="group flex flex-col gap-3.5 border border-sg-line bg-sg-surface p-4 transition-colors hover:border-sg-line-strong hover:bg-sg-raised"
     >
       <CoverStrip imageUrls={coverUrls} />

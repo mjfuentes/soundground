@@ -39,9 +39,9 @@ export default async function CityPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
-      <BrowseHeader breadcrumb={`City / ${city.name}`} />
+      <BrowseHeader breadcrumb={`Place / ${city.name}`} />
       <EntityHero
-        kicker={city.country ? `City · ${city.country}` : "City"}
+        kicker={city.country ? `Place · ${city.country}` : "Place"}
         name={city.name}
         activity={city.activity}
         activeNow={city.activeNow}
@@ -67,20 +67,20 @@ export default async function CityPage({ params }: PageProps) {
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">
           {city.genres.length > 0 && (
             <IntersectionList
-              heading="Genres here"
+              heading="Sounds here"
               items={city.genres.map((genre) => ({
                 label: genre.name,
                 suffix: `in ${city.name} · ${genre.count}`,
-                href: `/genre/${genre.slug}`,
+                href: `/sound/${genre.slug}`,
               }))}
             />
           )}
           {city.otherCities.length > 0 && (
             <RelatedChips
-              heading="Other cities"
+              heading="Other places"
               items={city.otherCities.map((other) => ({
                 label: other.name,
-                href: `/city/${other.slug}`,
+                href: `/place/${other.slug}`,
               }))}
             />
           )}

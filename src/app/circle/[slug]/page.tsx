@@ -43,9 +43,9 @@ export default async function ScenePage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
-      <BrowseHeader breadcrumb={`Scene / ${scene.name}`} />
+      <BrowseHeader breadcrumb={`Circle / ${scene.name}`} />
       <EntityHero
-        kicker="Scene"
+        kicker="Circle"
         name={scene.name}
         activity={scene.activity}
         activeNow={scene.activeNow}
@@ -71,12 +71,12 @@ export default async function ScenePage({ params }: PageProps) {
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">
           {scene.tags.length > 0 && (
             <RelatedChips
-              heading="How this scene tags itself"
+              heading="How this circle tags itself"
               items={scene.tags.map((tag) => {
                 const tagSlug = slugify(tag);
                 return {
                   label: tag,
-                  href: genreSlugs.has(tagSlug) ? `/genre/${tagSlug}` : undefined,
+                  href: genreSlugs.has(tagSlug) ? `/sound/${tagSlug}` : undefined,
                 };
               })}
             />
@@ -92,11 +92,11 @@ export default async function ScenePage({ params }: PageProps) {
           )}
           {scene.genres.length > 0 && (
             <IntersectionList
-              heading="Genres in this scene"
+              heading="Sounds in this circle"
               items={scene.genres.map((genre) => ({
                 label: genre.name,
                 suffix: `${genre.count}`,
-                href: `/genre/${genre.slug}`,
+                href: `/sound/${genre.slug}`,
               }))}
             />
           )}
@@ -106,7 +106,7 @@ export default async function ScenePage({ params }: PageProps) {
               items={scene.cities.map((city) => ({
                 label: city.name,
                 suffix: `${city.count}`,
-                href: `/city/${city.slug}`,
+                href: `/place/${city.slug}`,
               }))}
             />
           )}

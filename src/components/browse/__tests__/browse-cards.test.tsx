@@ -18,7 +18,7 @@ jest.mock("@/contexts/player-context", () => ({
 describe("GenreCard", () => {
   it("links to the genre page", () => {
     render(<GenreCard genre={sampleGenre} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/genre/dub-techno");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/sound/dub-techno");
   });
 
   it("shows name, related genres, artist count, activity, and top city", () => {
@@ -42,7 +42,7 @@ describe("GenreCard", () => {
 describe("SceneCard", () => {
   it("links to the scene page and shows the scene's own vocabulary", () => {
     render(<SceneCard scene={sampleScene} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/scene/berlin-dub-techno");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/circle/berlin-dub-techno");
     expect(screen.getByText("Berlin Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Dub Techno · Deep Techno · Ambient")).toBeInTheDocument();
     expect(screen.getByText("5 artists mapped")).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("SceneCard", () => {
 describe("CityCard", () => {
   it("links to the city page and shows derived fields", () => {
     render(<CityCard city={sampleCity} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/city/berlin");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/place/berlin");
     expect(screen.getByText("Berlin")).toBeInTheDocument();
     expect(screen.getByText("DE · 3 artists")).toBeInTheDocument();
     expect(screen.getByText("↳ Dub Techno is strongest here")).toBeInTheDocument();

@@ -61,9 +61,9 @@ export default async function Home() {
         countsLine={
           status.hasData
             ? [
-                status.sceneCount > 0 ? `${status.sceneCount} scenes` : null,
-                `${status.genreCount} genres`,
-                `${status.cityCount} cities`,
+                status.sceneCount > 0 ? `${status.sceneCount} circles` : null,
+                `${status.genreCount} sounds`,
+                `${status.cityCount} places`,
               ]
                 .filter(Boolean)
                 .join(" · ")
@@ -89,7 +89,7 @@ export default async function Home() {
 
         {scenes.length > 0 && (
           <section id="scenes" className="mb-11 scroll-mt-24">
-            <SectionRule title="Scenes" hint="communities detected in the graph — not tags" />
+            <SectionRule title="Circles" hint="who actually runs together — detected in the graph, not tags" />
             <ShowMore
               gridClassName="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
               label="scenes"
@@ -106,7 +106,7 @@ export default async function Home() {
 
         {genres.length > 0 && (
           <section id="genres" className="mb-11 scroll-mt-24">
-            <SectionRule title="Genres" hint="as the scene tags itself" />
+            <SectionRule title="Sounds" hint="as the scene tags itself" />
             <ShowMore
               gridClassName="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
               label="genres"
@@ -123,7 +123,7 @@ export default async function Home() {
 
         {cities.length > 0 && (
           <section id="cities" className="scroll-mt-24">
-            <SectionRule title="Cities — listen to a place" hint="self-declared locations" />
+            <SectionRule title="Places — listen to a place" hint="self-declared locations" />
             <ShowMore
               gridClassName="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
               label="cities"

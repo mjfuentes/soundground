@@ -19,7 +19,7 @@ const DEBOUNCE_MS = 300;
 const MAX_QUICK_JUMPS = 4;
 
 interface BrowseIndexEntry {
-  kind: "genre" | "city" | "scene";
+  kind: "sound" | "place" | "circle";
   slug: string;
   name: string;
 }
@@ -186,8 +186,8 @@ export function HomeSearch() {
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search an artist, genre, or city…"
-            aria-label="Search an artist, genre, or city"
+            placeholder="Search an artist, sound, or place…"
+            aria-label="Search an artist, sound, or place"
             autoComplete="off"
             spellCheck="false"
             className="flex-1 bg-transparent font-sg text-[15px] text-sg-ink caret-sg-ink placeholder:text-sg-faint focus:outline-none"
@@ -230,7 +230,7 @@ export function HomeSearch() {
         )}
       </div>
       <div className="mt-2 font-sg-mono text-[10.5px] tracking-[0.04em] text-sg-ghost">
-        Search an artist → land in their genre &amp; city. A shortcut, not the map.
+        Search an artist → land in their sound &amp; place. A shortcut, not the map.
       </div>
     </div>
   );

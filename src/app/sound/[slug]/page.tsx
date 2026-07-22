@@ -41,9 +41,9 @@ export default async function GenrePage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
-      <BrowseHeader breadcrumb={`Genre / ${genre.name}`} />
+      <BrowseHeader breadcrumb={`Sound / ${genre.name}`} />
       <EntityHero
-        kicker="Genre"
+        kicker="Sound"
         name={genre.name}
         activity={genre.activity}
         activeNow={genre.activeNow}
@@ -69,30 +69,30 @@ export default async function GenrePage({ params }: PageProps) {
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">
           {scenes.length > 0 && (
             <IntersectionList
-              heading="Scenes inside this genre"
+              heading="Circles in this sound"
               items={scenes.map((scene) => ({
                 label: scene.name,
                 suffix: `${scene.count}`,
-                href: `/scene/${scene.slug}`,
+                href: `/circle/${scene.slug}`,
               }))}
             />
           )}
           {genre.cities.length > 0 && (
             <IntersectionList
-              heading="Strongest in these cities"
+              heading="Strongest in these places"
               items={genre.cities.map((city) => ({
                 label: `${genre.name} in ${city.name}`,
                 suffix: `${city.count}`,
-                href: `/city/${city.slug}`,
+                href: `/place/${city.slug}`,
               }))}
             />
           )}
           {genre.related.length > 0 && (
             <RelatedChips
-              heading="Related genres"
+              heading="Related sounds"
               items={genre.related.map((related) => ({
                 label: related.name,
-                href: `/genre/${related.slug}`,
+                href: `/sound/${related.slug}`,
               }))}
             />
           )}

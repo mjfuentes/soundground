@@ -71,7 +71,7 @@ describe("scene store", () => {
     expect(getBrowseStatus().sceneCount).toBe(2);
     const index = listBrowseIndex();
     expect(index).toContainEqual({
-      kind: "scene",
+      kind: "circle",
       slug: "berlin-dub-techno",
       name: "Berlin Dub Techno",
     });

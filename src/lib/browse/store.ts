@@ -169,8 +169,13 @@ function citySummary(db: Database.Database, row: CityRow, now: number): CitySumm
   };
 }
 
+/**
+ * User-facing vocabulary (Jul 2026): circle = detected community, sound =
+ * tag-derived genre, place = city. Kind doubles as the route segment.
+ * Internal table/type names keep the old words; only surfaces rename.
+ */
 export interface BrowseIndexEntry {
-  kind: "genre" | "city" | "scene";
+  kind: "sound" | "place" | "circle";
   slug: string;
   name: string;
 }
@@ -201,9 +206,9 @@ export function listBrowseIndex(): BrowseIndexEntry[] {
         .all() as { slug: string; name: string }[])
     : [];
   return [
-    ...scenes.map((s) => ({ kind: "scene" as const, ...s })),
-    ...genres.map((g) => ({ kind: "genre" as const, ...g })),
-    ...cities.map((c) => ({ kind: "city" as const, ...c })),
+    ...scenes.map((s) => ({ kind: "circle" as const, ...s })),
+    ...genres.map((g) => ({ kind: "sound" as const, ...g })),
+    ...cities.map((c) => ({ kind: "place" as const, ...c })),
   ];
 }
 

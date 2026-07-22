@@ -56,7 +56,7 @@ describe("GenrePage", () => {
   it("renders real aggregated detail with a resolved roster", async () => {
     render(await GenrePage(props("dub-techno")));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Dub Techno");
-    expect(screen.getByText("Genre / Dub Techno")).toBeInTheDocument();
+    expect(screen.getByText("Sound / Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Artist One")).toBeInTheDocument();
     expect(screen.getByText("Dub Techno in Berlin")).toBeInTheDocument();
     expect(screen.getByText("Ambient")).toBeInTheDocument();
@@ -64,10 +64,10 @@ describe("GenrePage", () => {
 
   it("links the scenes detected inside the genre", async () => {
     render(await GenrePage(props("dub-techno")));
-    expect(screen.getByText("Scenes inside this genre")).toBeInTheDocument();
+    expect(screen.getByText("Circles in this sound")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Berlin Dub Techno/ })).toHaveAttribute(
       "href",
-      "/scene/berlin-dub-techno",
+      "/circle/berlin-dub-techno",
     );
   });
 

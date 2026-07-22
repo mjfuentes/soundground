@@ -164,6 +164,14 @@ describe("nameScenes", () => {
     expect(result.get(1)?.tags).toEqual([]);
   });
 
+  it("names a city-anchored circle by its place alone when no sound clears the floor", () => {
+    const docs = [
+      doc(1, {}, { name: "Amsterdam", share: 0.7, locatedMembers: 20 }),
+      doc(2, { jungle: 10 }),
+    ];
+    expect(nameScenes(docs, display, config()).get(1)?.name).toBe("Amsterdam");
+  });
+
   it("caps tags at the configured count", () => {
     const terms = Object.fromEntries(
       Array.from({ length: 15 }, (_, i) => [`genre${i}`, 20 - i]),

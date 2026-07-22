@@ -48,7 +48,7 @@ describe("CityPage", () => {
   it("renders real aggregated detail with a resolved roster", async () => {
     render(await CityPage(props("berlin")));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Berlin");
-    expect(screen.getByText("City / Berlin")).toBeInTheDocument();
+    expect(screen.getByText("Place / Berlin")).toBeInTheDocument();
     expect(screen.getByText("Artist One")).toBeInTheDocument();
     expect(screen.getByText("Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Tokyo")).toBeInTheDocument();

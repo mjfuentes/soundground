@@ -390,10 +390,33 @@ export function computeScenes(
   // permalink — and every canon-listed one, present in the graph or not
   // (members tag "NTS Radio" even when NTS has no account here) — and keep
   // those terms out of scene vocabulary entirely.
+  // City names are excluded from the sound vocabulary outright: a place
+  // may only name a circle via the located-member prefix rule (structural
+  // evidence), never via tag votes ("amsterdam" the tag). Multi-word forms
+  // like "detroit techno" fold differently and survive.
+  const cityFolds = new Set<string>();
+  if (hasTable(db, "browse_cities")) {
+    const cityRows = db.prepare(`SELECT slug, name FROM browse_cities`).all() as {
+      slug: string;
+      name: string;
+    }[];
+    for (const row of cityRows) {
+      cityFolds.add(foldTerm(row.name));
+      cityFolds.add(foldTerm(row.slug));
+    }
+  }
+  // Countries too ("Brazil" the tag) — the artists table holds the full
+  // country names the API supplies, so the list is data-driven.
+  const countryRows = db
+    .prepare(`SELECT DISTINCT country_code FROM artists WHERE country_code IS NOT NULL`)
+    .all() as { country_code: string }[];
+  for (const row of countryRows) cityFolds.add(foldTerm(row.country_code));
+
   const hubNameFolds = new Set([
     ...[...hubSet].map((urn) => foldTerm(artists.get(urn)?.permalink ?? "")),
     ...[...accountCanon.hubPermalinks].map(foldTerm),
     ...accountCanon.hubTermFolds,
+    ...cityFolds,
   ]);
   hubNameFolds.delete("");
   const names = nameScenes(docs, display, config.naming, hubNameFolds);

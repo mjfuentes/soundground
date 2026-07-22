@@ -29,7 +29,7 @@ describe("PlayButton", () => {
     render(
       // A plain <a> stands in for any wrapping link; Next's <Link/> is irrelevant here.
       // eslint-disable-next-line @next/next/no-html-link-for-pages
-      <a href="/genre/dub-techno" data-testid="wrapper">
+      <a href="/sound/dub-techno" data-testid="wrapper">
         <PlayButton scope={{ genre: "dub-techno" }} label="Dub Techno" />
       </a>,
     );

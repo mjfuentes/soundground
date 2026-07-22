@@ -68,14 +68,14 @@ describe("ScenePage", () => {
   it("renders the detected scene with its ranked roster and links", async () => {
     render(await ScenePage(props("berlin-dub-techno")));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Berlin Dub Techno");
-    expect(screen.getByText("Scene / Berlin Dub Techno")).toBeInTheDocument();
+    expect(screen.getByText("Circle / Berlin Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Artist One")).toBeInTheDocument();
     expect(screen.getByText(/5 artists mapped/)).toBeInTheDocument();
     expect(screen.getByText(/centered in Berlin/)).toBeInTheDocument();
     // Tags that exist as genre pages become links; others stay plain chips.
     expect(screen.getByRole("link", { name: "Dub Techno" })).toHaveAttribute(
       "href",
-      "/genre/dub-techno",
+      "/sound/dub-techno",
     );
     expect(screen.getByText("Ambient")).not.toHaveAttribute("href");
   });

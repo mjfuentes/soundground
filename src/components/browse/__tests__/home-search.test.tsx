@@ -15,8 +15,8 @@ jest.mock("@/components/search-dropdown", () => ({
 
 const BROWSE_INDEX = {
   entries: [
-    { kind: "genre", slug: "dub-techno", name: "Dub Techno" },
-    { kind: "city", slug: "berlin", name: "Berlin" },
+    { kind: "sound", slug: "dub-techno", name: "Dub Techno" },
+    { kind: "place", slug: "berlin", name: "Berlin" },
   ],
 };
 
@@ -119,13 +119,13 @@ describe("HomeSearch", () => {
     await waitFor(() => expect(screen.getByText("Dub Techno")).toBeInTheDocument());
     expect(screen.getByText("Dub Techno").closest("a")).toHaveAttribute(
       "href",
-      "/genre/dub-techno",
+      "/sound/dub-techno",
     );
     expect(screen.queryByText("Berlin")).not.toBeInTheDocument();
 
     type("berl");
     await waitFor(() => expect(screen.getByText("Berlin")).toBeInTheDocument());
-    expect(screen.getByText("Berlin").closest("a")).toHaveAttribute("href", "/city/berlin");
+    expect(screen.getByText("Berlin").closest("a")).toHaveAttribute("href", "/place/berlin");
   });
 
   it("only issues one request for rapid keystrokes", async () => {

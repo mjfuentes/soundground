@@ -168,7 +168,10 @@ function composeName(
     if (chosen.length > 0 && score < broad[0].score * config.secondaryTermRatio) break;
     chosen.push(term);
   }
-  if (chosen.length === 0) return { name: null, nameTerms: [] };
+  // A city-anchored circle with no sound consensus is still nameable by
+  // its place alone — the prefix rule is structural (located members),
+  // unlike tag votes.
+  if (chosen.length === 0) return { name: city, nameTerms: [] };
   const joined = chosen.map(display).join(" · ");
   return { name: city ? `${city} ${joined}` : joined, nameTerms: chosen };
 }

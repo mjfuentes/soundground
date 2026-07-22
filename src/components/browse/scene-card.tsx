@@ -14,7 +14,7 @@ export function SceneCard({ scene, coverUrls = [] }: SceneCardProps) {
   const tagLine = scene.tags.slice(0, 3).join(" · ");
   return (
     <Link
-      href={`/scene/${scene.slug}`}
+      href={`/circle/${scene.slug}`}
       className="group flex flex-col gap-3.5 border border-sg-line bg-sg-surface p-4 transition-colors hover:border-sg-line-strong hover:bg-sg-raised"
     >
       <div className="flex items-start justify-between">
