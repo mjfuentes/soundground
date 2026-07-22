@@ -41,6 +41,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# cache database
-/data
+# cache + graph databases, crawl snapshots (seeds.example.json is the one tracked file)
+/data/*
+!/data/seeds.example.json
 chrome/

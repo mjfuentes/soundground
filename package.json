@@ -14,6 +14,8 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "prepare": "husky",
+    "crawl": "node --env-file-if-exists=.env --import tsx scripts/crawl.ts",
+    "aggregate": "node --env-file-if-exists=.env --import tsx scripts/aggregate.ts",
     "validate:env": "node scripts/validate-env.js",
     "validate:deployment": "node scripts/validate-deployment.js",
     "deploy:check": "node scripts/pre-deploy-check.js",
@@ -56,6 +58,7 @@
     "lint-staged": "^16.2.3",
     "tailwindcss": "^4",
     "ts-jest": "^29.2.5",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }
