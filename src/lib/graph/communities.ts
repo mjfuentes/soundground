@@ -23,7 +23,12 @@ export interface CommunityConfig {
   maxLargestFraction: number;
   /** Preferred median size of non-dust communities. */
   medianRange: [number, number];
-  /** Communities above this size get one sub-clustering pass at higher γ. */
+  /**
+   * Communities with more MEASURED members than this get one sub-clustering
+   * pass at higher γ. Measured = the caller's isMeasured predicate (crawled
+   * artists in production); raw node counts would chop precisely the
+   * deepest-crawled core communities while frontier-padded orbits survive.
+   */
   maxSceneSize: number;
   /** γ multiplier for the sub-clustering pass. */
   subClusterResolutionFactor: number;
@@ -182,6 +187,8 @@ function inducedSubgraph(graph: Graph, members: readonly string[]): Graph {
 export function detectCommunities(
   graph: Graph,
   config: CommunityConfig = DEFAULT_COMMUNITY_CONFIG,
+  /** Which nodes count toward the sub-clustering size limit (default: all). */
+  isMeasured: (node: string) => boolean = () => true,
 ): DetectedPartition {
   if (graph.order === 0) {
     return { scenes: [], unclustered: [], resolution: 0, sweep: [], subClustered: 0 };
@@ -204,7 +211,8 @@ export function detectCommunities(
   // One sub-clustering pass: oversize communities re-run at higher γ.
   let subClustered = 0;
   const clusters = chosen.clusters.flatMap((cluster) => {
-    if (cluster.length <= config.maxSceneSize) return [cluster];
+    const measured = cluster.reduce((n, node) => n + (isMeasured(node) ? 1 : 0), 0);
+    if (measured <= config.maxSceneSize) return [cluster];
     const parts = runDetection(
       inducedSubgraph(graph, cluster),
       chosen.resolution * config.subClusterResolutionFactor,

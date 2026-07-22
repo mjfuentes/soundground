@@ -152,6 +152,30 @@ describe("detectCommunities", () => {
     expect(split.scenes.length).toBeGreaterThan(1);
   });
 
+  it("sizes the sub-clustering limit by measured nodes only", () => {
+    // Same oversize-by-raw-count graph as above, but only 4 nodes are
+    // "measured" (crawled) — under the limit, so no split happens.
+    const edges = [
+      ...clique("a", 6, 3),
+      ...clique("b", 6, 3),
+      edge("a0", "b0", 3),
+      edge("a1", "b1", 3),
+      edge("a2", "b2", 3),
+    ];
+    const measured = new Set(["a0", "a1", "b0", "b1"]);
+    const result = detectCommunities(
+      buildSceneGraph(edges),
+      testConfig({
+        resolutions: [0.01],
+        maxSceneSize: 8,
+        subClusterResolutionFactor: 100,
+      }),
+      (node) => measured.has(node),
+    );
+    expect(result.subClustered).toBe(0);
+    expect(result.scenes).toHaveLength(1);
+  });
+
   it("is deterministic across runs", () => {
     const edges = [...clique("a", 6), ...clique("b", 6), edge("a0", "b0", 0.5)];
     const graph = buildSceneGraph(edges);

@@ -328,8 +328,20 @@ export function computeScenes(
   const strengths = directedStrengths(pairs, factors);
   const edges = symmetrize(strengths);
 
+  // Crawled artists are the "measured" population: sub-clustering limits
+  // apply to them, never to the uncrawled frontier padding.
+  const crawledUrns = new Set(
+    (
+      db.prepare(`SELECT urn FROM artists WHERE last_crawled_at IS NOT NULL`).all() as {
+        urn: string;
+      }[]
+    ).map((row) => row.urn),
+  );
+
   // 2. Communities (A1).
-  const partition = detectCommunities(buildSceneGraph(edges), config.community);
+  const partition = detectCommunities(buildSceneGraph(edges), config.community, (node) =>
+    crawledUrns.has(node),
+  );
   const clusterOf = new Map<string, number>();
   partition.scenes.forEach((cluster, index) => {
     for (const urn of cluster) clusterOf.set(urn, index);
