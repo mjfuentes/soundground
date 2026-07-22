@@ -48,10 +48,12 @@ export default async function Home() {
   const restGenres = genres.slice(TOP_GENRES);
   const topCities = cities.slice(0, TOP_CITIES);
   const restCities = cities.slice(TOP_CITIES);
+  // One urn group per card: the resolver round-robins its API budget across
+  // groups so every mosaic gets its top members first.
   const avatars = await resolveAvatarMap([
-    ...topScenes.flatMap((scene) => scene.coverUrns),
-    ...topGenres.flatMap((genre) => genre.coverUrns),
-    ...topCities.flatMap((city) => city.coverUrns),
+    ...topScenes.map((scene) => scene.coverUrns),
+    ...topGenres.map((genre) => genre.coverUrns),
+    ...topCities.map((city) => city.coverUrns),
   ]);
   const coversFor = (urns: readonly string[]) => urns.map((urn) => avatars.get(urn) ?? null);
 

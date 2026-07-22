@@ -5,7 +5,7 @@
  */
 
 import { cache } from "react";
-import { getUser, seedUserCache } from "@/lib/soundcloud/official-cached-client";
+import { getUser, peekUser, seedUserCache } from "@/lib/soundcloud/official-cached-client";
 import { urnToId } from "@/lib/soundcloud/official-client";
 import type { RosterArtist } from "./types";
 
@@ -63,21 +63,52 @@ export async function resolveRoster(
 /** Covers must never stall a page render: after this budget, remaining tiles fall back to placeholders. */
 const AVATAR_RESOLVE_BUDGET_MS = 4000;
 
+/** Round-robin: first urn of every group, then second of every group, … */
+function interleaveGroups(groups: readonly (readonly string[])[]): string[] {
+  const longest = Math.max(0, ...groups.map((group) => group.length));
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (let round = 0; round < longest; round++) {
+    for (const group of groups) {
+      const urn = group[round];
+      if (urn && !seen.has(urn)) {
+        seen.add(urn);
+        ordered.push(urn);
+      }
+    }
+  }
+  return ordered;
+}
+
 /**
- * Avatar URLs for card covers: dedupes urns across all cards on a page,
- * resolves in polite batches within a hard time budget, returns urn →
- * avatar (null when unknown or unresolved-in-time — the cache warms across
- * renders, so misses heal on subsequent visits).
+ * Avatar URLs for card cover mosaics. Pass one urn group per card.
+ * Two passes:
+ * 1. Cache-only peek for every urn — free, instant, covers everything the
+ *    crawler already warmed.
+ * 2. The API budget goes to the gaps, round-robin across cards so no card
+ *    starves into a fully-hatched wall. Misses heal on later renders as
+ *    the cache warms.
  */
 export async function resolveAvatarMap(
-  urns: readonly string[],
+  groups: readonly (readonly string[])[],
 ): Promise<Map<string, string | null>> {
-  const unique = [...new Set(urns)];
-  const avatars = new Map<string, string | null>(unique.map((urn) => [urn, null]));
+  const ordered = interleaveGroups(groups);
+  const avatars = new Map<string, string | null>(ordered.map((urn) => [urn, null]));
+
+  const misses: string[] = [];
+  for (const urn of ordered) {
+    const cached = peekUser(urnToId(urn));
+    if (cached) {
+      avatars.set(urn, cached.avatar_url ?? null);
+    } else {
+      misses.push(urn);
+    }
+  }
+
   const deadline = Date.now() + AVATAR_RESOLVE_BUDGET_MS;
-  for (let i = 0; i < unique.length; i += RESOLVE_BATCH_SIZE * 2) {
+  for (let i = 0; i < misses.length; i += RESOLVE_BATCH_SIZE * 2) {
     if (Date.now() > deadline) break;
-    const batch = unique.slice(i, i + RESOLVE_BATCH_SIZE * 2);
+    const batch = misses.slice(i, i + RESOLVE_BATCH_SIZE * 2);
     const users = await Promise.all(batch.map((urn) => resolveUser(urn)));
     batch.forEach((urn, j) => avatars.set(urn, users[j]?.avatar_url ?? null));
   }

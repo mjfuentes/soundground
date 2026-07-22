@@ -57,6 +57,15 @@ export async function getUser(userId: number): Promise<SoundCloudUser> {
   );
 }
 
+/**
+ * Cache-only read: whatever profile is retained on disk (fresh or stale),
+ * or null — never a network request. For render paths that must not block
+ * on the API (cover mosaics).
+ */
+export function peekUser(userId: number): SoundCloudUser | null {
+  return getCacheService().peekRetained<SoundCloudUser>(`official:user:${userId}`);
+}
+
 export async function getSpotlight(): Promise<{ collection: SpotlightItem[] }> {
   // No spotlight in the official API; nothing worth caching.
   return client.getSpotlight();
