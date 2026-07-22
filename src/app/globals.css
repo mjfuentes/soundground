@@ -11,6 +11,35 @@
   --font-sans: var(--font-inter);
   --font-display: var(--font-space-grotesk);
   --breakpoint-xs: 480px;
+
+  /* SoundGround browse design system (SoundGround.dc.html) */
+  --font-sg: var(--font-archivo), sans-serif;
+  --font-sg-mono: var(--font-ibm-plex-mono), monospace;
+  --color-sg-bg: #070707;
+  --color-sg-surface: #0c0c0c;
+  --color-sg-raised: #101010;
+  --color-sg-ink: #ededec;
+  --color-sg-soft: #c8c8c4;
+  --color-sg-body: #a8a8a4;
+  --color-sg-muted: #8c8c88;
+  --color-sg-dim: #7a7a76;
+  --color-sg-faint: #4a4a48;
+  --color-sg-ghost: #3f3f3d;
+  --color-sg-line: rgba(255, 255, 255, 0.09);
+  --color-sg-line-soft: rgba(255, 255, 255, 0.07);
+  --color-sg-line-strong: rgba(255, 255, 255, 0.14);
+  --color-sg-line-bold: rgba(255, 255, 255, 0.25);
+  --animate-sgpulse: sgpulse 2s ease-in-out infinite;
+}
+
+@keyframes sgpulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

@@ -5,9 +5,9 @@ import { Header } from "./header";
 
 export function ConditionalHeader() {
   const pathname = usePathname();
-  
-  // Don't show header on homepage
-  if (pathname === "/") {
+
+  // Don't show the legacy header on browse surfaces — they render BrowseHeader themselves
+  if (pathname === "/" || pathname.startsWith("/genre/") || pathname.startsWith("/city/")) {
     return null;
   }
   

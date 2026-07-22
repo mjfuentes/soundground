@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Archivo, IBM_Plex_Mono, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ConditionalHeader } from "@/components/conditional-header";
 import { PlayerProvider } from "@/contexts/player-context";
@@ -17,15 +17,30 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+const archivo = Archivo({
+  variable: "--font-archivo",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+});
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "SoundGround - Sounds from the Underground",
   description: "Discover and explore SoundCloud artists. Dig deep into artist profiles, explore connections, and uncover hidden gems in the underground music scene.",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   icons: {
     icon: [
       { url: "/logo.png" },
@@ -44,7 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
+        className={`${inter.variable} ${spaceGrotesk.variable} ${archivo.variable} ${ibmPlexMono.variable} antialiased`}
         style={{ backgroundColor: '#0f0f0f' }}
       >
         <PlayerProvider>

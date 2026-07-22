@@ -1,307 +1,109 @@
-"use client";
+import { ActivityDot } from "@/components/browse/activity-dot";
+import { BrowseHeader } from "@/components/browse/browse-header";
+import { CityCard } from "@/components/browse/city-card";
+import { GenreCard } from "@/components/browse/genre-card";
+import { HomeSearch } from "@/components/browse/home-search";
+import { ShowMore } from "@/components/browse/show-more";
+import { resolveAvatarMap } from "@/lib/browse/resolve-artists";
+import { getBrowseStatus, listCities, listGenres } from "@/lib/browse/store";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { SearchBar } from "@/components/search-bar";
-import { SearchDropdown } from "@/components/search-dropdown";
-import { ClientSearchCache } from "@/lib/client-search-cache";
-import { trackPageLoad, ClientPerformanceTimer } from "@/lib/client-performance";
-import type { SoundCloudUser, SoundCloudTrack, SoundCloudPlaylist } from "@/lib/soundcloud/client";
+export const revalidate = 3600;
 
-// Track page load performance
-if (typeof window !== 'undefined') {
-  trackPageLoad();
+/** Cards shown before "show more"; only these get live-resolved cover art. */
+const TOP_GENRES = 12;
+const TOP_CITIES = 9;
+
+function SectionRule({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className="mb-5 flex items-baseline justify-between border-b border-sg-line pb-3.5 font-sg-mono text-[11px] uppercase tracking-[0.18em]">
+      <span className="text-sg-muted">{title}</span>
+      {hint ? <span className="normal-case tracking-normal text-sg-faint">{hint}</span> : null}
+    </div>
+  );
 }
 
-// Import the same filtering/sorting logic used in SearchDropdown
-function isUser(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): result is SoundCloudUser {
-  return 'followers_count' in result && 'followings_count' in result;
+function StillCrawling() {
+  return (
+    <div className="border border-sg-line bg-sg-surface px-6 py-16 text-center">
+      <div className="font-sg text-2xl font-semibold text-sg-ink">The atlas is still crawling</div>
+      <p className="mx-auto mt-3 max-w-md font-sg-mono text-xs leading-relaxed text-sg-dim">
+        No aggregated scene data yet. Run <span className="text-sg-soft">npm run crawl</span> and
+        then <span className="text-sg-soft">npm run aggregate</span> to map the first orbit.
+      </p>
+    </div>
+  );
 }
 
-function isTrack(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): result is SoundCloudTrack {
-  return 'user' in result && !('is_album' in result);
-}
-
-function isPlaylist(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): result is SoundCloudPlaylist {
-  return 'is_album' in result;
-}
-
-function hasImage(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): boolean {
-  if (isUser(result)) {
-    return !!result.avatar_url;
-  }
-  return !!result.artwork_url;
-}
-
-function isQualityResult(result: SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist): boolean {
-  if (isUser(result)) {
-    const hasAvatar = !!result.avatar_url;
-    const hasMinFollowers = (result.followers_count || 0) >= 10;
-    const hasTracks = (result.track_count || 0) >= 1;
-    
-    if (!hasAvatar && !hasTracks && (result.followers_count || 0) < 10) {
-      return false;
-    }
-    
-    return hasAvatar || hasMinFollowers || hasTracks;
-  } else if (isTrack(result)) {
-    const hasArtwork = !!result.artwork_url;
-    const hasSignificantPlays = (result.playback_count || 0) >= 1000;
-    
-    return hasArtwork || hasSignificantPlays;
-  } else if (isPlaylist(result)) {
-    const hasArtwork = !!result.artwork_url;
-    const hasMinTracks = (result.track_count || 0) >= 3;
-    
-    return hasArtwork || hasMinTracks;
-  }
-  
-  return true;
-}
-
-function sortSearchResults(results: (SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]) {
-  return [...results].sort((a, b) => {
-    const aIsUser = isUser(a);
-    const bIsUser = isUser(b);
-    if (aIsUser && !bIsUser) return -1;
-    if (!aIsUser && bIsUser) return 1;
-
-    const aHasImage = hasImage(a);
-    const bHasImage = hasImage(b);
-    if (aHasImage && !bHasImage) return -1;
-    if (!aHasImage && bHasImage) return 1;
-
-    if (isUser(a) && isUser(b)) {
-      return (b.followers_count || 0) - (a.followers_count || 0);
-    } else if (isTrack(a) && isTrack(b)) {
-      return (b.playback_count || 0) - (a.playback_count || 0);
-    } else if (isPlaylist(a) && isPlaylist(b)) {
-      return (b.likes_count || 0) - (a.likes_count || 0);
-    }
-
-    const aIsTrack = isTrack(a);
-    const bIsTrack = isTrack(b);
-    if (aIsTrack && !bIsTrack) return -1;
-    if (!aIsTrack && bIsTrack) return 1;
-
-    return 0;
-  });
-}
-
-const MAX_RESULTS = 5;
-
-export default function Home() {
-  const router = useRouter();
-  const [searchResults, setSearchResults] = useState<(SoundCloudUser | SoundCloudTrack | SoundCloudPlaylist)[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const initialViewportHeight = useRef<number>(0);
-
-  const handleSearch = useCallback(async (query: string, isImmediate = false) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setSearchQuery("");
-      setIsDropdownOpen(false);
-      setIsSearching(false);
-      setSelectedIndex(0);
-      return;
-    }
-
-    setSearchQuery(query);
-    setIsDropdownOpen(true);
-    setSelectedIndex(0);
-
-    // Check cache immediately and show results
-    const cachedResults = ClientSearchCache.get(query);
-    if (cachedResults) {
-      setSearchResults(cachedResults);
-    }
-
-    // Don't fetch on immediate calls, wait for debounce
-    if (isImmediate) {
-      return;
-    }
-
-    // Always show loading indicator when fetching fresh results
-    setIsSearching(true);
-
-    // Track search performance
-    const perfTimer = new ClientPerformanceTimer('search', query, { cached: !!cachedResults });
-
-    try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=20`);
-      if (response.ok) {
-        const data = await response.json();
-        const freshResults = data.collection || [];
-        
-        // Track response time from server
-        const serverTime = response.headers.get('X-Response-Time');
-        perfTimer.end({ serverTime, resultCount: freshResults.length });
-        
-        // Only update UI if results are actually different
-        if (!cachedResults || ClientSearchCache.areResultsDifferent(cachedResults, freshResults)) {
-          setSearchResults(freshResults);
-        }
-        
-        // Always cache the fresh results
-        ClientSearchCache.set(query, freshResults);
-      } else {
-        console.error("Search failed:", response.statusText);
-        perfTimer.end({ error: true, status: response.status });
-        if (!cachedResults) {
-          setSearchResults([]);
-        }
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      perfTimer.end({ error: true });
-      if (!cachedResults) {
-        setSearchResults([]);
-      }
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
-
-  // Apply same filtering and sorting as SearchDropdown to ensure index matches
-  const filteredAndSortedResults = useMemo(() => {
-    const qualityResults = searchResults.filter(isQualityResult);
-    return sortSearchResults(qualityResults).slice(0, MAX_RESULTS);
-  }, [searchResults]);
-
-  const handleCloseDropdown = useCallback(() => {
-    setIsDropdownOpen(false);
-  }, []);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    // Allow keyboard navigation whenever there are results
-    if (filteredAndSortedResults.length === 0) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((prev) => Math.min(prev + 1, filteredAndSortedResults.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((prev) => Math.max(prev - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      // Navigate to the selected result from the FILTERED AND SORTED array
-      const selectedResult = filteredAndSortedResults[selectedIndex];
-      if (selectedResult) {
-        // Check if it's a user/artist
-        if (isUser(selectedResult)) {
-          const handle = selectedResult.permalink || selectedResult.permalink_url?.split('/').pop();
-          if (handle) {
-            router.push(`/${handle}`);
-          }
-        } else if (isTrack(selectedResult)) {
-          // It's a track
-          router.push(`/track/${selectedResult.id}`);
-        } else if (isPlaylist(selectedResult)) {
-          // It's a playlist
-          router.push(`/playlist/${selectedResult.id}`);
-        }
-        // Close dropdown
-        setIsDropdownOpen(false);
-      }
-    }
-  }, [filteredAndSortedResults, selectedIndex, router]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Detect keyboard visibility on mobile
-  useEffect(() => {
-    // Store initial viewport height
-    initialViewportHeight.current = window.visualViewport?.height || window.innerHeight;
-
-    const handleResize = () => {
-      if (!window.visualViewport) return;
-      
-      const currentHeight = window.visualViewport.height;
-      const heightDifference = initialViewportHeight.current - currentHeight;
-      
-      // If viewport shrunk by more than 150px, keyboard is likely visible
-      // This threshold accounts for mobile browser UI changes
-      setIsKeyboardVisible(heightDifference > 150);
-    };
-
-    // Listen to visual viewport resize (better for mobile keyboards)
-    window.visualViewport?.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-    };
-  }, []);
+export default async function Home() {
+  const status = getBrowseStatus();
+  const genres = listGenres();
+  const cities = listCities();
+  const topGenres = genres.slice(0, TOP_GENRES);
+  const restGenres = genres.slice(TOP_GENRES);
+  const topCities = cities.slice(0, TOP_CITIES);
+  const restCities = cities.slice(TOP_CITIES);
+  const avatars = await resolveAvatarMap([
+    ...topGenres.flatMap((genre) => genre.coverUrns),
+    ...topCities.flatMap((city) => city.coverUrns),
+  ]);
+  const coversFor = (urns: readonly string[]) => urns.map((urn) => avatars.get(urn) ?? null);
 
   return (
-    <main 
-      className={`flex min-h-screen text-white px-4 sm:px-6 transition-all ${
-        isKeyboardVisible 
-          ? 'items-start pt-4' 
-          : 'items-center justify-center'
-      }`}
-    >
-      <div className="w-full max-w-4xl mx-auto">
-        {/* Logo and Search - Stacked vertically and centered */}
-        <div className={`flex flex-col items-center mb-6 transition-all ${
-          isKeyboardVisible ? 'gap-3' : 'gap-6'
-        }`}>
-          {/* Logo/Title - Hide on mobile when keyboard is visible to save space */}
-          <div className={`flex items-center gap-2 sm:gap-3 flex-shrink-0 soundground-logo transition-all ${
-            isKeyboardVisible ? 'scale-75 -mb-2' : ''
-          }`}>
-            <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 sm:w-12 sm:h-12">
-              <circle cx="30" cy="30" r="28" stroke="white" strokeWidth="2"/>
-              <path d="M20 35V25M25 38V22M30 40V20M35 38V22M40 35V25" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white whitespace-nowrap">
-              SoundGround
-            </h1>
-          </div>
+    <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
+      <BrowseHeader
+        countsLine={
+          status.hasData ? `${status.genreCount} genres · ${status.cityCount} cities` : undefined
+        }
+      />
+      <HomeSearch />
 
-          {/* Search - Full width on mobile, centered */}
-          <div className="relative w-full max-w-2xl" ref={containerRef}>
-            <SearchBar 
-              onSearch={handleSearch} 
-              isLoading={isSearching} 
-              onKeyDown={handleKeyDown}
-              hasResults={searchResults.length > 0 && isDropdownOpen}
-            />
-            {isDropdownOpen && (
-              <SearchDropdown
-                results={searchResults}
-                isLoading={isSearching}
-                query={searchQuery}
-                onClose={handleCloseDropdown}
-                selectedIndex={selectedIndex}
-                containerRef={containerRef}
-                isMobile={true}
-              />
-            )}
-          </div>
+      <div className="px-5 pb-28 pt-7 sm:px-7">
+        <div className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="m-0 font-sg text-3xl font-bold tracking-[-0.02em] text-sg-ink sm:text-[40px]">
+            Browse the underground
+          </h1>
+          {status.hasData && (
+            <div className="flex items-center gap-2 font-sg-mono text-[11px] uppercase tracking-[0.1em] text-sg-dim">
+              <ActivityDot />
+              from the artist graph
+            </div>
+          )}
         </div>
 
-        {/* Hint text - Hide when keyboard is visible */}
-        {!isKeyboardVisible && (
-          <div className="text-center">
-            <p className="text-xs sm:text-sm text-zinc-500">
-              by artists for artists
-            </p>
-          </div>
+        {!status.hasData && <StillCrawling />}
+
+        {genres.length > 0 && (
+          <section id="genres" className="mb-11 scroll-mt-24">
+            <SectionRule title="Genres" hint="as the scene tags itself" />
+            <ShowMore
+              gridClassName="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
+              label="genres"
+              restCount={restGenres.length}
+              preview={topGenres.map((genre) => (
+                <GenreCard key={genre.slug} genre={genre} coverUrls={coversFor(genre.coverUrns)} />
+              ))}
+              rest={restGenres.map((genre) => (
+                <GenreCard key={genre.slug} genre={genre} />
+              ))}
+            />
+          </section>
+        )}
+
+        {cities.length > 0 && (
+          <section id="cities" className="scroll-mt-24">
+            <SectionRule title="Cities — listen to a place" hint="self-declared locations" />
+            <ShowMore
+              gridClassName="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
+              label="cities"
+              restCount={restCities.length}
+              preview={topCities.map((city) => (
+                <CityCard key={city.slug} city={city} coverUrls={coversFor(city.coverUrns)} />
+              ))}
+              rest={restCities.map((city) => (
+                <CityCard key={city.slug} city={city} />
+              ))}
+            />
+          </section>
         )}
       </div>
     </main>

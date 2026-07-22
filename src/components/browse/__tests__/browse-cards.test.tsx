@@ -1,0 +1,81 @@
+import { render, screen } from "@testing-library/react";
+import { ArtistRow } from "../artist-row";
+import { BrowseHeader } from "../browse-header";
+import { CityCard } from "../city-card";
+import { GenreCard } from "../genre-card";
+import {
+  sampleCity,
+  sampleGenre,
+  sampleResolvedArtist,
+} from "@/lib/browse/__tests__/fixtures";
+
+jest.mock("@/contexts/player-context", () => ({
+  usePlayer: () => ({ playQueue: jest.fn() }),
+}));
+
+describe("GenreCard", () => {
+  it("links to the genre page", () => {
+    render(<GenreCard genre={sampleGenre} />);
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/genre/dub-techno");
+  });
+
+  it("shows name, related genres, artist count, activity, and top city", () => {
+    render(<GenreCard genre={sampleGenre} />);
+    expect(screen.getByText("Dub Techno")).toBeInTheDocument();
+    expect(screen.getByText("with Ambient")).toBeInTheDocument();
+    expect(screen.getByText("3 artists")).toBeInTheDocument();
+    expect(screen.getByText("active now")).toBeInTheDocument();
+    expect(screen.getByText("↳ strongest in Berlin")).toBeInTheDocument();
+  });
+
+  it("hides activity and top city when absent", () => {
+    render(
+      <GenreCard genre={{ ...sampleGenre, activity: null, activeNow: false, topCity: null }} />,
+    );
+    expect(screen.queryByText("active now")).not.toBeInTheDocument();
+    expect(screen.queryByText(/strongest in/)).not.toBeInTheDocument();
+  });
+});
+
+describe("CityCard", () => {
+  it("links to the city page and shows derived fields", () => {
+    render(<CityCard city={sampleCity} />);
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/city/berlin");
+    expect(screen.getByText("Berlin")).toBeInTheDocument();
+    expect(screen.getByText("DE · 3 artists")).toBeInTheDocument();
+    expect(screen.getByText("↳ Dub Techno is strongest here")).toBeInTheDocument();
+  });
+});
+
+describe("ArtistRow", () => {
+  it("shows rank, resolved name, context, and reach metrics, linking to the profile", () => {
+    render(<ArtistRow rank={1} artist={sampleResolvedArtist} />);
+    expect(screen.getByText("01")).toBeInTheDocument();
+    expect(screen.getByText("Artist One")).toBeInTheDocument();
+    expect(screen.getByText("Berlin · also in Ambient")).toBeInTheDocument();
+    expect(screen.getByText("2.3k")).toBeInTheDocument();
+    expect(screen.getByText("followers")).toBeInTheDocument();
+    expect(screen.getByText("15k")).toBeInTheDocument();
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/artist-1");
+  });
+
+  it("renders without a link when no permalink is known", () => {
+    render(<ArtistRow rank={2} artist={{ ...sampleResolvedArtist, profileHref: null }} />);
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("BrowseHeader", () => {
+  it("renders the wordmark and a single Browse nav item with a counts line", () => {
+    render(<BrowseHeader countsLine="19 genres · 3 cities" />);
+    expect(screen.getByText("SOUNDGROUND")).toHaveAttribute("href", "/");
+    expect(screen.getByText("Browse")).toHaveAttribute("href", "/");
+    expect(screen.getByText("19 genres · 3 cities")).toBeInTheDocument();
+  });
+
+  it("swaps nav for a breadcrumb on detail pages", () => {
+    render(<BrowseHeader breadcrumb="Genre / Dub Techno" />);
+    expect(screen.getByText("Genre / Dub Techno")).toBeInTheDocument();
+    expect(screen.queryByText("Browse")).not.toBeInTheDocument();
+  });
+});
