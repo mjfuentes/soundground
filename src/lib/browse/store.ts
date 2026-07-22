@@ -148,7 +148,7 @@ function genreSummary(db: Database.Database, row: GenreRow, now: number): GenreS
     activity: activityLine(counts),
     activeNow: counts.activeNow,
     coverUrns: parseRoster(row.roster)
-      .slice(0, 3)
+      .slice(0, 20)
       .map((artist) => artist.urn),
   };
 }
@@ -164,7 +164,7 @@ function citySummary(db: Database.Database, row: CityRow, now: number): CitySumm
     activity: activityLine(counts),
     activeNow: counts.activeNow,
     coverUrns: parseRoster(row.roster)
-      .slice(0, 4)
+      .slice(0, 20)
       .map((artist) => artist.urn),
   };
 }

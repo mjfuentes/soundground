@@ -37,7 +37,8 @@ describe("scene store", () => {
     expect(berlin.memberCount).toBe(5);
     expect(berlin.tags).toContain("Dub Techno");
     expect(berlin.activity).toBe("active now");
-    expect(berlin.coverUrns).toHaveLength(3);
+    // Mosaic covers: every rosterable member surfaces (fixture has 6).
+    expect(berlin.coverUrns).toHaveLength(6);
   });
 
   it("returns scene detail with ranked roster, genres, and cities", () => {

@@ -33,7 +33,7 @@ export const DEFAULT_AGGREGATE_CONFIG: AggregateConfig = {
   minGenreArtists: 5,
   minCityArtists: 2,
   minTagEvidence: 2,
-  rosterSize: 12,
+  rosterSize: 24, // deep enough for the card cover mosaics (20 cells)
 };
 
 export interface AggregateReport {

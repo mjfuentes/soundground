@@ -36,16 +36,25 @@ export function CoverTile({ size = 46, className = "", imageUrl }: CoverTileProp
   );
 }
 
-interface CoverStripProps {
+interface CoverMosaicProps {
+  /** Cells in the wall; unresolved cells render as hatched placeholders. */
   count?: number;
-  height?: number;
+  columns?: number;
   imageUrls?: readonly (string | null)[];
 }
 
-/** Full-width strip of tiles, used as the "cover wall" on city cards. */
-export function CoverStrip({ count = 4, height = 52, imageUrls = [] }: CoverStripProps) {
+/**
+ * Dense wall of tiny member avatars — a community at a glance. Cells
+ * without a resolved avatar keep the hatched placeholder so the wall's
+ * size always reflects the roster, not the cache state.
+ */
+export function CoverMosaic({ count = 20, columns = 10, imageUrls = [] }: CoverMosaicProps) {
   return (
-    <div aria-hidden className="flex gap-[3px]">
+    <div
+      aria-hidden
+      className="grid w-full gap-[2px]"
+      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+    >
       {Array.from({ length: count }, (_, i) => {
         const imageUrl = imageUrls[i];
         return imageUrl ? (
@@ -53,19 +62,19 @@ export function CoverStrip({ count = 4, height = 52, imageUrls = [] }: CoverStri
             key={i}
             src={imageUrl}
             alt=""
-            width={100}
-            height={height}
-            className="min-w-0 flex-1 border border-white/[0.06] object-cover"
-            style={{ height }}
+            width={44}
+            height={44}
+            className="aspect-square h-auto w-full border border-white/[0.06] object-cover"
           />
         ) : (
           <div
             key={i}
-            className="flex-1 border border-white/[0.06]"
-            style={{ height, background: HATCH }}
+            className="aspect-square w-full border border-white/[0.06]"
+            style={{ background: HATCH }}
           />
         );
       })}
     </div>
   );
 }
+

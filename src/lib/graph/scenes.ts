@@ -50,7 +50,7 @@ export const DEFAULT_SCENE_COMPUTE_CONFIG: SceneComputeConfig = {
   community: DEFAULT_COMMUNITY_CONFIG,
   naming: DEFAULT_SCENE_NAMING_CONFIG,
   identity: DEFAULT_IDENTITY_CONFIG,
-  rosterSize: 15,
+  rosterSize: 24, // deep enough for the card cover mosaics (20 cells)
 };
 
 export interface ScenePreview {

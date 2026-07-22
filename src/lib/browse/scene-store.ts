@@ -57,7 +57,7 @@ function sceneSummary(db: Database.Database, row: SceneRow, now: number): SceneS
     activity: activityLine(counts),
     activeNow: counts.activeNow,
     coverUrns: parseRoster(row.roster)
-      .slice(0, 3)
+      .slice(0, 20)
       .map((artist) => artist.urn),
   };
 }

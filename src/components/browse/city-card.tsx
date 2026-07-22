@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { CitySummary } from "@/lib/browse/types";
-import { CoverStrip } from "./cover-art";
+import { CoverMosaic } from "./cover-art";
 import { PlayButton } from "./play-button";
 
 interface CityCardProps {
@@ -15,7 +15,7 @@ export function CityCard({ city, coverUrls = [] }: CityCardProps) {
       href={`/place/${city.slug}`}
       className="group flex flex-col gap-3.5 border border-sg-line bg-sg-surface p-4 transition-colors hover:border-sg-line-strong hover:bg-sg-raised"
     >
-      <CoverStrip imageUrls={coverUrls} />
+      <CoverMosaic imageUrls={coverUrls} />
       <div className="flex items-end justify-between">
         <div>
           <div className="font-sg text-[22px] font-semibold tracking-[-0.01em] text-sg-ink">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { SceneSummary } from "@/lib/browse/types";
 import { ActivityDot } from "./activity-dot";
-import { CoverTile } from "./cover-art";
+import { CoverMosaic } from "./cover-art";
 import { PlayButton } from "./play-button";
 
 interface SceneCardProps {
@@ -17,12 +17,8 @@ export function SceneCard({ scene, coverUrls = [] }: SceneCardProps) {
       href={`/circle/${scene.slug}`}
       className="group flex flex-col gap-3.5 border border-sg-line bg-sg-surface p-4 transition-colors hover:border-sg-line-strong hover:bg-sg-raised"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex gap-1">
-          <CoverTile imageUrl={coverUrls[0]} />
-          <CoverTile imageUrl={coverUrls[1]} />
-          <CoverTile imageUrl={coverUrls[2]} className="hidden xs:block" />
-        </div>
+      <div className="flex items-start justify-between gap-3">
+        <CoverMosaic imageUrls={coverUrls} />
         <PlayButton scope={{ scene: scene.slug }} label={scene.name} />
       </div>
       <div>
