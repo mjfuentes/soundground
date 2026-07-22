@@ -76,8 +76,10 @@ export interface SceneSummary {
 }
 
 export interface SceneDetail extends SceneSummary {
-  /** Ranked by within-scene weighted in-degree. */
+  /** Ranked by within-scene weighted in-degree. Hubs excluded. */
   roster: RosterArtist[];
+  /** Labels/radios/promo channels inside the scene (B4). */
+  hubs: RosterArtist[];
   /** Genres this scene's members belong to. */
   genres: LinkedCount[];
   /** Cities this scene's members declare. */

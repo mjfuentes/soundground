@@ -29,6 +29,20 @@ const detail: SceneDetail = {
       otherGenres: ["Dub Techno"],
     },
   ],
+  hubs: [
+    {
+      urn: "soundcloud:users:23",
+      permalink: "dub-radio",
+      cityRaw: "Berlin",
+      connections: 9,
+      followers: 40000,
+      plays: 0,
+      likes: 0,
+      comments: 0,
+      trackCount: 2000,
+      otherGenres: [],
+    },
+  ],
   genres: [{ slug: "dub-techno", name: "Dub Techno", count: 5 }],
   cities: [{ slug: "berlin", name: "Berlin", count: 4 }],
 };
@@ -39,7 +53,13 @@ jest.mock("@/lib/browse/scene-store", () => ({
 }));
 
 jest.mock("@/lib/browse/resolve-artists", () => ({
-  resolveRoster: jest.fn(async () => [sampleResolvedArtist]),
+  resolveRoster: jest.fn(async (roster: { urn: string }[]) =>
+    roster.map((artist) =>
+      artist.urn === "soundcloud:users:23"
+        ? { ...detail.hubs[0], displayName: "Dub Radio", avatarUrl: null, profileHref: "/dub-radio" }
+        : sampleResolvedArtist,
+    ),
+  ),
 }));
 
 const props = (slug: string) => ({ params: Promise.resolve({ slug }) });
@@ -58,6 +78,12 @@ describe("ScenePage", () => {
       "/genre/dub-techno",
     );
     expect(screen.getByText("Ambient")).not.toHaveAttribute("href");
+  });
+
+  it("lists the scene's hubs separately from the artist roster", async () => {
+    render(await ScenePage(props("berlin-dub-techno")));
+    expect(screen.getByText("Hubs & labels")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Dub Radio/ })).toHaveAttribute("href", "/dub-radio");
   });
 
   it("404s on unknown slugs", async () => {

@@ -52,6 +52,7 @@ export function buildTwoSceneGraph(db: Database.Database): void {
   for (const id of [11, 12, 13, 14, 15]) put(id, "London", 10, 100);
   put(21, null, null, 50); // frontier: never crawled, unknown tracks
   put(22, null, 0, 10); // zero-track account: member but never rostered
+  put(23, "Berlin", 2000, 40000); // radio-station hub: 2k episodes → mechanical hub
 
   for (const id of [1, 2, 3, 4, 5, 11, 12, 13, 14, 15]) {
     repo.markCrawled(urn(id));
@@ -85,6 +86,12 @@ export function buildTwoSceneGraph(db: Database.Database): void {
   // Frontier + zero-track members hang off the dub techno circle.
   for (const src of [1, 2, 3]) follow(src, 21);
   for (const src of [1, 2]) follow(src, 22);
+  // The hub sits inside the dub techno circle, its episode tags loud
+  // enough to hijack naming if hub terms were not excluded.
+  repo.markCrawled(urn(23));
+  for (const src of [1, 2, 3]) follow(src, 23);
+  for (const dst of [1, 2, 3]) follow(23, dst);
+  repo.recordTerm({ artistUrn: urn(23), term: "pirateradio", kind: "tag", evidence: 50 });
   // Weak bridge between the two scenes.
   follow(1, 11);
 }

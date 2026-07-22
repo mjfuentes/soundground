@@ -15,6 +15,10 @@ export interface SceneDoc {
   key: number;
   /** Folded term → weight (term evidence × member in-scene in-degree). */
   termWeights: ReadonlyMap<string, number>;
+  /** Folded term → distinct members carrying it (breadth, not volume). */
+  termSupport: ReadonlyMap<string, number>;
+  /** Members carrying at least one term — the breadth denominator. */
+  termedMembers: number;
   /** Dominant city among located members, when known. */
   topCity: { name: string; share: number; locatedMembers: number } | null;
 }
@@ -31,6 +35,14 @@ export interface SceneNamingConfig {
   cityShareThreshold: number;
   /** …and at least this many located members (2 of 3 is noise, not a scene home). */
   minLocatedMembers: number;
+  /**
+   * Breadth floor: a term may NAME a scene only when carried by at least
+   * max(minNameSupport, nameSupportShare × termedMembers) distinct members.
+   * Six obsessive taggers must not name a 1,600-member scene; c-TF-IDF
+   * scores volume-weighted distinctiveness, this floor demands consensus.
+   */
+  minNameSupport: number;
+  nameSupportShare: number;
   /** At most this many terms in a name. */
   maxNameTerms: number;
   /** Extra name terms must score at least this fraction of the top term. */
@@ -41,6 +53,8 @@ export interface SceneNamingConfig {
 export const DEFAULT_SCENE_NAMING_CONFIG: SceneNamingConfig = {
   minDocFrequency: 3,
   maxDocFraction: 0.6,
+  minNameSupport: 4,
+  nameSupportShare: 0.08,
   cityShareThreshold: 0.4,
   minLocatedMembers: 5,
   maxNameTerms: 3,
@@ -134,18 +148,24 @@ function cityPrefix(doc: SceneDoc, config: SceneNamingConfig): string | null {
 }
 
 function composeName(
+  doc: SceneDoc,
   terms: readonly ScoredTerm[],
   city: string | null,
   display: (term: string) => string,
   config: SceneNamingConfig,
 ): { name: string | null; nameTerms: string[] } {
   const cityFold = city ? foldTerm(city) : null;
+  const requiredSupport = Math.max(
+    config.minNameSupport,
+    Math.ceil(config.nameSupportShare * doc.termedMembers),
+  );
+  const broad = terms.filter(({ term }) => (doc.termSupport.get(term) ?? 0) >= requiredSupport);
   const chosen: string[] = [];
-  for (const { term, score } of terms) {
+  for (const { term, score } of broad) {
     if (chosen.length >= config.maxNameTerms) break;
     if (term === cityFold) continue; // "Berlin Berlin Dub" — the prefix already says it
     if (isRedundant(term, chosen)) continue;
-    if (chosen.length > 0 && score < terms[0].score * config.secondaryTermRatio) break;
+    if (chosen.length > 0 && score < broad[0].score * config.secondaryTermRatio) break;
     chosen.push(term);
   }
   if (chosen.length === 0) return { name: null, nameTerms: [] };
@@ -156,19 +176,23 @@ function composeName(
 /**
  * Name every scene. `display` renders a folded term for humans (most
  * frequent raw spelling, title-cased) — the caller owns spelling data.
+ * `excludedTerms` (fold keys) never enter the vocabulary at all — used for
+ * hub-account names ("refugeworldwide" the tag is the radio, not a sound).
  */
 export function nameScenes(
   docs: readonly SceneDoc[],
   display: (term: string) => string,
   config: SceneNamingConfig = DEFAULT_SCENE_NAMING_CONFIG,
+  excludedTerms: ReadonlySet<string> = new Set(),
 ): Map<number, SceneName> {
   const vocabulary = buildVocabulary(docs, config);
+  for (const term of excludedTerms) vocabulary.delete(term);
   const scored = scoreDocs(docs, vocabulary);
 
   const results = new Map<number, SceneName>();
   for (const doc of docs) {
     const terms = scored.get(doc.key) ?? [];
-    const { name } = composeName(terms, cityPrefix(doc, config), display, config);
+    const { name } = composeName(doc, terms, cityPrefix(doc, config), display, config);
     results.set(doc.key, {
       name,
       tags: terms.slice(0, config.tagCount).map(({ term }) => display(term)),

@@ -42,13 +42,29 @@ describe("computeScenes", () => {
     db.close();
   });
 
-  it("counts only crawled members but keeps the frontier in totals", () => {
+  it("counts only crawled artist members but keeps the frontier in totals", () => {
     const db = buildAggregatedTwoSceneDb();
     computeScenes(db, TEST_CONFIG);
 
     const berlin = readScenes(db).find((scene) => scene.name === "Berlin Dub Techno")!;
-    expect(berlin.member_count).toBe(5); // 21 and 22 are uncrawled
-    expect(berlin.total_count).toBe(7);
+    expect(berlin.member_count).toBe(5); // 21/22 uncrawled, 23 is a hub
+    expect(berlin.total_count).toBe(8);
+    db.close();
+  });
+
+  it("splits hubs out of the roster and never lets their tags name the scene", () => {
+    const db = buildAggregatedTwoSceneDb();
+    computeScenes(db, TEST_CONFIG);
+
+    const berlin = readScenes(db).find((scene) => scene.name === "Berlin Dub Techno")!;
+    const rosterUrns = (JSON.parse(berlin.roster) as RosterEntry[]).map((entry) => entry.urn);
+    expect(rosterUrns).not.toContain(urn(23));
+    const hubUrns = (JSON.parse((berlin as SceneRow & { hubs: string }).hubs) as RosterEntry[]).map(
+      (entry) => entry.urn,
+    );
+    expect(hubUrns).toEqual([urn(23)]);
+    // The hub's 50-evidence "pirateradio" tag must not surface anywhere.
+    expect(JSON.parse(berlin.tags)).not.toContain("Pirateradio");
     db.close();
   });
 

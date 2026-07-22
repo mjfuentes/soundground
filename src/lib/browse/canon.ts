@@ -31,6 +31,45 @@ export function defaultCityCanonPath(): string {
   return process.env.CITY_CANON_PATH || path.join(process.cwd(), "data", "canon", "cities.json");
 }
 
+const accountCanonSchema = z.object({
+  $comment: z.string().optional(),
+  hubs: z.array(z.string().min(1)).default([]),
+  hubTerms: z.array(z.string().min(1)).default([]),
+});
+
+export interface AccountCanon {
+  /** Permalinks of institutional accounts (labels, radios, mags, promo). */
+  hubPermalinks: ReadonlySet<string>;
+  /** Fold keys of institution tag-spellings that differ from permalinks. */
+  hubTermFolds: ReadonlySet<string>;
+}
+
+export const EMPTY_ACCOUNT_CANON: AccountCanon = {
+  hubPermalinks: new Set(),
+  hubTermFolds: new Set(),
+};
+
+export function defaultAccountCanonPath(): string {
+  return (
+    process.env.ACCOUNT_CANON_PATH || path.join(process.cwd(), "data", "canon", "accounts.json")
+  );
+}
+
+export function loadAccountCanon(filePath: string = defaultAccountCanonPath()): AccountCanon {
+  if (!fs.existsSync(filePath)) return EMPTY_ACCOUNT_CANON;
+  try {
+    const parsed = accountCanonSchema.parse(JSON.parse(fs.readFileSync(filePath, "utf8")));
+    return {
+      hubPermalinks: new Set(parsed.hubs.map((permalink) => permalink.toLowerCase())),
+      hubTermFolds: new Set(parsed.hubTerms.map(foldTerm).filter(Boolean)),
+    };
+  } catch (error) {
+    throw new Error(
+      `Invalid account canon at ${filePath}: ${error instanceof Error ? error.message : error}`,
+    );
+  }
+}
+
 export function loadCityCanon(filePath: string = defaultCityCanonPath()): CityCanon {
   if (!fs.existsSync(filePath)) return EMPTY_CITY_CANON;
 

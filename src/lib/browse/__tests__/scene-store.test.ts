@@ -45,6 +45,8 @@ describe("scene store", () => {
     expect(detail).not.toBeNull();
     // Artist 2 leads on within-scene in-degree (peer reposts), not followers.
     expect(detail!.roster[0].urn).toBe("soundcloud:users:2");
+    // The radio-station hub is split out of the roster.
+    expect(detail!.hubs.map((hub) => hub.urn)).toEqual(["soundcloud:users:23"]);
     expect(detail!.genres).toContainEqual(
       expect.objectContaining({ slug: "dub-techno", name: "Dub Techno" }),
     );

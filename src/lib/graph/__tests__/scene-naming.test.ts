@@ -11,6 +11,8 @@ const config = (overrides: Partial<SceneNamingConfig> = {}): SceneNamingConfig =
   minDocFrequency: 1,
   maxDocFraction: 1,
   minLocatedMembers: 2,
+  minNameSupport: 1,
+  nameSupportShare: 0,
   ...overrides,
 });
 
@@ -18,7 +20,15 @@ const doc = (
   key: number,
   terms: Record<string, number>,
   topCity: SceneDoc["topCity"] = null,
-): SceneDoc => ({ key, termWeights: new Map(Object.entries(terms)), topCity });
+  support: Record<string, number> = {},
+): SceneDoc => ({
+  key,
+  termWeights: new Map(Object.entries(terms)),
+  // Default: every term is broadly carried, so only the floor test opts in.
+  termSupport: new Map(Object.keys(terms).map((term) => [term, support[term] ?? 99])),
+  termedMembers: 100,
+  topCity,
+});
 
 const display = displayFromSpellings(new Map([["dubtechno", "Dub Techno"]]));
 
@@ -113,6 +123,38 @@ describe("nameScenes", () => {
     const result = nameScenes(docs, display, config());
     expect(result.get(1)?.name).toBe("Dub Techno");
     expect(result.get(1)?.tags).toContain("Ambient");
+  });
+
+  it("refuses narrowly-supported terms as names but keeps them as tags", () => {
+    // "fjaak" scores highest (distinctive, heavy taggers) but only 6 of
+    // 100 termed members carry it; "dub techno" is the broad consensus.
+    const docs = [
+      doc(1, { fjaak: 500, dubtechno: 200 }, null, { fjaak: 6, dubtechno: 40 }),
+      doc(2, { jungle: 50 }),
+    ];
+    const result = nameScenes(docs, display, config({ minNameSupport: 4, nameSupportShare: 0.08 }));
+    expect(result.get(1)?.name).toBe("Dub Techno");
+    expect(result.get(1)?.tags).toContain("Fjaak");
+  });
+
+  it("leaves a scene unnamed when nothing clears the breadth floor", () => {
+    const docs = [
+      doc(1, { fjaak: 500 }, null, { fjaak: 6 }),
+      doc(2, { jungle: 50 }),
+    ];
+    const result = nameScenes(docs, display, config({ minNameSupport: 10 }));
+    expect(result.get(1)?.name).toBeNull();
+  });
+
+  it("never uses stopwords or explicitly excluded hub names", () => {
+    const docs = [
+      doc(1, { the: 900, refugeworldwide: 500, dubtechno: 100 }),
+      doc(2, { jungle: 50 }),
+    ];
+    const result = nameScenes(docs, display, config(), new Set(["refugeworldwide"]));
+    expect(result.get(1)?.name).toBe("Dub Techno");
+    expect(result.get(1)?.tags).not.toContain("The");
+    expect(result.get(1)?.tags).not.toContain("Refugeworldwide");
   });
 
   it("leaves scenes without vocabulary unnamed", () => {

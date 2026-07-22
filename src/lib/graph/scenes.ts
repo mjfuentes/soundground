@@ -7,7 +7,9 @@
 
 import type { Database } from "better-sqlite3";
 import type { RosterEntry } from "@/lib/browse/aggregate";
+import { EMPTY_ACCOUNT_CANON, type AccountCanon } from "@/lib/browse/canon";
 import { foldTerm, mostFrequent, slugify, titleCase } from "@/lib/browse/slug";
+import { classifyHubs } from "./hubs";
 import {
   DEFAULT_COMMUNITY_CONFIG,
   buildSceneGraph,
@@ -39,6 +41,9 @@ export interface SceneComputeConfig {
   identity: IdentityConfig;
   rosterSize: number;
 }
+
+/** Hubs shown per scene ("Hubs & labels" strip). */
+const HUBS_PER_SCENE = 6;
 
 export const DEFAULT_SCENE_COMPUTE_CONFIG: SceneComputeConfig = {
   edgeWeights: DEFAULT_EDGE_WEIGHT_CONFIG,
@@ -180,6 +185,8 @@ interface SceneTermData {
  * Build one c-TF-IDF document per cluster: folded member terms, weighted by
  * evidence × the member's within-scene in-degree (falling back to plain
  * evidence for clusters whose terms all sit on zero-degree members).
+ * Hub accounts' terms are excluded entirely — a radio show's episode
+ * metadata is not the scene's self-description.
  */
 function buildSceneDocs(
   terms: readonly TermRow[],
@@ -187,14 +194,17 @@ function buildSceneDocs(
   clusterOf: ReadonlyMap<string, number>,
   degrees: ReadonlyMap<string, number>,
   cities: CityLookup,
+  hubs: ReadonlySet<string>,
 ): SceneTermData {
   const spellingCounts = new Map<string, Map<string, number>>();
   const weighted = clusters.map(() => new Map<string, number>());
   const unweighted = clusters.map(() => new Map<string, number>());
+  const supportSets = clusters.map(() => new Map<string, Set<string>>());
+  const termedMembers = clusters.map(() => new Set<string>());
 
   for (const row of terms) {
     const cluster = clusterOf.get(row.artist_urn);
-    if (cluster === undefined) continue;
+    if (cluster === undefined || hubs.has(row.artist_urn)) continue;
     const key = foldTerm(row.term);
     if (!key) continue;
 
@@ -205,6 +215,10 @@ function buildSceneDocs(
     const degree = degrees.get(row.artist_urn) ?? 0;
     weighted[cluster].set(key, (weighted[cluster].get(key) ?? 0) + row.evidence * degree);
     unweighted[cluster].set(key, (unweighted[cluster].get(key) ?? 0) + row.evidence);
+    const carriers = supportSets[cluster].get(key) ?? new Set<string>();
+    carriers.add(row.artist_urn);
+    supportSets[cluster].set(key, carriers);
+    termedMembers[cluster].add(row.artist_urn);
   }
 
   const docs = clusters.map((cluster, index): SceneDoc => {
@@ -226,7 +240,15 @@ function buildSceneDocs(
             locatedMembers: located,
           }
         : null;
-    return { key: index, termWeights: hasWeight ? weighted[index] : unweighted[index], topCity };
+    return {
+      key: index,
+      termWeights: hasWeight ? weighted[index] : unweighted[index],
+      termSupport: new Map(
+        [...supportSets[index].entries()].map(([term, carriers]) => [term, carriers.size]),
+      ),
+      termedMembers: termedMembers[index].size,
+      topCity,
+    };
   });
 
   const displaySpellings = new Map<string, string>(
@@ -298,6 +320,7 @@ export function computeScenes(
   db: Database,
   config: SceneComputeConfig = DEFAULT_SCENE_COMPUTE_CONFIG,
   now: () => string = () => new Date().toISOString(),
+  accountCanon: AccountCanon = EMPTY_ACCOUNT_CANON,
 ): SceneComputeReport {
   // 1. Weights (B1): discounted directed strengths, symmetrized.
   const pairs = loadDirectedPairs(db);
@@ -331,6 +354,17 @@ export function computeScenes(
   const cities = loadCities(db);
   const genresOf = loadGenresOfArtists(db);
 
+  // Hubs (B4): labels/radios/promo — clustered with everyone (real glue),
+  // but out of artist rosters and out of the naming vocabulary.
+  const hubSet = classifyHubs(
+    artistRows.map((row) => ({
+      urn: row.urn,
+      permalink: row.permalink,
+      trackCount: row.track_count,
+    })),
+    accountCanon,
+  );
+
   // 5. Names (A2).
   const { docs, display } = buildSceneDocs(
     termRows,
@@ -338,8 +372,19 @@ export function computeScenes(
     clusterOf,
     degrees,
     cities,
+    hubSet,
   );
-  const names = nameScenes(docs, display, config.naming);
+  // A hub's name is an address, not a sound: fold every classified hub's
+  // permalink — and every canon-listed one, present in the graph or not
+  // (members tag "NTS Radio" even when NTS has no account here) — and keep
+  // those terms out of scene vocabulary entirely.
+  const hubNameFolds = new Set([
+    ...[...hubSet].map((urn) => foldTerm(artists.get(urn)?.permalink ?? "")),
+    ...[...accountCanon.hubPermalinks].map(foldTerm),
+    ...accountCanon.hubTermFolds,
+  ]);
+  hubNameFolds.delete("");
+  const names = nameScenes(docs, display, config.naming, hubNameFolds);
 
   // 6. Stable identity, then persist.
   const previous = loadPreviousMembership(db);
@@ -352,7 +397,10 @@ export function computeScenes(
 
   const previews: ScenePreview[] = partition.scenes.map((cluster, index) => {
     const doc = docs[index];
-    const crawledCount = cluster.filter((urn) => artists.get(urn)?.crawled === 1).length;
+    // "N artists mapped" — crawled members that are actual artists, not hubs.
+    const crawledCount = cluster.filter(
+      (urn) => artists.get(urn)?.crawled === 1 && !hubSet.has(urn),
+    ).length;
     return {
       id: ids[index],
       name: names.get(index)?.name ?? null,
@@ -373,14 +421,16 @@ export function computeScenes(
     db.prepare(`DELETE FROM scenes`).run();
     const insertScene = db.prepare(
       `INSERT INTO scenes (id, slug, name, city_name, tags, member_count, total_count,
-                           roster, resolution, computed_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                           roster, hubs, resolution, computed_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const insertMember = db.prepare(
       `INSERT INTO scene_members (scene_id, artist_urn, in_scene_degree) VALUES (?, ?, ?)`,
     );
     partition.scenes.forEach((cluster, index) => {
       const preview = previews[index];
+      const artistPool = cluster.filter((urn) => !hubSet.has(urn));
+      const hubPool = cluster.filter((urn) => hubSet.has(urn));
       insertScene.run(
         preview.id,
         preview.slug,
@@ -390,8 +440,9 @@ export function computeScenes(
         preview.memberCount,
         preview.totalCount,
         JSON.stringify(
-          buildRoster(cluster, degrees, artists, genresOf, config.rosterSize),
+          buildRoster(artistPool, degrees, artists, genresOf, config.rosterSize),
         ),
+        JSON.stringify(buildRoster(hubPool, degrees, artists, genresOf, HUBS_PER_SCENE)),
         partition.resolution,
         timestamp,
       );

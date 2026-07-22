@@ -71,9 +71,10 @@ const SCHEMA = `
     name TEXT,                          -- NULL = unnamed, excluded from UI
     city_name TEXT,
     tags TEXT NOT NULL DEFAULT '[]',
-    member_count INTEGER NOT NULL,      -- crawled members only (honest display count)
+    member_count INTEGER NOT NULL,      -- crawled artist members (honest display count)
     total_count INTEGER NOT NULL,       -- including the uncrawled frontier
     roster TEXT NOT NULL DEFAULT '[]',
+    hubs TEXT NOT NULL DEFAULT '[]',    -- labels/radios/promo in the scene (B4)
     resolution REAL,
     computed_at TEXT NOT NULL
   );
@@ -127,5 +128,11 @@ function migrate(db: Database.Database): void {
   const queueColumns = db.prepare(`PRAGMA table_info(crawl_queue)`).all() as { name: string }[];
   if (!queueColumns.some((c) => c.name === "priority")) {
     db.exec(`ALTER TABLE crawl_queue ADD COLUMN priority INTEGER NOT NULL DEFAULT 0`);
+  }
+
+  // Hub split (ideas/0004 B4): scenes created before the column existed.
+  const sceneColumns = db.prepare(`PRAGMA table_info(scenes)`).all() as { name: string }[];
+  if (!sceneColumns.some((c) => c.name === "hubs")) {
+    db.exec(`ALTER TABLE scenes ADD COLUMN hubs TEXT NOT NULL DEFAULT '[]'`);
   }
 }

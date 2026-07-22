@@ -9,6 +9,7 @@
  */
 
 import { parseArgs } from "util";
+import { loadAccountCanon } from "@/lib/browse/canon";
 import { openGraphDatabase } from "@/lib/graph/database";
 import { computeScenes, DEFAULT_SCENE_COMPUTE_CONFIG } from "@/lib/graph/scenes";
 
@@ -46,10 +47,13 @@ function main(): void {
     },
   };
 
+  const accountCanon = loadAccountCanon();
+  log(`canon: ${accountCanon.hubPermalinks.size} known hub accounts`);
+
   const db = openGraphDatabase(values.db);
   try {
     const started = Date.now();
-    const report = computeScenes(db, config);
+    const report = computeScenes(db, config, undefined, accountCanon);
     const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
     log(

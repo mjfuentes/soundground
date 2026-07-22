@@ -23,10 +23,18 @@ export const FORMAT_TERMS: ReadonlySet<string> = new Set(
   ].map(foldTerm),
 );
 
+/** Bare function words that survive folding ("The", "Of") are never vocabulary. */
+const STOP_WORDS: ReadonlySet<string> = new Set([
+  "the", "a", "an", "and", "or", "of", "in", "on", "at", "to", "for", "with", "by", "from",
+]);
+
 /**
  * A term that is platform noise rather than scene vocabulary: on the
- * stoplist, or purely numeric ("2026" the year tag — but "2step" survives).
+ * stoplist, a bare stopword, or purely numeric ("2026" the year tag —
+ * but "2step" survives).
  */
 export function isFormatTerm(foldedTerm: string): boolean {
-  return FORMAT_TERMS.has(foldedTerm) || /^[0-9]+$/.test(foldedTerm);
+  return (
+    FORMAT_TERMS.has(foldedTerm) || STOP_WORDS.has(foldedTerm) || /^[0-9]+$/.test(foldedTerm)
+  );
 }

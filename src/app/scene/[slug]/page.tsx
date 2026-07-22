@@ -37,6 +37,7 @@ export default async function ScenePage({ params }: PageProps) {
   }
 
   const roster = await resolveRoster(scene.roster);
+  const hubs = await resolveRoster(scene.hubs);
   // Tags link into genre pages when the genre actually exists as a page.
   const genreSlugs = new Set(scene.genres.map((genre) => genre.slug));
 
@@ -78,6 +79,15 @@ export default async function ScenePage({ params }: PageProps) {
                   href: genreSlugs.has(tagSlug) ? `/genre/${tagSlug}` : undefined,
                 };
               })}
+            />
+          )}
+          {hubs.length > 0 && (
+            <IntersectionList
+              heading="Hubs & labels"
+              items={hubs.map((hub) => ({
+                label: hub.displayName,
+                href: hub.profileHref ?? undefined,
+              }))}
             />
           )}
           {scene.genres.length > 0 && (
