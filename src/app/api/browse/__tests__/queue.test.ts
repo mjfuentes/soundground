@@ -143,6 +143,32 @@ describe("/api/browse/queue", () => {
     expect((await GET(req("?genre=dub-techno&within=ambient"))).status).toBe(400);
   });
 
+  it("plays only the circle's vocabulary when an artist queue has circle context", async () => {
+    mockGetSceneDetail.mockReturnValue({
+      tags: ["Hardgroove", "Raw", "Groovy", "Rolling", "Tribal"],
+      roster: [],
+    });
+    mockGetTracks.mockResolvedValue({
+      collection: [
+        track(11, 7, { genre: "Ambient" }),
+        track(12, 7, { genre: "Hardgroove" }),
+        track(13, 7, { tag_list: 'raw "peak time"' }),
+      ],
+    });
+
+    const data = await (await GET(req("?artist=7&withinCircle=hardgroove"))).json();
+    expect(mockGetSceneDetail).toHaveBeenCalledWith("hardgroove");
+    expect(data.items.map((item: { id: number }) => item.id)).toEqual([12, 13]);
+  });
+
+  it("falls back to latest tracks for an unknown or tagless circle context", async () => {
+    mockGetSceneDetail.mockReturnValue(null);
+    mockGetTracks.mockResolvedValue({ collection: [track(11, 7), track(12, 7)] });
+
+    const data = await (await GET(req("?artist=7&withinCircle=nope"))).json();
+    expect(data.items).toHaveLength(2);
+  });
+
   it("404s when nothing is playable", async () => {
     mockGetCityDetail.mockReturnValue({ roster: [rosterEntry(1)] });
     mockGetTracks.mockResolvedValue({ collection: [] });

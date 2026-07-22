@@ -64,7 +64,7 @@ export default async function ScenePage({ params }: PageProps) {
             </div>
           </div>
           {roster.map((artist, index) => (
-            <ArtistRow key={artist.urn} rank={index + 1} artist={artist} />
+            <ArtistRow key={artist.urn} rank={index + 1} artist={artist} withinCircle={scene.slug} />
           ))}
         </div>
 

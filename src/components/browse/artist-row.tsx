@@ -11,10 +11,12 @@ interface ArtistRowProps {
   artist: ResolvedRosterArtist;
   /** Sound-page context: play only this artist's tracks in that sound. */
   within?: string;
+  /** Circle-page context: play only tracks in the circle's vocabulary. */
+  withinCircle?: string;
 }
 
 /** Ranked roster row shared by the sound, place, and circle pages. */
-export function ArtistRow({ rank, artist, within }: ArtistRowProps) {
+export function ArtistRow({ rank, artist, within, withinCircle }: ArtistRowProps) {
   const context = [artist.cityRaw, artist.otherGenres.length > 0 ? `also in ${artist.otherGenres.join(", ")}` : null]
     .filter(Boolean)
     .join(" · ");
@@ -56,7 +58,7 @@ export function ArtistRow({ rank, artist, within }: ArtistRowProps) {
         </div>
       )}
       <PlayButton
-        scope={{ artist: urnToId(artist.urn), within }}
+        scope={{ artist: urnToId(artist.urn), within, withinCircle }}
         label={artist.displayName}
         size={38}
       />

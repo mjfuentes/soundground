@@ -25,14 +25,23 @@ const querySchema = z
     city: z.string().min(1).max(100).optional(),
     scene: z.string().min(1).max(100).optional(),
     artist: z.coerce.number().int().positive().optional(),
-    /** Sound context for an artist queue: prefer tracks matching this sound. */
+    /** Sound context for an artist queue: play only tracks in this sound. */
     within: z.string().min(1).max(100).optional(),
+    /** Circle context: play only tracks carrying the circle's vocabulary. */
+    withinCircle: z.string().min(1).max(100).optional(),
   })
   .refine(
     (query) => [query.genre, query.city, query.scene, query.artist].filter(Boolean).length === 1,
     "Pass exactly one of: genre, city, scene, artist",
   )
-  .refine((query) => !query.within || query.artist, "within requires artist");
+  .refine(
+    (query) => [query.within, query.withinCircle].filter(Boolean).length <= 1,
+    "Pass at most one context",
+  )
+  .refine(
+    (query) => (!query.within && !query.withinCircle) || query.artist,
+    "within/withinCircle require artist",
+  );
 
 const SCENE_ARTIST_COUNT = 8;
 const TRACKS_PER_SCENE_ARTIST = 4;
@@ -62,10 +71,28 @@ function toQueueItem(track: SoundCloudTrack): QueueItem {
   };
 }
 
-/** Does the track carry the sound, by folded genre field or any folded tag? */
-function matchesSound(track: SoundCloudTrack, soundFold: string): boolean {
-  if (foldTerm(track.genre ?? "") === soundFold) return true;
-  return parseTagList(track.tag_list).some((tag) => foldTerm(tag) === soundFold);
+/** How many of a circle's top tags define its playable vocabulary. */
+const CIRCLE_MATCH_TAGS = 5;
+
+/** Does the track carry any accepted fold, by genre field or tags? */
+function matchesVocabulary(track: SoundCloudTrack, folds: ReadonlySet<string>): boolean {
+  if (folds.has(foldTerm(track.genre ?? ""))) return true;
+  return parseTagList(track.tag_list).some((tag) => folds.has(foldTerm(tag)));
+}
+
+/** The accepted term folds for an artist queue's context, if any. */
+function contextFolds(query: {
+  within?: string;
+  withinCircle?: string;
+}): Set<string> | null {
+  if (query.within) return new Set([foldTerm(query.within)]);
+  if (query.withinCircle) {
+    const circle = getSceneDetail(query.withinCircle);
+    if (!circle) return null;
+    const folds = circle.tags.slice(0, CIRCLE_MATCH_TAGS).map(foldTerm).filter(Boolean);
+    return folds.length > 0 ? new Set(folds) : null;
+  }
+  return null;
 }
 
 /** Round-robin across artists so a scene mix rotates voices. */
@@ -114,12 +141,12 @@ export async function GET(request: NextRequest) {
     if (query.artist) {
       const { collection } = await getTracks(query.artist, 50);
       const playable = collection.filter(isTrackPlayable);
-      // In a sound context, a label/curator catalog spans everything —
-      // queue only tracks carrying the sound. Latest-anything is the
-      // fallback only when nothing in the catalog matches.
-      const soundFold = query.within ? foldTerm(query.within) : null;
-      const matched = soundFold
-        ? playable.filter((track) => matchesSound(track, soundFold))
+      // In a sound/circle context, a label/curator catalog spans
+      // everything — queue only tracks carrying that vocabulary.
+      // Latest-anything is the fallback when nothing matches.
+      const folds = contextFolds(query);
+      const matched = folds
+        ? playable.filter((track) => matchesVocabulary(track, folds))
         : playable;
       const pool = matched.length > 0 ? matched : playable;
       items = pool.slice(0, TRACKS_PER_SOLO_ARTIST).map(toQueueItem);

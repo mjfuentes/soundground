@@ -10,6 +10,8 @@ export interface PlayScope {
   artist?: number;
   /** With artist: prefer tracks carrying this sound (its slug). */
   within?: string;
+  /** With artist: prefer tracks carrying this circle's vocabulary (its slug). */
+  withinCircle?: string;
 }
 
 interface PlayButtonProps {
@@ -44,6 +46,7 @@ export function PlayButton({ scope, label, variant = "hint", size = 40 }: PlayBu
       if (scope.scene) params.set("scene", scope.scene);
       if (scope.artist) params.set("artist", String(scope.artist));
       if (scope.within) params.set("within", scope.within);
+      if (scope.withinCircle) params.set("withinCircle", scope.withinCircle);
       const response = await fetch(`/api/browse/queue?${params}`);
       if (!response.ok) {
         throw new Error(`Queue request failed (${response.status})`);
