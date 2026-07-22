@@ -114,6 +114,35 @@ describe("/api/browse/queue", () => {
     expect(data.items).toHaveLength(2);
   });
 
+  it("plays only the sound's tracks when an artist queue has context", async () => {
+    // A label's catalog: one dub techno cut among unrelated releases.
+    mockGetTracks.mockResolvedValue({
+      collection: [
+        track(11, 7, { genre: "Ambient" }),
+        track(12, 7, { genre: "Dub Techno" }),
+        track(13, 7, { genre: "Pop", tag_list: 'dubtechno "field recording"' }),
+        track(14, 7),
+      ],
+    });
+
+    const data = await (await GET(req("?artist=7&within=dub-techno"))).json();
+    // Genre-field match and tag match; folding covers spelling variants.
+    expect(data.items.map((item: { id: number }) => item.id)).toEqual([12, 13]);
+  });
+
+  it("falls back to latest tracks when nothing matches the sound", async () => {
+    mockGetTracks.mockResolvedValue({
+      collection: [track(11, 7, { genre: "Ambient" }), track(12, 7)],
+    });
+
+    const data = await (await GET(req("?artist=7&within=dub-techno"))).json();
+    expect(data.items).toHaveLength(2);
+  });
+
+  it("rejects within without an artist", async () => {
+    expect((await GET(req("?genre=dub-techno&within=ambient"))).status).toBe(400);
+  });
+
   it("404s when nothing is playable", async () => {
     mockGetCityDetail.mockReturnValue({ roster: [rosterEntry(1)] });
     mockGetTracks.mockResolvedValue({ collection: [] });

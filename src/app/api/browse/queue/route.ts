@@ -11,7 +11,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSceneDetail } from "@/lib/browse/scene-store";
+import { foldTerm } from "@/lib/browse/slug";
 import { getCityDetail, getGenreDetail } from "@/lib/browse/store";
+import { parseTagList } from "@/lib/crawler/extract";
 import { getTracks } from "@/lib/soundcloud/official-cached-client";
 import { urnToId } from "@/lib/soundcloud/official-client";
 import { isTrackPlayable } from "@/lib/soundcloud/track-validation";
@@ -23,11 +25,14 @@ const querySchema = z
     city: z.string().min(1).max(100).optional(),
     scene: z.string().min(1).max(100).optional(),
     artist: z.coerce.number().int().positive().optional(),
+    /** Sound context for an artist queue: prefer tracks matching this sound. */
+    within: z.string().min(1).max(100).optional(),
   })
   .refine(
     (query) => [query.genre, query.city, query.scene, query.artist].filter(Boolean).length === 1,
     "Pass exactly one of: genre, city, scene, artist",
-  );
+  )
+  .refine((query) => !query.within || query.artist, "within requires artist");
 
 const SCENE_ARTIST_COUNT = 8;
 const TRACKS_PER_SCENE_ARTIST = 4;
@@ -55,6 +60,12 @@ function toQueueItem(track: SoundCloudTrack): QueueItem {
     artwork: track.artwork_url,
     type: "track",
   };
+}
+
+/** Does the track carry the sound, by folded genre field or any folded tag? */
+function matchesSound(track: SoundCloudTrack, soundFold: string): boolean {
+  if (foldTerm(track.genre ?? "") === soundFold) return true;
+  return parseTagList(track.tag_list).some((tag) => foldTerm(tag) === soundFold);
 }
 
 /** Round-robin across artists so a scene mix rotates voices. */
@@ -98,12 +109,20 @@ export async function GET(request: NextRequest) {
   const query = parsed.data;
 
   try {
-    let userIds: number[];
-    let perArtist: number;
+    let items: QueueItem[];
 
     if (query.artist) {
-      userIds = [query.artist];
-      perArtist = TRACKS_PER_SOLO_ARTIST;
+      const { collection } = await getTracks(query.artist, 50);
+      const playable = collection.filter(isTrackPlayable);
+      // In a sound context, a label/curator catalog spans everything —
+      // queue only tracks carrying the sound. Latest-anything is the
+      // fallback only when nothing in the catalog matches.
+      const soundFold = query.within ? foldTerm(query.within) : null;
+      const matched = soundFold
+        ? playable.filter((track) => matchesSound(track, soundFold))
+        : playable;
+      const pool = matched.length > 0 ? matched : playable;
+      items = pool.slice(0, TRACKS_PER_SOLO_ARTIST).map(toQueueItem);
     } else {
       const detail = query.genre
         ? getGenreDetail(query.genre)
@@ -113,11 +132,11 @@ export async function GET(request: NextRequest) {
       if (!detail) {
         return NextResponse.json({ error: "Unknown scene" }, { status: 404 });
       }
-      userIds = detail.roster.slice(0, SCENE_ARTIST_COUNT).map((artist) => urnToId(artist.urn));
-      perArtist = TRACKS_PER_SCENE_ARTIST;
+      const userIds = detail.roster
+        .slice(0, SCENE_ARTIST_COUNT)
+        .map((artist) => urnToId(artist.urn));
+      items = interleave(await tracksFor(userIds, TRACKS_PER_SCENE_ARTIST));
     }
-
-    const items = interleave(await tracksFor(userIds, perArtist));
     if (items.length === 0) {
       return NextResponse.json({ error: "No playable tracks in this scene yet" }, { status: 404 });
     }

@@ -52,6 +52,14 @@ describe("PlayButton", () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith("/api/browse/queue?artist=42"));
   });
 
+  it("carries the sound context on artist queues", async () => {
+    render(<PlayButton scope={{ artist: 42, within: "dub-techno" }} label="Yagya" />);
+    fireEvent.click(screen.getByRole("button"));
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith("/api/browse/queue?artist=42&within=dub-techno"),
+    );
+  });
+
   it("shows a failure state when the queue is empty", async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,

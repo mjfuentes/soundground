@@ -62,7 +62,7 @@ export default async function GenrePage({ params }: PageProps) {
             </div>
           </div>
           {roster.map((artist, index) => (
-            <ArtistRow key={artist.urn} rank={index + 1} artist={artist} />
+            <ArtistRow key={artist.urn} rank={index + 1} artist={artist} within={genre.slug} />
           ))}
         </div>
 

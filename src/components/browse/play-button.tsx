@@ -8,6 +8,8 @@ export interface PlayScope {
   city?: string;
   scene?: string;
   artist?: number;
+  /** With artist: prefer tracks carrying this sound (its slug). */
+  within?: string;
 }
 
 interface PlayButtonProps {
@@ -41,6 +43,7 @@ export function PlayButton({ scope, label, variant = "hint", size = 40 }: PlayBu
       if (scope.city) params.set("city", scope.city);
       if (scope.scene) params.set("scene", scope.scene);
       if (scope.artist) params.set("artist", String(scope.artist));
+      if (scope.within) params.set("within", scope.within);
       const response = await fetch(`/api/browse/queue?${params}`);
       if (!response.ok) {
         throw new Error(`Queue request failed (${response.status})`);

@@ -9,10 +9,12 @@ import { PlayButton } from "./play-button";
 interface ArtistRowProps {
   rank: number;
   artist: ResolvedRosterArtist;
+  /** Sound-page context: play only this artist's tracks in that sound. */
+  within?: string;
 }
 
-/** Ranked roster row shared by the genre and city pages. */
-export function ArtistRow({ rank, artist }: ArtistRowProps) {
+/** Ranked roster row shared by the sound, place, and circle pages. */
+export function ArtistRow({ rank, artist, within }: ArtistRowProps) {
   const context = [artist.cityRaw, artist.otherGenres.length > 0 ? `also in ${artist.otherGenres.join(", ")}` : null]
     .filter(Boolean)
     .join(" · ");
@@ -53,7 +55,11 @@ export function ArtistRow({ rank, artist }: ArtistRowProps) {
           <span className="text-[10px] text-sg-faint">plays</span>
         </div>
       )}
-      <PlayButton scope={{ artist: urnToId(artist.urn) }} label={artist.displayName} size={38} />
+      <PlayButton
+        scope={{ artist: urnToId(artist.urn), within }}
+        label={artist.displayName}
+        size={38}
+      />
     </div>
   );
 
