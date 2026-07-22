@@ -155,27 +155,44 @@ export class GraphRepository {
    * BFS silently under-explores (visit order is nondeterministic).
    */
   enqueue(urn: string, depth: number): void {
+    // Every re-sighting is another inbound edge — bump priority so the
+    // queue keeps approximating inbound-degree as the crawl discovers.
     this.db
       .prepare(
-        `INSERT INTO crawl_queue (urn, depth, status, attempts, enqueued_at)
-         VALUES (?, ?, 'pending', 0, ?)
+        `INSERT INTO crawl_queue (urn, depth, status, attempts, enqueued_at, priority)
+         VALUES (?, ?, 'pending', 0, ?, 0)
          ON CONFLICT(urn) DO UPDATE SET
            status = CASE
              WHEN excluded.depth < depth AND status IN ('done', 'failed') THEN 'pending'
              ELSE status
            END,
-           depth = MIN(depth, excluded.depth)`,
+           depth = MIN(depth, excluded.depth),
+           priority = priority + 1`,
       )
       .run(urn, depth, this.now());
   }
 
-  /** Claim the oldest pending item, marking it in_progress. */
+  /**
+   * One-off resync of queue priorities to observed inbound degree (the
+   * incremental bumps in enqueue only cover sightings after this run).
+   */
+  reprioritizeQueue(): number {
+    return this.db
+      .prepare(
+        `UPDATE crawl_queue SET priority =
+           (SELECT COUNT(*) FROM edges WHERE dst_urn = crawl_queue.urn)
+         WHERE status = 'pending'`,
+      )
+      .run().changes;
+  }
+
+  /** Claim the most-wanted pending item (inbound-degree first), marking it in_progress. */
   claimNext(): QueueItem | null {
     const claim = this.db.transaction((): QueueItem | null => {
       const row = this.db
         .prepare(
           `SELECT urn, depth, attempts FROM crawl_queue
-           WHERE status = 'pending' ORDER BY depth, enqueued_at LIMIT 1`,
+           WHERE status = 'pending' ORDER BY priority DESC, depth, enqueued_at LIMIT 1`,
         )
         .get() as QueueItem | undefined;
       if (!row) return null;

@@ -103,6 +103,13 @@ export class Crawler {
       this.repo.enqueue(urn, 0);
     }
 
+    // Value-density ordering (ideas/0004 C1): sync pending priorities to
+    // inbound degree so scene-central unknowns are visited first.
+    const reprioritized = this.repo.reprioritizeQueue();
+    if (reprioritized > 0) {
+      this.log(`reprioritized ${reprioritized} pending items by inbound degree`);
+    }
+
     const deadline = this.config.maxRuntimeMs ? Date.now() + this.config.maxRuntimeMs : null;
     let consecutiveFailures = 0;
     for (;;) {

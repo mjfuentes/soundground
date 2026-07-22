@@ -120,6 +120,29 @@ describe("GraphRepository", () => {
       expect(repo.claimNext()).toBeNull();
     });
 
+    it("claims re-sighted items first: every re-enqueue bumps priority", () => {
+      repo.enqueue("soundcloud:users:1", 1);
+      repo.enqueue("soundcloud:users:2", 1);
+      repo.enqueue("soundcloud:users:2", 1); // second sighting
+      expect(repo.claimNext()?.urn).toBe("soundcloud:users:2");
+    });
+
+    it("reprioritizes pending items by observed inbound degree", () => {
+      repo.enqueue("soundcloud:users:1", 1);
+      repo.enqueue("soundcloud:users:2", 1);
+      for (const src of ["a", "b", "c"]) {
+        repo.recordEdge({
+          srcUrn: src,
+          dstUrn: "soundcloud:users:2",
+          type: "follow",
+          weight: 1,
+          source: "t",
+        });
+      }
+      expect(repo.reprioritizeQueue()).toBe(2);
+      expect(repo.claimNext()?.urn).toBe("soundcloud:users:2");
+    });
+
     it("ignores re-enqueues at the same or deeper depth", () => {
       repo.enqueue("soundcloud:users:1", 1);
       repo.claimNext();

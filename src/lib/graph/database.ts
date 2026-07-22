@@ -121,4 +121,11 @@ function migrate(db: Database.Database): void {
       db.exec(`ALTER TABLE artists ADD COLUMN ${column} INTEGER`);
     }
   }
+
+  // Priority crawling (ideas/0004 C1): pending items with more inbound
+  // edges are crawled first — scene-central unknowns over random frontier.
+  const queueColumns = db.prepare(`PRAGMA table_info(crawl_queue)`).all() as { name: string }[];
+  if (!queueColumns.some((c) => c.name === "priority")) {
+    db.exec(`ALTER TABLE crawl_queue ADD COLUMN priority INTEGER NOT NULL DEFAULT 0`);
+  }
 }
