@@ -10,7 +10,12 @@
  */
 
 import type { Database } from "better-sqlite3";
-import { EMPTY_CITY_CANON, type CityCanon } from "./canon";
+import {
+  EMPTY_ACCOUNT_CANON,
+  EMPTY_CITY_CANON,
+  type AccountCanon,
+  type CityCanon,
+} from "./canon";
 import { isFormatTerm } from "./format-terms";
 import { foldTerm, mostFrequent, slugify, titleCase } from "./slug";
 
@@ -146,7 +151,14 @@ export function aggregate(
   config: AggregateConfig = DEFAULT_AGGREGATE_CONFIG,
   now: () => string = () => new Date().toISOString(),
   canon: CityCanon = EMPTY_CITY_CANON,
+  accountCanon: AccountCanon = EMPTY_ACCOUNT_CANON,
 ): AggregateReport {
+  // Hub names never become genres: "Rinse FM" as a track's genre field is
+  // a radio rip's provenance, not a sound.
+  const hubFolds = new Set([
+    ...[...accountCanon.hubPermalinks].map(foldTerm),
+    ...accountCanon.hubTermFolds,
+  ]);
   const terms = db.prepare(`SELECT artist_urn, term, kind, evidence FROM artist_terms`).all() as TermRow[];
   const artists = db
     .prepare(
@@ -204,7 +216,8 @@ export function aggregate(
   );
   const isCityDominated = (key: string) =>
     (cityCounts.get(key) ?? 0) >= (genreDeclarers.get(key)?.size ?? 0);
-  const isExcludedGenreKey = (key: string) => isFormatTerm(key) || isCityDominated(key);
+  const isExcludedGenreKey = (key: string) =>
+    isFormatTerm(key) || hubFolds.has(key) || isCityDominated(key);
 
   const overThreshold = [...genreDeclarers.entries()].filter(
     ([, urns]) => urns.size >= config.minGenreArtists,
@@ -214,7 +227,7 @@ export function aggregate(
     .map(([key, urns]) => ({
       term: mostFrequent(spellingCounts.get(key)!) ?? key,
       artists: urns.size,
-      reason: isFormatTerm(key) ? ("format" as const) : ("city" as const),
+      reason: isCityDominated(key) ? ("city" as const) : ("format" as const),
     }))
     .sort((a, b) => b.artists - a.artists);
 

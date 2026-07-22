@@ -9,7 +9,7 @@
 import { parseArgs } from "util";
 import { openGraphDatabase } from "@/lib/graph/database";
 import { aggregate, DEFAULT_AGGREGATE_CONFIG } from "@/lib/browse/aggregate";
-import { loadCityCanon } from "@/lib/browse/canon";
+import { loadAccountCanon, loadCityCanon } from "@/lib/browse/canon";
 
 function log(message: string): void {
   process.stdout.write(`[aggregate] ${message}\n`);
@@ -33,11 +33,15 @@ function main(): void {
   };
 
   const canon = loadCityCanon();
-  log(`canon: ${canon.aliases.size} city aliases · ${canon.nonPlaces.size} non-places`);
+  const accountCanon = loadAccountCanon();
+  log(
+    `canon: ${canon.aliases.size} city aliases · ${canon.nonPlaces.size} non-places · ` +
+      `${accountCanon.hubPermalinks.size} hub accounts`,
+  );
 
   const db = openGraphDatabase(values.db);
   try {
-    const report = aggregate(db, config, undefined, canon);
+    const report = aggregate(db, config, undefined, canon, accountCanon);
     log(
       `${report.genres} genres · ${report.cities} cities · ` +
         `${report.genreMemberships} genre memberships · ${report.cityMemberships} city memberships`,

@@ -48,6 +48,24 @@ describe("aggregate", () => {
     expect(berlin.artist_count).toBe(3);
   });
 
+  it("never lets hub names become genres", () => {
+    // Both artists declare genre "Rinse FM" — a radio's name, not a sound.
+    const repo = new GraphRepository(db, () => "2026-07-20T00:00:00.000Z");
+    for (const id of [1, 2, 3]) {
+      repo.recordTerm({
+        artistUrn: `soundcloud:users:${id}`,
+        term: "rinse fm",
+        kind: "genre",
+        evidence: 3,
+      });
+    }
+    aggregate(db, FIXTURE_CONFIG, () => "2026-07-21T12:00:00.000Z", undefined, {
+      hubPermalinks: new Set(["rinsefm"]),
+      hubTermFolds: new Set(),
+    });
+    expect(db.prepare(`SELECT * FROM browse_genres WHERE slug = 'rinse-fm'`).get()).toBeUndefined();
+  });
+
   it("merges canon aliases under the canonical name", () => {
     addArtist(31, "NYC");
     addArtist(32, "New York");
