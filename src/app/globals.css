@@ -27,6 +27,7 @@
   --color-sg-ghost: #3f3f3d;
   --color-sg-line: rgba(255, 255, 255, 0.09);
   --color-sg-line-soft: rgba(255, 255, 255, 0.07);
+  --color-sg-line-faint: rgba(255, 255, 255, 0.05);
   --color-sg-line-strong: rgba(255, 255, 255, 0.14);
   --color-sg-line-bold: rgba(255, 255, 255, 0.25);
   --animate-sgpulse: sgpulse 2s ease-in-out infinite;
@@ -119,3 +120,4 @@ h1, h2, h3, h4, h5, h6 {
 @view-transition {
   navigation: auto;
 }
+

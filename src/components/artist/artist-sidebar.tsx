@@ -54,7 +54,7 @@ export function ReleasesList({
         return (
           <div
             key={album.id}
-            className="flex items-center gap-3.5 border-b border-sg-line-soft py-2.5"
+            className="flex items-center gap-3.5 border-b border-sg-line-faint py-2.5"
           >
             {album.artwork_url ? (
               <Image
