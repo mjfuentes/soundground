@@ -34,6 +34,7 @@ export default async function SoundInPlacePage({ params }: PageProps) {
   }
 
   const roster = await resolveRoster(detail.roster);
+  const hubs = await resolveRoster(detail.hubs);
 
   return (
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
@@ -43,7 +44,7 @@ export default async function SoundInPlacePage({ params }: PageProps) {
         name={`${detail.genreName} in ${detail.cityName}`}
         activity={null}
         activeNow={false}
-        stats={`${detail.artistCount} artists`}
+        stats={`${detail.artistCount} artists${detail.hubCount > 0 ? ` + ${detail.hubCount} label${detail.hubCount === 1 ? "" : "s"}` : ""}`}
         playScope={{ genre: detail.genreSlug, city: detail.citySlug }}
       />
 
@@ -60,6 +61,22 @@ export default async function SoundInPlacePage({ params }: PageProps) {
           {roster.map((artist, index) => (
             <ArtistRow key={artist.urn} rank={index + 1} artist={artist} within={detail.genreSlug} />
           ))}
+
+          {hubs.length > 0 && (
+            <>
+              <div className="mb-2 mt-10 flex items-baseline justify-between">
+                <div className="font-sg-mono text-[11px] uppercase tracking-[0.18em] text-sg-muted">
+                  Labels &amp; hubs
+                </div>
+                <div className="font-sg-mono text-[10.5px] text-sg-faint">
+                  the institutions here
+                </div>
+              </div>
+              {hubs.map((hub, index) => (
+                <ArtistRow key={hub.urn} rank={index + 1} artist={hub} within={detail.genreSlug} />
+              ))}
+            </>
+          )}
         </div>
 
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">

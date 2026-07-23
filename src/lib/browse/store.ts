@@ -338,7 +338,10 @@ export interface IntersectionDetail {
   citySlug: string;
   cityName: string;
   artistCount: number;
+  hubCount: number;
   roster: RosterArtist[];
+  /** Labels/radios/promo in the intersection (persisted classification). */
+  hubs: RosterArtist[];
 }
 
 /**
@@ -364,7 +367,7 @@ export function getSoundInPlace(
   const members = db
     .prepare(
       `SELECT a.urn, a.permalink, a.city_raw, a.followers_count, a.plays_total,
-              a.likes_total, a.comments_total, a.track_count
+              a.likes_total, a.comments_total, a.track_count, a.account_kind
        FROM artist_genres ag
        JOIN artist_cities ac ON ac.artist_urn = ag.artist_urn
        JOIN artists a ON a.urn = ag.artist_urn
@@ -382,10 +385,11 @@ export function getSoundInPlace(
     likes_total: number | null;
     comments_total: number | null;
     track_count: number | null;
+    account_kind: string | null;
   }[];
   if (members.length === 0) return null;
 
-  const roster = members.slice(0, rosterSize).map((row) => ({
+  const toEntry = (row: (typeof members)[number]) => ({
     urn: row.urn,
     permalink: row.permalink,
     cityRaw: row.city_raw,
@@ -396,15 +400,19 @@ export function getSoundInPlace(
     comments: row.comments_total ?? 0,
     trackCount: row.track_count,
     otherGenres: [] as string[],
-  }));
+  });
+  const artistMembers = members.filter((row) => row.account_kind !== "hub");
+  const hubMembers = members.filter((row) => row.account_kind === "hub");
 
   return {
     genreSlug,
     genreName: genre.name,
     citySlug,
     cityName: city.name,
-    artistCount: members.length,
-    roster,
+    artistCount: artistMembers.length,
+    hubCount: hubMembers.length,
+    roster: artistMembers.slice(0, rosterSize).map(toEntry),
+    hubs: hubMembers.slice(0, 12).map(toEntry),
   };
 }
 

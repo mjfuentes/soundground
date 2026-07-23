@@ -64,6 +64,7 @@ interface ArtistRow {
   plays_total: number | null;
   likes_total: number | null;
   comments_total: number | null;
+  account_kind: string | null;
 }
 
 const DERIVED_SCHEMA = `
@@ -163,7 +164,7 @@ export function aggregate(
   const artists = db
     .prepare(
       `SELECT urn, permalink, city_raw, country_code, last_upload_at, track_count,
-              followers_count, plays_total, likes_total, comments_total
+              followers_count, plays_total, likes_total, comments_total, account_kind
        FROM artists`,
     )
     .all() as ArtistRow[];
@@ -310,7 +311,10 @@ export function aggregate(
    */
   function rankRoster(memberUrns: Set<string>, candidates?: Set<string>): RosterEntry[] {
     const pool = candidates ?? memberUrns;
+    // Hubs (labels/radios/promo, classified by the scenes run) stay out of
+    // display rosters; they still count as members and carry edges.
     return [...pool]
+      .filter((urn) => artistByUrn.get(urn)?.account_kind !== "hub")
       .map((urn) => {
         const artist = artistByUrn.get(urn);
         const connections = (adjacency.get(urn) ?? []).reduce(

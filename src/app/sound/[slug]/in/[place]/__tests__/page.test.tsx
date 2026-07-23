@@ -19,6 +19,8 @@ const detail: IntersectionDetail = {
   citySlug: "berlin",
   cityName: "Berlin",
   artistCount: 2,
+  hubCount: 0,
+  hubs: [],
   roster: [
     {
       urn: "soundcloud:users:1",

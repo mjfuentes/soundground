@@ -138,4 +138,10 @@ function migrate(db: Database.Database): void {
   if (!sceneColumns.some((c) => c.name === "hub_count")) {
     db.exec(`ALTER TABLE scenes ADD COLUMN hub_count INTEGER NOT NULL DEFAULT 0`);
   }
+
+  // Persisted artist/hub classification (B4), written by the scenes run so
+  // every surface (sound/place/intersection rosters) can split consistently.
+  if (!columns.some((c) => c.name === "account_kind")) {
+    db.exec(`ALTER TABLE artists ADD COLUMN account_kind TEXT`);
+  }
 }

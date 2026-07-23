@@ -461,6 +461,12 @@ export function computeScenes(
 
   const timestamp = now();
   db.transaction(() => {
+    // Persist the classification for every known account so other
+    // surfaces (sound/place/intersection rosters) split the same way.
+    db.prepare(`UPDATE artists SET account_kind = 'artist' WHERE account_kind IS NOT 'artist'`).run();
+    const markHub = db.prepare(`UPDATE artists SET account_kind = 'hub' WHERE urn = ?`);
+    for (const urn of hubSet) markHub.run(urn);
+
     db.prepare(`DELETE FROM scene_members`).run();
     db.prepare(`DELETE FROM scenes`).run();
     const insertScene = db.prepare(
