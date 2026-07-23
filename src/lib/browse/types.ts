@@ -7,6 +7,8 @@ export interface GenreSummary {
   slug: string;
   name: string;
   artistCount: number;
+  /** Label/hub members, counted separately ("+ N labels"). */
+  hubCount: number;
   /** Names of the genres this genre's artists most co-occur with. */
   relatedNames: string[];
   topCity: string | null;
@@ -23,6 +25,7 @@ export interface CitySummary {
   /** Full country name ("United States") — the API supplies names, not codes. */
   country: string | null;
   artistCount: number;
+  hubCount: number;
   topGenre: string | null;
   activity: string | null;
   activeNow: boolean;
@@ -50,12 +53,15 @@ export interface LinkedCount {
 
 export interface GenreDetail extends GenreSummary {
   roster: RosterArtist[];
+  /** Labels/radios/promo carrying this sound. */
+  hubs: RosterArtist[];
   cities: LinkedCount[];
   related: LinkedCount[];
 }
 
 export interface CityDetail extends CitySummary {
   roster: RosterArtist[];
+  hubs: RosterArtist[];
   genres: LinkedCount[];
   otherCities: LinkedCount[];
 }

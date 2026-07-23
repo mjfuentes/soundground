@@ -44,7 +44,7 @@ jest.mock("@/lib/browse/store", () => ({
 }));
 
 jest.mock("@/lib/browse/resolve-artists", () => ({
-  resolveRoster: jest.fn(async () => [sampleResolvedArtist]),
+  resolveRoster: jest.fn(async (roster: unknown[]) => (roster.length > 0 ? [sampleResolvedArtist] : [])),
 }));
 
 const props = (slug: string, place: string) => ({ params: Promise.resolve({ slug, place }) });

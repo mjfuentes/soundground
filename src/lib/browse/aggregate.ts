@@ -97,7 +97,9 @@ const DERIVED_SCHEMA = `
     artist_count INTEGER NOT NULL,
     top_city_slug TEXT,
     top_terms TEXT NOT NULL,
-    roster TEXT NOT NULL
+    roster TEXT NOT NULL,
+    hub_count INTEGER NOT NULL DEFAULT 0,
+    hub_roster TEXT NOT NULL DEFAULT '[]'
   );
 
   CREATE TABLE browse_cities (
@@ -106,7 +108,9 @@ const DERIVED_SCHEMA = `
     country TEXT,
     artist_count INTEGER NOT NULL,
     top_genre_slug TEXT,
-    roster TEXT NOT NULL
+    roster TEXT NOT NULL,
+    hub_count INTEGER NOT NULL DEFAULT 0,
+    hub_roster TEXT NOT NULL DEFAULT '[]'
   );
 
   CREATE TABLE browse_genre_city (
@@ -309,12 +313,18 @@ export function aggregate(
    * restricts who may appear (genre previews use primary-genre assignment)
    * while degree is still computed against the full member set.
    */
-  function rankRoster(memberUrns: Set<string>, candidates?: Set<string>): RosterEntry[] {
+  const isHubUrn = (urn: string) => artistByUrn.get(urn)?.account_kind === "hub";
+
+  function rankRoster(
+    memberUrns: Set<string>,
+    candidates?: Set<string>,
+    kind: "artist" | "hub" = "artist",
+  ): RosterEntry[] {
     const pool = candidates ?? memberUrns;
-    // Hubs (labels/radios/promo, classified by the scenes run) stay out of
-    // display rosters; they still count as members and carry edges.
+    // Artists and hubs (labels/radios/promo, classified by the scenes run)
+    // rank in separate rosters; both count as members and carry edges.
     return [...pool]
-      .filter((urn) => artistByUrn.get(urn)?.account_kind !== "hub")
+      .filter((urn) => (kind === "hub") === isHubUrn(urn))
       .map((urn) => {
         const artist = artistByUrn.get(urn);
         const connections = (adjacency.get(urn) ?? []).reduce(
@@ -399,12 +409,14 @@ export function aggregate(
       `INSERT INTO artist_cities (artist_urn, city_slug) VALUES (?, ?)`,
     );
     const insertGenre = db.prepare(
-      `INSERT INTO browse_genres (slug, name, artist_count, top_city_slug, top_terms, roster)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO browse_genres (slug, name, artist_count, top_city_slug, top_terms, roster,
+                                  hub_count, hub_roster)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const insertCity = db.prepare(
-      `INSERT INTO browse_cities (slug, name, country, artist_count, top_genre_slug, roster)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO browse_cities (slug, name, country, artist_count, top_genre_slug, roster,
+                                  hub_count, hub_roster)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const insertGenreCity = db.prepare(
       `INSERT INTO browse_genre_city (genre_slug, city_slug, artist_count) VALUES (?, ?, ?)`,
@@ -457,15 +469,18 @@ export function aggregate(
         .slice(0, 3)
         .map(([slug]) => slug);
 
+      const hubMembers = [...members].filter(isHubUrn).length;
       insertGenre.run(
         genre.slug,
         genre.name,
-        members.size,
+        members.size - hubMembers,
         mostFrequent(cityCounts),
         JSON.stringify(topTerms),
         JSON.stringify(
           withOtherGenres(rankRoster(members, previewPool(genre.slug, members)), genre.slug),
         ),
+        hubMembers,
+        JSON.stringify(withOtherGenres(rankRoster(members, undefined, "hub"), genre.slug)),
       );
     }
 
@@ -475,13 +490,16 @@ export function aggregate(
       for (const urn of members) {
         for (const slug of genresOfArtist.get(urn) ?? []) bump(genreCounts, slug);
       }
+      const hubMembers = [...members].filter(isHubUrn).length;
       insertCity.run(
         city.slug,
         city.name,
         city.country,
-        members.size,
+        members.size - hubMembers,
         mostFrequent(genreCounts),
         JSON.stringify(withOtherGenres(rankRoster(members))),
+        hubMembers,
+        JSON.stringify(withOtherGenres(rankRoster(members, undefined, "hub"))),
       );
     }
 

@@ -29,6 +29,7 @@ const detail: CityDetail = {
       otherGenres: ["Ambient"],
     },
   ],
+  hubs: [],
   genres: [{ slug: "dub-techno", name: "Dub Techno", count: 2 }],
   otherCities: [{ slug: "tokyo", name: "Tokyo", count: 2 }],
 };
@@ -39,7 +40,7 @@ jest.mock("@/lib/browse/store", () => ({
 }));
 
 jest.mock("@/lib/browse/resolve-artists", () => ({
-  resolveRoster: jest.fn(async () => [sampleResolvedArtist]),
+  resolveRoster: jest.fn(async (roster: unknown[]) => (roster.length > 0 ? [sampleResolvedArtist] : [])),
 }));
 
 const props = (slug: string) => ({ params: Promise.resolve({ slug }) });

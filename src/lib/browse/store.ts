@@ -154,6 +154,8 @@ interface GenreRow {
   top_city_slug: string | null;
   top_terms: string;
   roster: string;
+  hub_count: number;
+  hub_roster: string;
 }
 
 interface CityRow {
@@ -163,6 +165,8 @@ interface CityRow {
   artist_count: number;
   top_genre_slug: string | null;
   roster: string;
+  hub_count: number;
+  hub_roster: string;
 }
 
 function genreSummary(
@@ -181,6 +185,7 @@ function genreSummary(
     slug: row.slug,
     name: row.name,
     artistCount: row.artist_count,
+    hubCount: row.hub_count ?? 0,
     relatedNames: (JSON.parse(row.top_terms) as string[]).map((slug) => genreName(db, slug)),
     topCity: cityName,
     activity: activityLine(counts),
@@ -203,6 +208,7 @@ function citySummary(
     name: row.name,
     country: row.country,
     artistCount: row.artist_count,
+    hubCount: row.hub_count ?? 0,
     topGenre: row.top_genre_slug ? genreName(db, row.top_genre_slug) : null,
     activity: activityLine(counts),
     activeNow: counts.activeNow,
@@ -327,6 +333,10 @@ export function getGenreDetail(slug: string, now: number = Date.now()): GenreDet
       ...artist,
       otherGenres: artist.otherGenres.map((s) => genreName(db, s)),
     })),
+    hubs: parseRoster(row.hub_roster ?? "[]").map((artist) => ({
+      ...artist,
+      otherGenres: artist.otherGenres.map((s) => genreName(db, s)),
+    })),
     cities,
     related,
   };
@@ -442,6 +452,10 @@ export function getCityDetail(slug: string, now: number = Date.now()): CityDetai
   return {
     ...citySummary(db, row, now),
     roster: parseRoster(row.roster).map((artist) => ({
+      ...artist,
+      otherGenres: artist.otherGenres.map((s) => genreName(db, s)),
+    })),
+    hubs: parseRoster(row.hub_roster ?? "[]").map((artist) => ({
       ...artist,
       otherGenres: artist.otherGenres.map((s) => genreName(db, s)),
     })),

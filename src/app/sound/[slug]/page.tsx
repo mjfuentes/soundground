@@ -37,6 +37,7 @@ export default async function GenrePage({ params }: PageProps) {
   }
 
   const roster = await resolveRoster(genre.roster);
+  const hubs = await resolveRoster(genre.hubs);
   const scenes = scenesForGenre(genre.slug);
 
   return (
@@ -47,7 +48,7 @@ export default async function GenrePage({ params }: PageProps) {
         name={genre.name}
         activity={genre.activity}
         activeNow={genre.activeNow}
-        stats={`${genre.artistCount} artists${genre.topCity ? ` · strongest in ${genre.topCity}` : ""}`}
+        stats={`${genre.artistCount} artists${genre.hubCount > 0 ? ` + ${genre.hubCount} label${genre.hubCount === 1 ? "" : "s"}` : ""}${genre.topCity ? ` · strongest in ${genre.topCity}` : ""}`}
         playScope={{ genre: genre.slug }}
       />
 
@@ -64,6 +65,21 @@ export default async function GenrePage({ params }: PageProps) {
           {roster.map((artist, index) => (
             <ArtistRow key={artist.urn} rank={index + 1} artist={artist} within={genre.slug} />
           ))}
+          {hubs.length > 0 && (
+            <>
+              <div className="mb-2 mt-10 flex items-baseline justify-between">
+                <div className="font-sg-mono text-[11px] uppercase tracking-[0.18em] text-sg-muted">
+                  Labels &amp; hubs
+                </div>
+                <div className="font-sg-mono text-[10.5px] text-sg-faint">
+                  the institutions here
+                </div>
+              </div>
+              {hubs.map((hub, index) => (
+                <ArtistRow key={hub.urn} rank={index + 1} artist={hub} within={genre.slug} />
+              ))}
+            </>
+          )}
         </div>
 
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">

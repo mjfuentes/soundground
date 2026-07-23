@@ -29,6 +29,7 @@ const detail: GenreDetail = {
       otherGenres: ["Ambient"],
     },
   ],
+  hubs: [],
   cities: [{ slug: "berlin", name: "Berlin", count: 2 }],
   related: [{ slug: "ambient", name: "Ambient", count: 2 }],
 };
@@ -47,7 +48,7 @@ jest.mock("@/lib/browse/scene-store", () => ({
 }));
 
 jest.mock("@/lib/browse/resolve-artists", () => ({
-  resolveRoster: jest.fn(async () => [sampleResolvedArtist]),
+  resolveRoster: jest.fn(async (roster: unknown[]) => (roster.length > 0 ? [sampleResolvedArtist] : [])),
 }));
 
 const props = (slug: string) => ({ params: Promise.resolve({ slug }) });
