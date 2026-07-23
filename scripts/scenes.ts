@@ -12,6 +12,8 @@ import { parseArgs } from "util";
 import { loadAccountCanon } from "@/lib/browse/canon";
 import { openGraphDatabase } from "@/lib/graph/database";
 import { computeScenes, DEFAULT_SCENE_COMPUTE_CONFIG } from "@/lib/graph/scenes";
+import { peekUser } from "@/lib/soundcloud/official-cached-client";
+import { urnToId } from "@/lib/soundcloud/official-client";
 
 function log(message: string): void {
   process.stdout.write(`[scenes] ${message}\n`);
@@ -53,7 +55,16 @@ function main(): void {
   const db = openGraphDatabase(values.db);
   try {
     const started = Date.now();
-    const report = computeScenes(db, config, undefined, accountCanon);
+    // Text classification reads cached profiles — disk only, zero API calls.
+    const peekProfile = (urn: string) => {
+      try {
+        const user = peekUser(urnToId(urn));
+        return user ? { username: user.username, description: user.description } : null;
+      } catch {
+        return null;
+      }
+    };
+    const report = computeScenes(db, config, undefined, accountCanon, peekProfile);
     const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
     log(

@@ -35,6 +35,7 @@ const accountCanonSchema = z.object({
   $comment: z.string().optional(),
   hubs: z.array(z.string().min(1)).default([]),
   hubTerms: z.array(z.string().min(1)).default([]),
+  artists: z.array(z.string().min(1)).default([]),
 });
 
 export interface AccountCanon {
@@ -42,11 +43,14 @@ export interface AccountCanon {
   hubPermalinks: ReadonlySet<string>;
   /** Fold keys of institution tag-spellings that differ from permalinks. */
   hubTermFolds: ReadonlySet<string>;
+  /** Force-artist overrides for classifier misfires. Wins over everything. */
+  artistPermalinks: ReadonlySet<string>;
 }
 
 export const EMPTY_ACCOUNT_CANON: AccountCanon = {
   hubPermalinks: new Set(),
   hubTermFolds: new Set(),
+  artistPermalinks: new Set(),
 };
 
 export function defaultAccountCanonPath(): string {
@@ -62,6 +66,7 @@ export function loadAccountCanon(filePath: string = defaultAccountCanonPath()): 
     return {
       hubPermalinks: new Set(parsed.hubs.map((permalink) => permalink.toLowerCase())),
       hubTermFolds: new Set(parsed.hubTerms.map(foldTerm).filter(Boolean)),
+      artistPermalinks: new Set(parsed.artists.map((permalink) => permalink.toLowerCase())),
     };
   } catch (error) {
     throw new Error(

@@ -62,6 +62,7 @@ describe("aggregate", () => {
     aggregate(db, FIXTURE_CONFIG, () => "2026-07-21T12:00:00.000Z", undefined, {
       hubPermalinks: new Set(["rinsefm"]),
       hubTermFolds: new Set(),
+      artistPermalinks: new Set(),
     });
     expect(db.prepare(`SELECT * FROM browse_genres WHERE slug = 'rinse-fm'`).get()).toBeUndefined();
   });

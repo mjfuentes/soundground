@@ -146,6 +146,25 @@ describe("computeScenes", () => {
     db.close();
   });
 
+  it("classifies hubs from cached profile text when a peek is provided", () => {
+    const db = buildAggregatedTwoSceneDb();
+    // Artist 4's cached profile declares label-ness.
+    computeScenes(db, TEST_CONFIG, undefined, undefined, (urn) =>
+      urn === "soundcloud:users:4"
+        ? { username: "Quiet Fog Records", description: "Dub techno record label." }
+        : null,
+    );
+
+    const berlin = readScenes(db).find((scene) => scene.name === "Berlin Dub Techno")!;
+    const rosterUrns = (JSON.parse(berlin.roster) as RosterEntry[]).map((entry) => entry.urn);
+    const hubUrns = (JSON.parse((berlin as SceneRow & { hubs: string }).hubs) as RosterEntry[]).map(
+      (entry) => entry.urn,
+    );
+    expect(rosterUrns).not.toContain(urn(4));
+    expect(hubUrns).toContain(urn(4));
+    db.close();
+  });
+
   it("assigns collision-free slugs even against suffixed names", () => {
     const { assignSlugs } = jest.requireActual<typeof import("../scenes")>("../scenes");
     // "Techno 5"'s base slug collides with the suffixed fallback of the

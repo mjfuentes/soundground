@@ -9,7 +9,6 @@ import type { Database } from "better-sqlite3";
 import type { RosterEntry } from "@/lib/browse/aggregate";
 import { EMPTY_ACCOUNT_CANON, type AccountCanon } from "@/lib/browse/canon";
 import { foldTerm, mostFrequent, slugify, titleCase } from "@/lib/browse/slug";
-import { classifyHubs } from "./hubs";
 import {
   DEFAULT_COMMUNITY_CONFIG,
   buildSceneGraph,
@@ -25,6 +24,7 @@ import {
   symmetrize,
   type EdgeWeightConfig,
 } from "./edge-weights";
+import { classifyHubs, type HubProfileText } from "./hubs";
 import { DEFAULT_IDENTITY_CONFIG, matchSceneIds, type IdentityConfig } from "./scene-identity";
 import {
   DEFAULT_SCENE_NAMING_CONFIG,
@@ -42,8 +42,8 @@ export interface SceneComputeConfig {
   rosterSize: number;
 }
 
-/** Hubs shown per scene ("Hubs & labels" strip). */
-const HUBS_PER_SCENE = 6;
+/** Hubs ranked per scene ("Labels & hubs" roster). */
+const HUBS_PER_SCENE = 12;
 
 export const DEFAULT_SCENE_COMPUTE_CONFIG: SceneComputeConfig = {
   edgeWeights: DEFAULT_EDGE_WEIGHT_CONFIG,
@@ -321,6 +321,8 @@ export function computeScenes(
   config: SceneComputeConfig = DEFAULT_SCENE_COMPUTE_CONFIG,
   now: () => string = () => new Date().toISOString(),
   accountCanon: AccountCanon = EMPTY_ACCOUNT_CANON,
+  /** Cached-profile reader for text classification; injected so tests stay hermetic. */
+  peekProfile: (urn: string) => HubProfileText | null = () => null,
 ): SceneComputeReport {
   // 1. Weights (B1): discounted directed strengths, symmetrized.
   const pairs = loadDirectedPairs(db);
@@ -375,6 +377,7 @@ export function computeScenes(
       trackCount: row.track_count,
     })),
     accountCanon,
+    peekProfile,
   );
 
   // 5. Names (A2).

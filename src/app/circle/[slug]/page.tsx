@@ -66,6 +66,22 @@ export default async function ScenePage({ params }: PageProps) {
           {roster.map((artist, index) => (
             <ArtistRow key={artist.urn} rank={index + 1} artist={artist} withinCircle={scene.slug} />
           ))}
+
+          {hubs.length > 0 && (
+            <>
+              <div className="mb-2 mt-10 flex items-baseline justify-between">
+                <div className="font-sg-mono text-[11px] uppercase tracking-[0.18em] text-sg-muted">
+                  Labels &amp; hubs
+                </div>
+                <div className="font-sg-mono text-[10.5px] text-sg-faint">
+                  the institutions this circle moves through
+                </div>
+              </div>
+              {hubs.map((hub, index) => (
+                <ArtistRow key={hub.urn} rank={index + 1} artist={hub} withinCircle={scene.slug} />
+              ))}
+            </>
+          )}
         </div>
 
         <aside className="flex flex-col gap-8 pt-6 lg:flex-1">
@@ -79,15 +95,6 @@ export default async function ScenePage({ params }: PageProps) {
                   href: genreSlugs.has(tagSlug) ? `/sound/${tagSlug}` : undefined,
                 };
               })}
-            />
-          )}
-          {hubs.length > 0 && (
-            <IntersectionList
-              heading="Hubs & labels"
-              items={hubs.map((hub) => ({
-                label: hub.displayName,
-                href: hub.profileHref ?? undefined,
-              }))}
             />
           )}
           {scene.genres.length > 0 && (

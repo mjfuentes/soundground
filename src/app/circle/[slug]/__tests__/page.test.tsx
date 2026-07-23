@@ -82,7 +82,7 @@ describe("ScenePage", () => {
 
   it("lists the scene's hubs separately from the artist roster", async () => {
     render(await ScenePage(props("berlin-dub-techno")));
-    expect(screen.getByText("Hubs & labels")).toBeInTheDocument();
+    expect(screen.getByText("Labels & hubs")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Dub Radio/ })).toHaveAttribute("href", "/dub-radio");
   });
 
