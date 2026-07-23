@@ -61,7 +61,24 @@ export function SpotlightGrid({ tracks }: { tracks: readonly SoundCloudTrack[] }
         {tracks.slice(0, 3).map((track) => (
           <div key={track.id} className="border border-sg-line bg-sg-surface">
             <div className="relative aspect-square">
-              <Artwork url={track.artwork_url?.replace("-large", "-t300x300")} size={300} />
+              {track.artwork_url ? (
+                <Image
+                  src={track.artwork_url.replace("-large", "-t500x500")}
+                  alt=""
+                  fill
+                  sizes="(min-width: 640px) 33vw, 50vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div
+                  aria-hidden
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "repeating-linear-gradient(45deg,#181818 0 6px,#101010 6px 12px)",
+                  }}
+                />
+              )}
               <div className="absolute bottom-3 left-3">
                 <TrackPlayButton track={toPlayable(track)} queue={queue} size={40} variant="solid" />
               </div>
