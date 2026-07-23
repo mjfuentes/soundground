@@ -6,13 +6,10 @@ import { Header } from "./header";
 export function ConditionalHeader() {
   const pathname = usePathname();
 
-  // Don't show the legacy header on browse surfaces — they render BrowseHeader themselves
-  if (
-    pathname === "/" ||
-    pathname.startsWith("/sound/") ||
-    pathname.startsWith("/place/") ||
-    pathname.startsWith("/circle/")
-  ) {
+  // The legacy header survives only on legacy surfaces (track/playlist
+  // pages). Everything else — home, browse pages, artist pages — renders
+  // BrowseHeader itself.
+  if (!pathname.startsWith("/track/") && !pathname.startsWith("/playlist/")) {
     return null;
   }
   
