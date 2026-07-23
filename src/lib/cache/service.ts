@@ -105,6 +105,20 @@ export class CacheService {
   }
 
   /**
+   * Like peekRetained but extracts one JSON field in SQL — no full-object
+   * parse. Built for bulk cache-only reads (thousands of avatar lookups
+   * per render). `path` is a json_extract path without the leading `$.`.
+   */
+  peekRetainedField(key: string, path: string): string | null {
+    const row = this.db
+      .prepare(
+        `SELECT json_extract(value, ?) AS field FROM cache WHERE key = ? AND expires_at > ?`,
+      )
+      .get(`$.${path}`, key, Date.now()) as { field: string | null } | undefined;
+    return row?.field ?? null;
+  }
+
+  /**
    * Set a value in cache
    */
   set<T = unknown>(key: string, value: T, options: CacheOptions = {}): void {

@@ -5,7 +5,7 @@ import { GenreCard } from "@/components/browse/genre-card";
 import { HomeSearch } from "@/components/browse/home-search";
 import { SceneCard } from "@/components/browse/scene-card";
 import { ShowMore } from "@/components/browse/show-more";
-import { resolveAvatarMap } from "@/lib/browse/resolve-artists";
+import { peekAvatarMap, resolveAvatarMap } from "@/lib/browse/resolve-artists";
 import { listScenes } from "@/lib/browse/scene-store";
 import { getBrowseStatus, listCities, listGenres } from "@/lib/browse/store";
 
@@ -55,7 +55,15 @@ export default async function Home() {
     ...topGenres.map((genre) => genre.coverUrns),
     ...topCities.map((city) => city.coverUrns),
   ]);
+  // "Show more" cards get cache-only avatars: thousands of cells, zero API.
+  const restAvatars = peekAvatarMap([
+    ...restScenes.flatMap((scene) => scene.coverUrns),
+    ...restGenres.flatMap((genre) => genre.coverUrns),
+    ...restCities.flatMap((city) => city.coverUrns),
+  ]);
   const coversFor = (urns: readonly string[]) => urns.map((urn) => avatars.get(urn) ?? null);
+  const cachedCoversFor = (urns: readonly string[]) =>
+    urns.map((urn) => restAvatars.get(urn) ?? null);
 
   return (
     <main className="min-h-screen bg-sg-bg font-sg text-sg-ink">
@@ -100,7 +108,7 @@ export default async function Home() {
                 <SceneCard key={scene.slug} scene={scene} coverUrls={coversFor(scene.coverUrns)} />
               ))}
               rest={restScenes.map((scene) => (
-                <SceneCard key={scene.slug} scene={scene} />
+                <SceneCard key={scene.slug} scene={scene} coverUrls={cachedCoversFor(scene.coverUrns)} />
               ))}
             />
           </section>
@@ -117,7 +125,7 @@ export default async function Home() {
                 <GenreCard key={genre.slug} genre={genre} coverUrls={coversFor(genre.coverUrns)} />
               ))}
               rest={restGenres.map((genre) => (
-                <GenreCard key={genre.slug} genre={genre} />
+                <GenreCard key={genre.slug} genre={genre} coverUrls={cachedCoversFor(genre.coverUrns)} />
               ))}
             />
           </section>
@@ -134,7 +142,7 @@ export default async function Home() {
                 <CityCard key={city.slug} city={city} coverUrls={coversFor(city.coverUrns)} />
               ))}
               rest={restCities.map((city) => (
-                <CityCard key={city.slug} city={city} />
+                <CityCard key={city.slug} city={city} coverUrls={cachedCoversFor(city.coverUrns)} />
               ))}
             />
           </section>

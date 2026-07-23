@@ -5,7 +5,12 @@
  */
 
 import { cache } from "react";
-import { getUser, peekUser, seedUserCache } from "@/lib/soundcloud/official-cached-client";
+import {
+  getUser,
+  peekUser,
+  peekUserAvatar,
+  seedUserCache,
+} from "@/lib/soundcloud/official-cached-client";
 import { urnToId } from "@/lib/soundcloud/official-client";
 import type { RosterArtist } from "./types";
 
@@ -111,6 +116,20 @@ export async function resolveAvatarMap(
     const batch = misses.slice(i, i + RESOLVE_BATCH_SIZE * 2);
     const users = await Promise.all(batch.map((urn) => resolveUser(urn)));
     batch.forEach((urn, j) => avatars.set(urn, users[j]?.avatar_url ?? null));
+  }
+  return avatars;
+}
+
+/**
+ * Cache-only avatar map: field-level disk reads, never the API. For the
+ * long tail of cards ("show more") where an API pass would be thousands
+ * of requests — unresolved cells stay placeholders until the cache warms
+ * through crawls or detail-page visits.
+ */
+export function peekAvatarMap(urns: readonly string[]): Map<string, string | null> {
+  const avatars = new Map<string, string | null>();
+  for (const urn of new Set(urns)) {
+    avatars.set(urn, peekUserAvatar(urnToId(urn)));
   }
   return avatars;
 }

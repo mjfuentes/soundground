@@ -66,6 +66,11 @@ export function peekUser(userId: number): SoundCloudUser | null {
   return getCacheService().peekRetained<SoundCloudUser>(`official:user:${userId}`);
 }
 
+/** Cache-only avatar lookup — field-level read, cheap enough for thousands per render. */
+export function peekUserAvatar(userId: number): string | null {
+  return getCacheService().peekRetainedField(`official:user:${userId}`, "avatar_url");
+}
+
 export async function getSpotlight(): Promise<{ collection: SpotlightItem[] }> {
   // No spotlight in the official API; nothing worth caching.
   return client.getSpotlight();
