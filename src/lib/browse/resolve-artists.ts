@@ -6,6 +6,7 @@
 
 import { cache } from "react";
 import {
+  getTracks,
   getUser,
   peekUser,
   peekUserAvatar,
@@ -71,6 +72,20 @@ function toResolved(
   };
 }
 
+/**
+ * Uncrawled roster members have no derived play totals; sum their cached
+ * (or freshly fetched, then 90d-cached) track counts so every row shows
+ * real numbers. Deduped per render, tolerant of failures.
+ */
+const resolvePlays = cache(async (urn: string): Promise<number> => {
+  try {
+    const { collection } = await getTracks(urnToId(urn), 50);
+    return collection.reduce((sum, track) => sum + (track.playback_count ?? 0), 0);
+  } catch {
+    return 0;
+  }
+});
+
 export async function resolveRoster(
   roster: readonly RosterArtist[],
 ): Promise<ResolvedRosterArtist[]> {
@@ -78,7 +93,16 @@ export async function resolveRoster(
   for (let i = 0; i < roster.length; i += RESOLVE_BATCH_SIZE) {
     const batch = roster.slice(i, i + RESOLVE_BATCH_SIZE);
     const users = await Promise.all(batch.map((artist) => resolveUser(artist.urn)));
-    resolved.push(...batch.map((artist, j) => toResolved(artist, users[j])));
+    const plays = await Promise.all(
+      batch.map((artist, j) =>
+        artist.plays === 0 && users[j] && (users[j]!.track_count ?? 0) > 0
+          ? resolvePlays(artist.urn)
+          : Promise.resolve(artist.plays),
+      ),
+    );
+    resolved.push(
+      ...batch.map((artist, j) => toResolved({ ...artist, plays: plays[j] }, users[j])),
+    );
   }
   return resolved;
 }

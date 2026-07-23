@@ -24,6 +24,7 @@ interface SceneRow {
   city_name: string | null;
   tags: string;
   member_count: number;
+  hub_count: number;
   roster: string;
   hubs: string;
 }
@@ -83,6 +84,7 @@ function sceneSummary(
     cityName: row.city_name,
     tags: JSON.parse(row.tags) as string[],
     memberCount: row.member_count,
+    hubCount: row.hub_count,
     activity: activityLine(counts),
     activeNow: counts.activeNow,
     coverUrns: parseRoster(row.roster)
@@ -97,7 +99,7 @@ export function listScenes(now: number = Date.now()): SceneSummary[] {
   if (!db || !hasSceneTables(db)) return [];
   const rows = db
     .prepare(
-      `SELECT id, slug, name, city_name, tags, member_count, roster, hubs
+      `SELECT id, slug, name, city_name, tags, member_count, hub_count, roster, hubs
        FROM scenes WHERE name IS NOT NULL
        ORDER BY member_count DESC, id`,
     )
@@ -113,7 +115,7 @@ export function getSceneDetail(slug: string, now: number = Date.now()): SceneDet
   if (!db || !hasSceneTables(db)) return null;
   const row = db
     .prepare(
-      `SELECT id, slug, name, city_name, tags, member_count, roster, hubs
+      `SELECT id, slug, name, city_name, tags, member_count, hub_count, roster, hubs
        FROM scenes WHERE slug = ? AND name IS NOT NULL`,
     )
     .get(slug) as SceneRow | undefined;

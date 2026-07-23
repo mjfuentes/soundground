@@ -130,9 +130,12 @@ function migrate(db: Database.Database): void {
     db.exec(`ALTER TABLE crawl_queue ADD COLUMN priority INTEGER NOT NULL DEFAULT 0`);
   }
 
-  // Hub split (ideas/0004 B4): scenes created before the column existed.
+  // Hub split (ideas/0004 B4): scenes created before the columns existed.
   const sceneColumns = db.prepare(`PRAGMA table_info(scenes)`).all() as { name: string }[];
   if (!sceneColumns.some((c) => c.name === "hubs")) {
     db.exec(`ALTER TABLE scenes ADD COLUMN hubs TEXT NOT NULL DEFAULT '[]'`);
+  }
+  if (!sceneColumns.some((c) => c.name === "hub_count")) {
+    db.exec(`ALTER TABLE scenes ADD COLUMN hub_count INTEGER NOT NULL DEFAULT 0`);
   }
 }

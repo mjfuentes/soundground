@@ -112,6 +112,7 @@ export const sampleScene: SceneSummary = {
   cityName: "Berlin",
   tags: ["Dub Techno", "Deep Techno", "Ambient"],
   memberCount: 5,
+  hubCount: 1,
   activity: "active now",
   activeNow: true,
   coverUrns: ["soundcloud:users:2", "soundcloud:users:1", "soundcloud:users:3"],

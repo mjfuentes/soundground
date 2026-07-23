@@ -70,7 +70,7 @@ describe("ScenePage", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Berlin Dub Techno");
     expect(screen.getByText("Circle / Berlin Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Artist One")).toBeInTheDocument();
-    expect(screen.getByText(/5 artists mapped/)).toBeInTheDocument();
+    expect(screen.getByText(/5 artists \+ 1 label mapped/)).toBeInTheDocument();
     expect(screen.getByText(/centered in Berlin/)).toBeInTheDocument();
     // Tags that exist as genre pages become links; others stay plain chips.
     expect(screen.getByRole("link", { name: "Dub Techno" })).toHaveAttribute(

@@ -31,7 +31,8 @@ export function SceneCard({ scene, coverUrls = [] }: SceneCardProps) {
       </div>
       <div className="flex items-center justify-between border-t border-sg-line-soft pt-3">
         <span className="font-sg-mono text-[11px] text-sg-muted">
-          {scene.memberCount} artists mapped
+          {scene.memberCount} artists
+          {scene.hubCount > 0 ? ` + ${scene.hubCount} label${scene.hubCount === 1 ? "" : "s"}` : ""}
         </span>
         {scene.activity && (
           <span className="flex items-center gap-1.5 font-sg-mono text-[10.5px] tracking-[0.06em] text-sg-muted">

@@ -45,7 +45,7 @@ describe("SceneCard", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "/circle/berlin-dub-techno");
     expect(screen.getByText("Berlin Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Dub Techno · Deep Techno · Ambient")).toBeInTheDocument();
-    expect(screen.getByText("5 artists mapped")).toBeInTheDocument();
+    expect(screen.getByText("5 artists + 1 label")).toBeInTheDocument();
     expect(screen.getByText("active now")).toBeInTheDocument();
     expect(screen.getByText("↳ centered in Berlin")).toBeInTheDocument();
   });

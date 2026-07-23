@@ -68,8 +68,10 @@ export interface SceneSummary {
   cityName: string | null;
   /** Top scene vocabulary (display names), most defining first. */
   tags: string[];
-  /** Crawled members only — the honest displayed count. */
+  /** Crawled artist members only — the honest displayed count. */
   memberCount: number;
+  /** Crawled label/hub members, shown alongside ("+ N labels"). */
+  hubCount: number;
   activity: string | null;
   activeNow: boolean;
   coverUrns: string[];

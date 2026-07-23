@@ -58,6 +58,8 @@ export interface ScenePreview {
   name: string | null;
   slug: string | null;
   memberCount: number;
+  /** Crawled hub members (labels/radios/promo) — shown alongside artists. */
+  hubCount: number;
   totalCount: number;
   cityName: string | null;
   tags: string[];
@@ -439,11 +441,15 @@ export function computeScenes(
     const crawledCount = cluster.filter(
       (urn) => artists.get(urn)?.crawled === 1 && !hubSet.has(urn),
     ).length;
+    const crawledHubCount = cluster.filter(
+      (urn) => artists.get(urn)?.crawled === 1 && hubSet.has(urn),
+    ).length;
     return {
       id: ids[index],
       name: names.get(index)?.name ?? null,
       slug: slugs.get(ids[index]) ?? null,
       memberCount: crawledCount,
+      hubCount: crawledHubCount,
       totalCount: cluster.length,
       cityName:
         doc.topCity && doc.topCity.share >= config.naming.cityShareThreshold
@@ -458,9 +464,9 @@ export function computeScenes(
     db.prepare(`DELETE FROM scene_members`).run();
     db.prepare(`DELETE FROM scenes`).run();
     const insertScene = db.prepare(
-      `INSERT INTO scenes (id, slug, name, city_name, tags, member_count, total_count,
-                           roster, hubs, resolution, computed_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO scenes (id, slug, name, city_name, tags, member_count, hub_count,
+                           total_count, roster, hubs, resolution, computed_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const insertMember = db.prepare(
       `INSERT INTO scene_members (scene_id, artist_urn, in_scene_degree) VALUES (?, ?, ?)`,
@@ -476,6 +482,7 @@ export function computeScenes(
         preview.cityName,
         JSON.stringify(preview.tags),
         preview.memberCount,
+        preview.hubCount,
         preview.totalCount,
         JSON.stringify(
           buildRoster(artistPool, degrees, artists, genresOf, config.rosterSize),

@@ -7,6 +7,7 @@ import { IntersectionList, RelatedChips } from "@/components/browse/sidebar-sect
 import { resolveRoster } from "@/lib/browse/resolve-artists";
 import { getSceneDetail, listScenes } from "@/lib/browse/scene-store";
 import { slugify } from "@/lib/browse/slug";
+import { isHubProfileText } from "@/lib/graph/hubs";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -36,8 +37,15 @@ export default async function ScenePage({ params }: PageProps) {
     notFound();
   }
 
-  const roster = await resolveRoster(scene.roster);
-  const hubs = await resolveRoster(scene.hubs);
+  const resolvedRoster = await resolveRoster(scene.roster);
+  const resolvedHubs = await resolveRoster(scene.hubs);
+  // Last-resort classification: uncrawled members carry no signals at
+  // compute time, but their live-resolved name can still say "…RECORDS".
+  const lateHubs = resolvedRoster.filter((artist) =>
+    isHubProfileText({ username: artist.displayName }),
+  );
+  const roster = resolvedRoster.filter((artist) => !lateHubs.includes(artist));
+  const hubs = [...resolvedHubs, ...lateHubs];
   // Tags link into genre pages when the genre actually exists as a page.
   const genreSlugs = new Set(scene.genres.map((genre) => genre.slug));
 
@@ -49,7 +57,7 @@ export default async function ScenePage({ params }: PageProps) {
         name={scene.name}
         activity={scene.activity}
         activeNow={scene.activeNow}
-        stats={`${scene.memberCount} artists mapped${scene.cityName ? ` · centered in ${scene.cityName}` : ""}`}
+        stats={`${scene.memberCount} artists${scene.hubCount > 0 ? ` + ${scene.hubCount} label${scene.hubCount === 1 ? "" : "s"}` : ""} mapped${scene.cityName ? ` · centered in ${scene.cityName}` : ""}`}
         playScope={{ scene: scene.slug }}
       />
 
