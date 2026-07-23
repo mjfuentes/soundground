@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSceneDetail } from "@/lib/browse/scene-store";
 import { foldTerm } from "@/lib/browse/slug";
-import { getCityDetail, getGenreDetail } from "@/lib/browse/store";
+import { getCityDetail, getGenreDetail, getSoundInPlace } from "@/lib/browse/store";
 import { parseTagList } from "@/lib/crawler/extract";
 import { getTracks } from "@/lib/soundcloud/official-cached-client";
 import { urnToId } from "@/lib/soundcloud/official-client";
@@ -30,10 +30,11 @@ const querySchema = z
     /** Circle context: play only tracks carrying the circle's vocabulary. */
     withinCircle: z.string().min(1).max(100).optional(),
   })
-  .refine(
-    (query) => [query.genre, query.city, query.scene, query.artist].filter(Boolean).length === 1,
-    "Pass exactly one of: genre, city, scene, artist",
-  )
+  .refine((query) => {
+    const scopes = [query.genre, query.city, query.scene, query.artist].filter(Boolean).length;
+    // genre+city together = the intersection ("Techno in Berlin").
+    return scopes === 1 || (scopes === 2 && Boolean(query.genre && query.city));
+  }, "Pass one of: genre, city, scene, artist — or genre+city for an intersection")
   .refine(
     (query) => [query.within, query.withinCircle].filter(Boolean).length <= 1,
     "Pass at most one context",
@@ -151,11 +152,14 @@ export async function GET(request: NextRequest) {
       const pool = matched.length > 0 ? matched : playable;
       items = pool.slice(0, TRACKS_PER_SOLO_ARTIST).map(toQueueItem);
     } else {
-      const detail = query.genre
-        ? getGenreDetail(query.genre)
-        : query.scene
-          ? getSceneDetail(query.scene)
-          : getCityDetail(query.city!);
+      const detail =
+        query.genre && query.city
+          ? getSoundInPlace(query.genre, query.city)
+          : query.genre
+            ? getGenreDetail(query.genre)
+            : query.scene
+              ? getSceneDetail(query.scene)
+              : getCityDetail(query.city!);
       if (!detail) {
         return NextResponse.json({ error: "Unknown scene" }, { status: 404 });
       }

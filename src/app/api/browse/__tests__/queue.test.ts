@@ -13,9 +13,11 @@ jest.mock("@/lib/soundcloud/official-cached-client", () => ({
 
 const mockGetGenreDetail = jest.fn();
 const mockGetCityDetail = jest.fn();
+const mockGetSoundInPlace = jest.fn();
 jest.mock("@/lib/browse/store", () => ({
   getGenreDetail: (...args: unknown[]) => mockGetGenreDetail(...args),
   getCityDetail: (...args: unknown[]) => mockGetCityDetail(...args),
+  getSoundInPlace: (...args: unknown[]) => mockGetSoundInPlace(...args),
 }));
 
 const mockGetSceneDetail = jest.fn();
@@ -46,9 +48,21 @@ describe("/api/browse/queue", () => {
     jest.clearAllMocks();
   });
 
-  it("rejects requests without exactly one scope", async () => {
+  it("rejects requests without a valid scope", async () => {
     expect((await GET(req(""))).status).toBe(400);
-    expect((await GET(req("?genre=a&city=b"))).status).toBe(400);
+    expect((await GET(req("?genre=a&scene=b"))).status).toBe(400);
+    expect((await GET(req("?city=a&scene=b"))).status).toBe(400);
+  });
+
+  it("builds an intersection queue for genre+city", async () => {
+    mockGetSoundInPlace.mockReturnValue({ roster: [rosterEntry(1), rosterEntry(2)] });
+    mockGetTracks.mockImplementation(async (userId: number) => ({
+      collection: [track(userId * 10 + 1, userId)],
+    }));
+
+    const data = await (await GET(req("?genre=techno&city=berlin"))).json();
+    expect(mockGetSoundInPlace).toHaveBeenCalledWith("techno", "berlin");
+    expect(data.items.map((item: { id: number }) => item.id)).toEqual([11, 21]);
   });
 
   it("404s for an unknown scene", async () => {

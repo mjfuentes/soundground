@@ -287,6 +287,82 @@ export function getGenreDetail(slug: string, now: number = Date.now()): GenreDet
   };
 }
 
+export interface IntersectionDetail {
+  genreSlug: string;
+  genreName: string;
+  citySlug: string;
+  cityName: string;
+  artistCount: number;
+  roster: RosterArtist[];
+}
+
+/**
+ * A sound within a place ("Techno in Berlin"): the intersection roster,
+ * ranked like place rosters (reach, then impact). Computed on demand from
+ * the membership tables — not precomputed, so it stays honest per re-run.
+ */
+export function getSoundInPlace(
+  genreSlug: string,
+  citySlug: string,
+  rosterSize = 24,
+): IntersectionDetail | null {
+  const db = getDb();
+  if (!db) return null;
+  const genre = db.prepare(`SELECT name FROM browse_genres WHERE slug = ?`).get(genreSlug) as
+    | { name: string }
+    | undefined;
+  const city = db.prepare(`SELECT name FROM browse_cities WHERE slug = ?`).get(citySlug) as
+    | { name: string }
+    | undefined;
+  if (!genre || !city) return null;
+
+  const members = db
+    .prepare(
+      `SELECT a.urn, a.permalink, a.city_raw, a.followers_count, a.plays_total,
+              a.likes_total, a.comments_total, a.track_count
+       FROM artist_genres ag
+       JOIN artist_cities ac ON ac.artist_urn = ag.artist_urn
+       JOIN artists a ON a.urn = ag.artist_urn
+       WHERE ag.genre_slug = ? AND ac.city_slug = ?
+       ORDER BY COALESCE(a.followers_count, 0) DESC,
+                COALESCE(a.likes_total, 0) + COALESCE(a.comments_total, 0) DESC,
+                COALESCE(a.plays_total, 0) DESC, a.urn`,
+    )
+    .all(genreSlug, citySlug) as {
+    urn: string;
+    permalink: string | null;
+    city_raw: string | null;
+    followers_count: number | null;
+    plays_total: number | null;
+    likes_total: number | null;
+    comments_total: number | null;
+    track_count: number | null;
+  }[];
+  if (members.length === 0) return null;
+
+  const roster = members.slice(0, rosterSize).map((row) => ({
+    urn: row.urn,
+    permalink: row.permalink,
+    cityRaw: row.city_raw,
+    connections: 0,
+    followers: row.followers_count ?? 0,
+    plays: row.plays_total ?? 0,
+    likes: row.likes_total ?? 0,
+    comments: row.comments_total ?? 0,
+    trackCount: row.track_count,
+    otherGenres: [] as string[],
+  }));
+
+  return {
+    genreSlug,
+    genreName: genre.name,
+    citySlug,
+    cityName: city.name,
+    artistCount: members.length,
+    roster,
+  };
+}
+
 export function getCityDetail(slug: string, now: number = Date.now()): CityDetail | null {
   const db = getDb();
   if (!db) return null;

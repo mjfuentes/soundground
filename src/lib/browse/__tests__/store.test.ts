@@ -6,6 +6,7 @@ import {
   getBrowseStatus,
   getCityDetail,
   getGenreDetail,
+  getSoundInPlace,
   listCities,
   listGenres,
 } from "../store";
@@ -73,6 +74,24 @@ describe("browse store", () => {
     expect(detail?.related).toContainEqual(
       expect.objectContaining({ slug: "ambient", name: "Ambient" }),
     );
+  });
+
+  it("returns the sound-in-place intersection ranked by reach", () => {
+    const detail = getSoundInPlace("dub-techno", "berlin");
+    expect(detail).not.toBeNull();
+    expect(detail!.genreName).toBe("Dub Techno");
+    expect(detail!.cityName).toBe("Berlin");
+    // Artists 1 and 2 are the Berlin dub techno members; 3 is in Tokyo.
+    expect(detail!.roster.map((artist) => artist.urn)).toEqual([
+      "soundcloud:users:1",
+      "soundcloud:users:2",
+    ]);
+    expect(detail!.artistCount).toBe(2);
+  });
+
+  it("returns null for unknown or empty intersections", () => {
+    expect(getSoundInPlace("polka", "berlin")).toBeNull();
+    expect(getSoundInPlace("jungle", "berlin")).toBeNull();
   });
 
   it("returns city detail with genres and roster", () => {

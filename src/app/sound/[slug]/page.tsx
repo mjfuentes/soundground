@@ -83,7 +83,7 @@ export default async function GenrePage({ params }: PageProps) {
               items={genre.cities.map((city) => ({
                 label: `${genre.name} in ${city.name}`,
                 suffix: `${city.count}`,
-                href: `/place/${city.slug}`,
+                href: `/sound/${genre.slug}/in/${city.slug}`,
               }))}
             />
           )}
