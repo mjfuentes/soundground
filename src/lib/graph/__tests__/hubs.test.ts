@@ -1,4 +1,4 @@
-import { classifyHubs, isHub } from "../hubs";
+import { classifyHubs, isHub, isHubByTrackTitles } from "../hubs";
 import type { AccountCanon } from "@/lib/browse/canon";
 
 const canon: AccountCanon = {
@@ -80,6 +80,30 @@ describe("isHub — profile text", () => {
         { username: "Something Records", description: "record label" },
       ),
     ).toBe(false);
+  });
+});
+
+describe("isHubByTrackTitles", () => {
+  it("classifies many-distinct-artist-prefix uploaders (premiere channels)", () => {
+    const titles = Array.from({ length: 30 }, (_, i) => `Artist ${i} - Track Title [PREM]`);
+    expect(isHubByTrackTitles(titles)).toBe(true);
+  });
+
+  it("leaves artists alone — own-name prefixes and undashed titles", () => {
+    const ownPrefix = Array.from({ length: 30 }, (_, i) => `Slam - Track ${i}`);
+    expect(isHubByTrackTitles(ownPrefix)).toBe(false);
+    const undashed = Array.from({ length: 30 }, (_, i) => `Dub Chamber ${i}`);
+    expect(isHubByTrackTitles(undashed)).toBe(false);
+    const fewTracks = ["A - X", "B - Y", "C - Z"];
+    expect(isHubByTrackTitles(fewTracks)).toBe(false);
+  });
+});
+
+describe("isHub — permalink endings", () => {
+  it("classifies label-shaped permalinks", () => {
+    expect(isHub({ urn: "u:1", permalink: "angelsrecs", trackCount: 50 }, canon)).toBe(true);
+    expect(isHub({ urn: "u:2", permalink: "outlookfestival", trackCount: 20 }, canon)).toBe(true);
+    expect(isHub({ urn: "u:3", permalink: "slam-djs", trackCount: 50 }, canon)).toBe(false);
   });
 });
 

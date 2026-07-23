@@ -71,6 +71,15 @@ export function peekUserAvatar(userId: number): string | null {
   return getCacheService().peekRetainedField(`official:user:${userId}`, "avatar_url");
 }
 
+/** Cache-only upload titles (for offline classification). Null when uncached. */
+export function peekTrackTitles(userId: number): string[] | null {
+  const cached = getCacheService().peekRetained<{ collection?: { title?: string }[] }>(
+    `official:tracks:${userId}:50`,
+  );
+  if (!cached?.collection) return null;
+  return cached.collection.map((track) => track.title ?? "").filter(Boolean);
+}
+
 export async function getSpotlight(): Promise<{ collection: SpotlightItem[] }> {
   // No spotlight in the official API; nothing worth caching.
   return client.getSpotlight();

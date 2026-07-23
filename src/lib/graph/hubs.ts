@@ -55,6 +55,37 @@ const HUB_DESCRIPTION_RE = new RegExp(
     "\\borgani[sz]ation\\b",
     "is an? .{0,20}radio show",
     "podcast series",
+    "\\bcurat(ion|or|orship)",
+    "curated .{0,30}(radio|show|platform|selection|channel|series|playlist)",
+    "curated by",
+    "\\b(mix|premiere|mixtape|radio) series\\b",
+    "series (focused|dedicated|where)",
+    "(music|electronic|independent|house|techno|disco|bass|dance) ?(music )?label",
+    "label by\\b",
+    "music company",
+    "record shop",
+    "no demos\\b",
+    "demos? (→|to:|via|through)",
+    "weekly podcast",
+    "podcast (since|and)\\b",
+    "is run by @",
+    "online publication",
+    "publication (offering|dedicated)",
+    "magazine (en ligne|based)",
+    "submit (a|your|us)\\b",
+    "delivery service",
+    "(music|techno) movement",
+    "series of events",
+    "collective label",
+    "(\\b|/)demos? .{0,15}@",
+    "platform to (share|discover)",
+    "emerging talents?",
+    "premieres?, (demos|mixes)",
+    "label,? (vinyl|cassette)",
+    "independent radio",
+    "division of",
+    "is now an archive",
+    "archive showcasing",
     "event series",
     "events? (company|agency|brand|platform|collective)",
     "party series",
@@ -81,7 +112,10 @@ const HUB_DESCRIPTION_RE = new RegExp(
  * A name that IS a label name: ends in a label word with no separator
  * earlier in the name (brackets/slashes mean "artist crediting a label").
  */
-const HUB_NAME_RE = /^[^[\]/|·]*\b(records|recordings|recs|tapes|editions|imprint|musik|discos|label|collective|soundsystem|agency|magazine|radio|fm|distribution|podcast|sessions)\s*$/i;
+const HUB_NAME_RE = /^[^[\]/|·]*\b(records|recordings|recs|tapes|editions|imprint|musik|discos|label|collective|soundsystem|agency|magazine|radio|fm|distribution|podcast|sessions|festival|premieres)\s*$/i;
+
+/** Permalink endings that are label/institution names ("angelsrecs"). */
+const HUB_PERMALINK_RE = /(records|recordings|recs|label|tapes|podcast|radio|radioshow|magazine|collective|festival|soundsystem|distribution|premieres|events|series)$/i;
 
 export interface HubCandidate {
   urn: string;
@@ -92,11 +126,37 @@ export interface HubCandidate {
 export interface HubProfileText {
   username?: string;
   description?: string;
+  /** Cached upload titles — the shape signal (see isHubByTrackTitles). */
+  trackTitles?: readonly string[];
 }
 
 export function isHubProfileText(profile: HubProfileText): boolean {
-  if (profile.description && HUB_DESCRIPTION_RE.test(profile.description)) return true;
-  return Boolean(profile.username && HUB_NAME_RE.test(profile.username.trim()));
+  // NFKC folds stylized Unicode ("𝗠𝗜𝗫 𝗦𝗘𝗥𝗜𝗘𝗦", "𝕃𝕒𝕓𝕖𝕝") to plain letters.
+  const description = profile.description?.normalize("NFKC");
+  const username = profile.username?.normalize("NFKC").trim();
+  if (description && HUB_DESCRIPTION_RE.test(description)) return true;
+  if (username && HUB_NAME_RE.test(username)) return true;
+  return Boolean(profile.trackTitles && isHubByTrackTitles(profile.trackTitles));
+}
+
+/**
+ * Title-shape signal: labels/premiere channels upload "Artist – Title"
+ * with MANY different artist prefixes; a musician's uploads either lack
+ * the dash or repeat their own few aliases. Verified separation on the
+ * Berlin crawl: channels run 30–50 distinct prefixes per 50 uploads,
+ * artists 1–10. High bar on purpose — canon `artists` overrides misfires.
+ */
+export function isHubByTrackTitles(titles: readonly string[]): boolean {
+  const prefixes = new Set<string>();
+  let dashed = 0;
+  for (const title of titles) {
+    const match = title.match(/^(.{2,40}?)\s+[-–—]\s+/);
+    if (match) {
+      dashed += 1;
+      prefixes.add(match[1].toLowerCase().trim());
+    }
+  }
+  return dashed >= 10 && prefixes.size >= 15 && prefixes.size / dashed >= 0.7;
 }
 
 export function isHub(
@@ -108,6 +168,7 @@ export function isHub(
   if (permalink && canon.artistPermalinks.has(permalink)) return false;
   if ((candidate.trackCount ?? 0) >= HUB_TRACK_THRESHOLD) return true;
   if (permalink && canon.hubPermalinks.has(permalink)) return true;
+  if (permalink && HUB_PERMALINK_RE.test(permalink)) return true;
   return profile ? isHubProfileText(profile) : false;
 }
 

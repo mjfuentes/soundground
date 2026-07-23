@@ -12,7 +12,7 @@ import { parseArgs } from "util";
 import { loadAccountCanon } from "@/lib/browse/canon";
 import { openGraphDatabase } from "@/lib/graph/database";
 import { computeScenes, DEFAULT_SCENE_COMPUTE_CONFIG } from "@/lib/graph/scenes";
-import { peekUser } from "@/lib/soundcloud/official-cached-client";
+import { peekUser, peekTrackTitles } from "@/lib/soundcloud/official-cached-client";
 import { urnToId } from "@/lib/soundcloud/official-client";
 
 function log(message: string): void {
@@ -58,8 +58,14 @@ function main(): void {
     // Text classification reads cached profiles — disk only, zero API calls.
     const peekProfile = (urn: string) => {
       try {
-        const user = peekUser(urnToId(urn));
-        return user ? { username: user.username, description: user.description } : null;
+        const id = urnToId(urn);
+        const user = peekUser(id);
+        if (!user) return null;
+        return {
+          username: user.username,
+          description: user.description,
+          trackTitles: peekTrackTitles(id) ?? undefined,
+        };
       } catch {
         return null;
       }
