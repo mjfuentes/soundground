@@ -15,6 +15,13 @@ export const revalidate = 3600;
 const TOP_SCENES = 6;
 const TOP_GENRES = 12;
 const TOP_CITIES = 9;
+/**
+ * Cap on "show more" cards per section. Every rest card ships in the page
+ * payload (ShowMore is a client component), so 500+ hidden card subtrees
+ * make the home multi-megabyte. The long tail stays reachable via search
+ * quick-jumps and cross-links.
+ */
+const REST_CAP = 30;
 
 function SectionRule({ title, hint }: { title: string; hint?: string }) {
   return (
@@ -43,11 +50,11 @@ export default async function Home() {
   const genres = listGenres();
   const cities = listCities();
   const topScenes = scenes.slice(0, TOP_SCENES);
-  const restScenes = scenes.slice(TOP_SCENES);
+  const restScenes = scenes.slice(TOP_SCENES, TOP_SCENES + REST_CAP);
   const topGenres = genres.slice(0, TOP_GENRES);
-  const restGenres = genres.slice(TOP_GENRES);
+  const restGenres = genres.slice(TOP_GENRES, TOP_GENRES + REST_CAP);
   const topCities = cities.slice(0, TOP_CITIES);
-  const restCities = cities.slice(TOP_CITIES);
+  const restCities = cities.slice(TOP_CITIES, TOP_CITIES + REST_CAP);
   // One urn group per card: the resolver round-robins its API budget across
   // groups so every mosaic gets its top members first.
   const avatars = await resolveAvatarMap([

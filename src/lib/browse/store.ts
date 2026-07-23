@@ -88,6 +88,39 @@ function activityFor(
   return { activeNow: (row.day ?? 0) > 0, uploadsThisWeek: row.week ?? 0 };
 }
 
+/** Batched activity for list renders: one GROUP BY instead of a query per row. */
+function activityMap(
+  db: Database.Database,
+  memberTable: "artist_genres" | "artist_cities",
+  memberColumn: "genre_slug" | "city_slug",
+  now: number,
+): Map<string, ActivityCounts> {
+  // Filter to week-active artists BEFORE joining memberships: a few
+  // thousand rows instead of every membership row in the table.
+  const rows = db
+    .prepare(
+      `SELECT m.${memberColumn} AS slug,
+         SUM(CASE WHEN a.last_upload_at > ? THEN 1 ELSE 0 END) AS day,
+         COUNT(*) AS week
+       FROM artists a JOIN ${memberTable} m ON m.artist_urn = a.urn
+       WHERE a.last_upload_at > ?
+       GROUP BY m.${memberColumn}`,
+    )
+    .all(new Date(now - DAY_MS).toISOString(), new Date(now - WEEK_MS).toISOString()) as {
+    slug: string;
+    day: number | null;
+    week: number | null;
+  }[];
+  return new Map(
+    rows.map((row) => [
+      row.slug,
+      { activeNow: (row.day ?? 0) > 0, uploadsThisWeek: row.week ?? 0 },
+    ]),
+  );
+}
+
+const NO_ACTIVITY: ActivityCounts = { activeNow: false, uploadsThisWeek: 0 };
+
 export function activityLine(counts: ActivityCounts): string | null {
   if (counts.activeNow) return "active now";
   if (counts.uploadsThisWeek > 0) return `${counts.uploadsThisWeek} this week`;
@@ -132,8 +165,13 @@ interface CityRow {
   roster: string;
 }
 
-function genreSummary(db: Database.Database, row: GenreRow, now: number): GenreSummary {
-  const counts = activityFor(db, "artist_genres", "genre_slug", row.slug, now);
+function genreSummary(
+  db: Database.Database,
+  row: GenreRow,
+  now: number,
+  batchedCounts?: ActivityCounts,
+): GenreSummary {
+  const counts = batchedCounts ?? activityFor(db, "artist_genres", "genre_slug", row.slug, now);
   const cityName = row.top_city_slug
     ? ((db.prepare(`SELECT name FROM browse_cities WHERE slug = ?`).get(row.top_city_slug) as
         | { name: string }
@@ -153,8 +191,13 @@ function genreSummary(db: Database.Database, row: GenreRow, now: number): GenreS
   };
 }
 
-function citySummary(db: Database.Database, row: CityRow, now: number): CitySummary {
-  const counts = activityFor(db, "artist_cities", "city_slug", row.slug, now);
+function citySummary(
+  db: Database.Database,
+  row: CityRow,
+  now: number,
+  batchedCounts?: ActivityCounts,
+): CitySummary {
+  const counts = batchedCounts ?? activityFor(db, "artist_cities", "city_slug", row.slug, now);
   return {
     slug: row.slug,
     name: row.name,
@@ -240,7 +283,8 @@ export function listGenres(now: number = Date.now()): GenreSummary[] {
   const rows = db
     .prepare(`SELECT * FROM browse_genres ORDER BY artist_count DESC, slug`)
     .all() as GenreRow[];
-  return rows.map((row) => genreSummary(db, row, now));
+  const counts = activityMap(db, "artist_genres", "genre_slug", now);
+  return rows.map((row) => genreSummary(db, row, now, counts.get(row.slug) ?? NO_ACTIVITY));
 }
 
 export function listCities(now: number = Date.now()): CitySummary[] {
@@ -249,7 +293,8 @@ export function listCities(now: number = Date.now()): CitySummary[] {
   const rows = db
     .prepare(`SELECT * FROM browse_cities ORDER BY artist_count DESC, slug`)
     .all() as CityRow[];
-  return rows.map((row) => citySummary(db, row, now));
+  const counts = activityMap(db, "artist_cities", "city_slug", now);
+  return rows.map((row) => citySummary(db, row, now, counts.get(row.slug) ?? NO_ACTIVITY));
 }
 
 export function getGenreDetail(slug: string, now: number = Date.now()): GenreDetail | null {

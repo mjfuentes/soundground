@@ -23,15 +23,30 @@ export interface ResolvedRosterArtist extends RosterArtist {
 /** Polite fan-out: at most this many concurrent profile requests per roster. */
 const RESOLVE_BATCH_SIZE = 4;
 
+// Failed resolutions (deleted/private accounts) are remembered in-process so
+// they stop burning the per-render API budget — without this, the same dead
+// accounts re-fetch on every render because errors never enter the cache.
+const RESOLVE_FAILURE_TTL_MS = 6 * 60 * 60 * 1000;
+const failedResolves = new Map<string, number>();
+
+/** Test hook. */
+export function __resetResolveFailuresForTests(): void {
+  failedResolves.clear();
+}
+
 const resolveUser = cache(async (urn: string) => {
+  const failedAt = failedResolves.get(urn);
+  if (failedAt && Date.now() - failedAt < RESOLVE_FAILURE_TTL_MS) return null;
   try {
     const user = await getUser(urnToId(urn));
     // Pre-seed the profile page's resolve cache: clicking through to
     // /{permalink} would otherwise pay a slow /resolve round-trip for a
     // user object we are already holding.
     seedUserCache(user);
+    failedResolves.delete(urn);
     return user;
   } catch (error) {
+    failedResolves.set(urn, Date.now());
     console.error(
       `[browse] failed to resolve ${urn}:`,
       error instanceof Error ? error.message : error,

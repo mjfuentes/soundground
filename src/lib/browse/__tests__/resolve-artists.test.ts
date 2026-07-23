@@ -1,4 +1,4 @@
-import { resolveAvatarMap } from "../resolve-artists";
+import { __resetResolveFailuresForTests, resolveAvatarMap } from "../resolve-artists";
 
 const mockPeekUser = jest.fn();
 const mockGetUser = jest.fn();
@@ -14,6 +14,7 @@ const user = (id: number) => ({ id, avatar_url: `https://img/${id}.jpg` });
 describe("resolveAvatarMap", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    __resetResolveFailuresForTests();
     mockPeekUser.mockReturnValue(null);
     mockGetUser.mockImplementation(async (id: number) => user(id));
   });
@@ -49,5 +50,12 @@ describe("resolveAvatarMap", () => {
     mockGetUser.mockRejectedValue(new Error("nope"));
     const avatars = await resolveAvatarMap([[urn(9)]]);
     expect(avatars.get(urn(9))).toBeNull();
+  });
+
+  it("remembers failures and stops re-fetching dead accounts", async () => {
+    mockGetUser.mockRejectedValue(new Error("404"));
+    await resolveAvatarMap([[urn(9)]]);
+    await resolveAvatarMap([[urn(9)]]);
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
   });
 });

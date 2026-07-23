@@ -45,8 +45,37 @@ function sceneActivity(db: Database.Database, sceneId: number, now: number): Act
   return { activeNow: (row.day ?? 0) > 0, uploadsThisWeek: row.week ?? 0 };
 }
 
-function sceneSummary(db: Database.Database, row: SceneRow, now: number): SceneSummary {
-  const counts = sceneActivity(db, row.id, now);
+/** Batched activity for the list render: one GROUP BY over all scenes. */
+function sceneActivityMap(db: Database.Database, now: number): Map<number, ActivityCounts> {
+  // Week-active artists first, then join memberships (see store.activityMap).
+  const rows = db
+    .prepare(
+      `SELECT m.scene_id AS id,
+         SUM(CASE WHEN a.last_upload_at > ? THEN 1 ELSE 0 END) AS day,
+         COUNT(*) AS week
+       FROM artists a JOIN scene_members m ON m.artist_urn = a.urn
+       WHERE a.last_upload_at > ?
+       GROUP BY m.scene_id`,
+    )
+    .all(
+      new Date(now - ACTIVITY_WINDOWS.dayMs).toISOString(),
+      new Date(now - ACTIVITY_WINDOWS.weekMs).toISOString(),
+    ) as { id: number; day: number | null; week: number | null }[];
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      { activeNow: (row.day ?? 0) > 0, uploadsThisWeek: row.week ?? 0 },
+    ]),
+  );
+}
+
+function sceneSummary(
+  db: Database.Database,
+  row: SceneRow,
+  now: number,
+  batchedCounts?: ActivityCounts,
+): SceneSummary {
+  const counts = batchedCounts ?? sceneActivity(db, row.id, now);
   return {
     id: row.id,
     slug: row.slug,
@@ -73,7 +102,10 @@ export function listScenes(now: number = Date.now()): SceneSummary[] {
        ORDER BY member_count DESC, id`,
     )
     .all() as SceneRow[];
-  return rows.map((row) => sceneSummary(db, row, now));
+  const counts = sceneActivityMap(db, now);
+  return rows.map((row) =>
+    sceneSummary(db, row, now, counts.get(row.id) ?? { activeNow: false, uploadsThisWeek: 0 }),
+  );
 }
 
 export function getSceneDetail(slug: string, now: number = Date.now()): SceneDetail | null {
