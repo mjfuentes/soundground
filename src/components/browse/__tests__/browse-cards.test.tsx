@@ -86,9 +86,22 @@ describe("ArtistRow", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
-  it("hides the followers metric when it is unknown", () => {
+  it("falls back to connections when reach is unknown", () => {
     render(<ArtistRow rank={3} artist={{ ...sampleResolvedArtist, followers: 0 }} />);
     expect(screen.queryByText("followers")).not.toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByText("connections")).toBeInTheDocument();
+  });
+
+  it("shows nothing when neither reach nor connections are known", () => {
+    render(
+      <ArtistRow
+        rank={4}
+        artist={{ ...sampleResolvedArtist, followers: 0, connections: 0 }}
+      />,
+    );
+    expect(screen.queryByText("followers")).not.toBeInTheDocument();
+    expect(screen.queryByText("connections")).not.toBeInTheDocument();
   });
 });
 

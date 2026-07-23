@@ -45,13 +45,21 @@ export function ArtistRow({ rank, artist, within, withinCircle }: ArtistRowProps
           <div className="mt-[3px] truncate font-sg-mono text-[10.5px] text-sg-dim">{context}</div>
         )}
       </div>
-      {artist.followers > 0 && (
+      {artist.followers > 0 ? (
         <div className="flex-none text-right font-sg-mono text-[11px] leading-tight text-sg-muted">
           {formatCount(artist.followers)}
           <br />
           <span className="text-[10px] text-sg-faint">followers</span>
         </div>
-      )}
+      ) : artist.connections > 0 ? (
+        // No reach data (uncrawled + unresolvable) — show why they rank:
+        // the in-scope connection weight that put them on this roster.
+        <div className="flex-none text-right font-sg-mono text-[11px] leading-tight text-sg-muted">
+          {formatCount(Math.round(artist.connections))}
+          <br />
+          <span className="text-[10px] text-sg-faint">connections</span>
+        </div>
+      ) : null}
       {artist.plays > 0 && (
         <div className="hidden w-[66px] flex-none text-right font-sg-mono text-[11px] leading-tight text-sg-muted sm:block">
           {formatCount(artist.plays)}
