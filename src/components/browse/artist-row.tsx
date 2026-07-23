@@ -45,11 +45,13 @@ export function ArtistRow({ rank, artist, within, withinCircle }: ArtistRowProps
           <div className="mt-[3px] truncate font-sg-mono text-[10.5px] text-sg-dim">{context}</div>
         )}
       </div>
-      <div className="flex-none text-right font-sg-mono text-[11px] leading-tight text-sg-muted">
-        {formatCount(artist.followers)}
-        <br />
-        <span className="text-[10px] text-sg-faint">followers</span>
-      </div>
+      {artist.followers > 0 && (
+        <div className="flex-none text-right font-sg-mono text-[11px] leading-tight text-sg-muted">
+          {formatCount(artist.followers)}
+          <br />
+          <span className="text-[10px] text-sg-faint">followers</span>
+        </div>
+      )}
       {artist.plays > 0 && (
         <div className="hidden w-[66px] flex-none text-right font-sg-mono text-[11px] leading-tight text-sg-muted sm:block">
           {formatCount(artist.plays)}

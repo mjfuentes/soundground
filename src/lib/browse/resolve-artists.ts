@@ -47,9 +47,12 @@ function toResolved(
   const permalink = artist.permalink?.replace(/^\/+/, "") || null;
   return {
     ...artist,
+    // Live profile beats the graph's sighting data: repost-discovered
+    // artists carry no counts at all until crawled ("0 followers" lies).
+    followers: user?.followers_count || artist.followers,
     displayName: user?.username || permalink || artist.urn,
     avatarUrl: user?.avatar_url ?? null,
-    profileHref: permalink ? `/${permalink}` : null,
+    profileHref: user?.permalink ? `/${user.permalink}` : permalink ? `/${permalink}` : null,
   };
 }
 

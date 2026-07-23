@@ -85,6 +85,11 @@ describe("ArtistRow", () => {
     render(<ArtistRow rank={2} artist={{ ...sampleResolvedArtist, profileHref: null }} />);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
+
+  it("hides the followers metric when it is unknown", () => {
+    render(<ArtistRow rank={3} artist={{ ...sampleResolvedArtist, followers: 0 }} />);
+    expect(screen.queryByText("followers")).not.toBeInTheDocument();
+  });
 });
 
 describe("BrowseHeader", () => {
