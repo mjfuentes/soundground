@@ -51,14 +51,16 @@ export function ReleasesList({
       <SectionHeading>Releases</SectionHeading>
       {albums.map((album) => {
         const playable = trackFor(album);
+        // Albums without their own artwork borrow the first track's.
+        const artwork = album.artwork_url ?? album.tracks?.find((t) => t.artwork_url)?.artwork_url;
         return (
           <div
             key={album.id}
             className="flex items-center gap-3.5 border-b border-sg-line-faint py-2.5"
           >
-            {album.artwork_url ? (
+            {artwork ? (
               <Image
-                src={album.artwork_url}
+                src={artwork}
                 alt=""
                 width={44}
                 height={44}
