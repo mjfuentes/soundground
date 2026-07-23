@@ -115,7 +115,7 @@ const HUB_DESCRIPTION_RE = new RegExp(
 const HUB_NAME_RE = /^[^[\]/|·]*\b(records|recordings|recs|tapes|editions|imprint|musik|discos|label|collective|soundsystem|agency|magazine|radio|fm|distribution|podcast|sessions|festival|premieres)\s*$/i;
 
 /** Permalink endings that are label/institution names ("angelsrecs"). */
-const HUB_PERMALINK_RE = /(records|recordings|recs|label|tapes|podcast|radio|radioshow|magazine|collective|festival|soundsystem|distribution|premieres|events|series)$/i;
+const HUB_PERMALINK_RE = /(records|recordings|recs|label|tapes|podcast|radio|radioshow|magazine|collective|festival|soundsystem|distribution|premieres|events|series|media)$/i;
 
 export interface HubCandidate {
   urn: string;
