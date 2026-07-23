@@ -157,6 +157,19 @@ describe("nameScenes", () => {
     expect(result.get(1)?.tags).not.toContain("Refugeworldwide");
   });
 
+  it("gives a term naming rights only where the most members carry it", () => {
+    // Doc 2 is a small promo cluster that tags dubtechno intensely (high
+    // weight share) but with few carriers; doc 1 is the real community.
+    const docs = [
+      doc(1, { dubtechno: 500, ambient: 300 }, null, { dubtechno: 60, ambient: 40 }),
+      doc(2, { dubtechno: 400, jungle: 90 }, null, { dubtechno: 7, jungle: 6 }),
+      doc(3, { ambient: 100 }),
+    ];
+    const result = nameScenes(docs, display, config());
+    expect(result.get(1)?.name).toContain("Dub Techno");
+    expect(result.get(2)?.name).toBe("Jungle");
+  });
+
   it("leaves scenes without vocabulary unnamed", () => {
     const docs = [doc(1, {}), doc(2, { jungle: 10 })];
     const result = nameScenes(docs, display, config());

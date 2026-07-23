@@ -153,13 +153,21 @@ function composeName(
   city: string | null,
   display: (term: string) => string,
   config: SceneNamingConfig,
+  claimedBy: ReadonlyMap<string, number>,
 ): { name: string | null; nameTerms: string[] } {
   const cityFold = city ? foldTerm(city) : null;
   const requiredSupport = Math.max(
     config.minNameSupport,
     Math.ceil(config.nameSupportShare * doc.termedMembers),
   );
-  const broad = terms.filter(({ term }) => (doc.termSupport.get(term) ?? 0) >= requiredSupport);
+  // A term names only the circle where it scores highest — a promo-tag
+  // cluster broadly tagging "melodic house & techno" cannot wear the name
+  // the organic-house circle defines better.
+  const broad = terms.filter(
+    ({ term }) =>
+      (doc.termSupport.get(term) ?? 0) >= requiredSupport &&
+      (claimedBy.get(term) ?? doc.key) === doc.key,
+  );
   const chosen: string[] = [];
   for (const { term, score } of broad) {
     if (chosen.length >= config.maxNameTerms) break;
@@ -192,10 +200,32 @@ export function nameScenes(
   for (const term of excludedTerms) vocabulary.delete(term);
   const scored = scoreDocs(docs, vocabulary);
 
+  // Exclusive naming rights: each term belongs to the doc where the most
+  // distinct members carry it. NOT tf-idf score — share-normalized tf lets
+  // a small term-concentrated (promo) cluster outscore the real community.
+  const claimedBy = new Map<string, number>();
+  const bestSupport = new Map<string, number>();
+  for (const doc of docs) {
+    for (const { term } of scored.get(doc.key) ?? []) {
+      const support = doc.termSupport.get(term) ?? 0;
+      if (support > (bestSupport.get(term) ?? 0)) {
+        bestSupport.set(term, support);
+        claimedBy.set(term, doc.key);
+      }
+    }
+  }
+
   const results = new Map<number, SceneName>();
   for (const doc of docs) {
     const terms = scored.get(doc.key) ?? [];
-    const { name } = composeName(doc, terms, cityPrefix(doc, config), display, config);
+    const { name } = composeName(
+      doc,
+      terms,
+      cityPrefix(doc, config),
+      display,
+      config,
+      claimedBy,
+    );
     results.set(doc.key, {
       name,
       tags: terms.slice(0, config.tagCount).map(({ term }) => display(term)),
