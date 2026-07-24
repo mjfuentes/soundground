@@ -177,6 +177,33 @@ describe("nameScenes", () => {
     expect(result.get(1)?.tags).toEqual([]);
   });
 
+  it("falls back to a shared term rather than hiding a real circle", () => {
+    // Doc 2's only broad term is owned by doc 1 — it still gets the name,
+    // duplicated, instead of disappearing from the atlas.
+    const docs = [
+      doc(1, { dubtechno: 500 }, null, { dubtechno: 60 }),
+      doc(2, { dubtechno: 300 }, null, { dubtechno: 20 }),
+      doc(3, { jungle: 100 }),
+    ];
+    const result = nameScenes(docs, display, config());
+    expect(result.get(1)?.name).toBe("Dub Techno");
+    expect(result.get(2)?.name).toBe("Dub Techno");
+  });
+
+  it("prefers a relaxed place read over a shared term", () => {
+    const docs = [
+      doc(1, { dubtechno: 500 }, null, { dubtechno: 60 }),
+      doc(
+        2,
+        { dubtechno: 300 },
+        { name: "Melbourne", share: 0.3, locatedMembers: 20 },
+        { dubtechno: 20 },
+      ),
+      doc(3, { jungle: 100 }),
+    ];
+    expect(nameScenes(docs, display, config()).get(2)?.name).toBe("Melbourne");
+  });
+
   it("names a city-anchored circle by its place alone when no sound clears the floor", () => {
     const docs = [
       doc(1, {}, { name: "Amsterdam", share: 0.7, locatedMembers: 20 }),

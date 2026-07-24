@@ -35,6 +35,10 @@ export interface SceneNamingConfig {
   cityShareThreshold: number;
   /** …and at least this many located members (2 of 3 is noise, not a scene home). */
   minLocatedMembers: number;
+  /** Fallback place-naming (nameless circles) accepts this relaxed share… */
+  fallbackCityShare: number;
+  /** …with at least this many located members. */
+  fallbackMinLocated: number;
   /**
    * Breadth floor: a term may NAME a scene only when carried by at least
    * max(minNameSupport, nameSupportShare × termedMembers) distinct members.
@@ -57,6 +61,8 @@ export const DEFAULT_SCENE_NAMING_CONFIG: SceneNamingConfig = {
   nameSupportShare: 0.08,
   cityShareThreshold: 0.4,
   minLocatedMembers: 5,
+  fallbackCityShare: 0.25,
+  fallbackMinLocated: 8,
   maxNameTerms: 3,
   secondaryTermRatio: 0.5,
   tagCount: 10,
@@ -147,6 +153,15 @@ function cityPrefix(doc: SceneDoc, config: SceneNamingConfig): string | null {
   return city.name;
 }
 
+/** Relaxed place read for otherwise-nameless circles. */
+function cityFallback(doc: SceneDoc, config: SceneNamingConfig): string | null {
+  const city = doc.topCity;
+  if (!city) return null;
+  if (city.share < config.fallbackCityShare) return null;
+  if (city.locatedMembers < config.fallbackMinLocated) return null;
+  return city.name;
+}
+
 function composeName(
   doc: SceneDoc,
   terms: readonly ScoredTerm[],
@@ -160,28 +175,57 @@ function composeName(
     config.minNameSupport,
     Math.ceil(config.nameSupportShare * doc.termedMembers),
   );
-  // A term names only the circle where it scores highest — a promo-tag
-  // cluster broadly tagging "melodic house & techno" cannot wear the name
-  // the organic-house circle defines better.
-  const broad = terms.filter(
-    ({ term }) =>
-      (doc.termSupport.get(term) ?? 0) >= requiredSupport &&
-      (claimedBy.get(term) ?? doc.key) === doc.key,
+  const broadAll = terms.filter(
+    ({ term }) => (doc.termSupport.get(term) ?? 0) >= requiredSupport,
   );
-  const chosen: string[] = [];
-  for (const { term, score } of broad) {
-    if (chosen.length >= config.maxNameTerms) break;
-    if (term === cityFold) continue; // "Berlin Berlin Dub" — the prefix already says it
-    if (isRedundant(term, chosen)) continue;
-    if (chosen.length > 0 && score < broad[0].score * config.secondaryTermRatio) break;
-    chosen.push(term);
+
+  const pick = (pool: typeof broadAll): string[] => {
+    const chosen: string[] = [];
+    for (const { term, score } of pool) {
+      if (chosen.length >= config.maxNameTerms) break;
+      if (term === cityFold) continue; // "Berlin Berlin Dub" — the prefix already says it
+      if (isRedundant(term, chosen)) continue;
+      if (chosen.length > 0 && score < pool[0].score * config.secondaryTermRatio) break;
+      chosen.push(term);
+    }
+    return chosen;
+  };
+
+  // Preferred: terms this circle owns — a term names only the circle where
+  // it has the most carriers, so promo clusters can't wear the real
+  // community's name.
+  const owned = pick(
+    broadAll.filter(({ term }) => (claimedBy.get(term) ?? doc.key) === doc.key),
+  );
+  if (owned.length > 0) {
+    const joined = owned.map(display).join(" · ");
+    return { name: city ? `${city} ${joined}` : joined, nameTerms: owned };
   }
-  // A city-anchored circle with no sound consensus is still nameable by
-  // its place alone — the prefix rule is structural (located members),
-  // unlike tag votes.
-  if (chosen.length === 0) return { name: city, nameTerms: [] };
-  const joined = chosen.map(display).join(" · ");
-  return { name: city ? `${city} ${joined}` : joined, nameTerms: chosen };
+  // Structural fallbacks — real circles are never hidden for lack of a
+  // distinctive word: place first (located members are evidence), then the
+  // best supported term even when a bigger circle owns it too.
+  if (city) return { name: city, nameTerms: [] };
+  const relaxedCity = cityFallback(doc, config);
+  if (relaxedCity) return { name: relaxedCity, nameTerms: [] };
+  const shared = pick(broadAll);
+  if (shared.length > 0) {
+    return { name: shared.map(display).join(" · "), nameTerms: shared };
+  }
+  // Last resort: the share-scaled breadth floor can be unreachable in big
+  // mixed circles (8% of 900 termed members = 72 carriers). Take the most
+  // CARRIED terms outright — any real vocabulary beats hiding the circle.
+  const byCarriers = [...terms]
+    .filter(({ term }) => (doc.termSupport.get(term) ?? 0) >= config.minNameSupport)
+    .sort(
+      (a, b) =>
+        (doc.termSupport.get(b.term) ?? 0) - (doc.termSupport.get(a.term) ?? 0) ||
+        b.score - a.score,
+    );
+  const carried = pick(byCarriers.slice(0, 8)).slice(0, 2);
+  if (carried.length > 0) {
+    return { name: carried.map(display).join(" · "), nameTerms: carried };
+  }
+  return { name: null, nameTerms: [] };
 }
 
 /**
