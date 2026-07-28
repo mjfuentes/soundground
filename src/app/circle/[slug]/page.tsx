@@ -55,9 +55,10 @@ export default async function ScenePage({ params }: PageProps) {
       <EntityHero
         kicker="Circle"
         name={scene.name}
+        tagline={scene.home.label}
         activity={scene.activity}
         activeNow={scene.activeNow}
-        stats={`${scene.memberCount} artists${scene.hubCount > 0 ? ` + ${scene.hubCount} label${scene.hubCount === 1 ? "" : "s"}` : ""} mapped${scene.cityName ? ` · centered in ${scene.cityName}` : ""}`}
+        stats={`${scene.memberCount} artists${scene.hubCount > 0 ? ` + ${scene.hubCount} label${scene.hubCount === 1 ? "" : "s"}` : ""} mapped`}
         playScope={{ scene: scene.slug }}
       />
 

@@ -15,7 +15,75 @@ import {
   parseRoster,
   type ActivityCounts,
 } from "./store";
-import type { LinkedCount, SceneDetail, SceneSummary } from "./types";
+import type { LinkedCount, SceneDetail, SceneHome, SceneSummary } from "./types";
+
+// Geographic-character thresholds (ideas/0005). Tuned against the Jul 28
+// circles-vs-places measurement: real place circles ran ≥33% top-city share,
+// tinted 18–33%, placeless below. Coverage gates out sparse-geodata noise —
+// only ~34% of artists declare a city, so a claim needs enough located members
+// AND a floor share of the circle located at all.
+const HOME_MIN_LOCATED = 5;
+const HOME_MIN_COVERAGE = 0.12;
+const HOME_PLACE_SHARE = 0.33;
+const HOME_TINTED_SHARE = 0.18;
+
+const PLACELESS: SceneHome = {
+  label: "Global — no single home",
+  city: null,
+  share: null,
+  kind: "global",
+};
+
+/**
+ * Where a circle "lives", from its top city vs. all located members. Pure so
+ * the three regimes are unit-testable without a database (ideas/0005).
+ */
+export function classifySceneHome(
+  memberCount: number,
+  located: number,
+  topCity: string | null,
+  topCount: number,
+): SceneHome {
+  if (
+    !topCity ||
+    memberCount <= 0 ||
+    located < HOME_MIN_LOCATED ||
+    located / memberCount < HOME_MIN_COVERAGE
+  ) {
+    return PLACELESS;
+  }
+  const share = topCount / located;
+  if (share >= HOME_PLACE_SHARE) {
+    return { label: `A ${topCity} scene`, city: topCity, share, kind: "place" };
+  }
+  if (share >= HOME_TINTED_SHARE) {
+    return {
+      label: `Centered on ${topCity} (${Math.round(share * 100)}% of located members)`,
+      city: topCity,
+      share,
+      kind: "tinted",
+    };
+  }
+  return PLACELESS;
+}
+
+function sceneHome(
+  db: Database.Database,
+  sceneId: number,
+  memberCount: number,
+  topCity: string | null,
+  topCount: number,
+): SceneHome {
+  if (!topCity || memberCount <= 0) return PLACELESS;
+  const { located } = db
+    .prepare(
+      `SELECT COUNT(*) AS located
+       FROM scene_members sm JOIN artist_cities ac ON ac.artist_urn = sm.artist_urn
+       WHERE sm.scene_id = ?`,
+    )
+    .get(sceneId) as { located: number };
+  return classifySceneHome(memberCount, located, topCity, topCount);
+}
 
 interface SceneRow {
   id: number;
@@ -143,6 +211,9 @@ export function getSceneDetail(slug: string, now: number = Date.now()): SceneDet
     )
     .all(row.id) as LinkedCount[];
 
+  // cities is ordered by count DESC, so cities[0] is the top city.
+  const home = sceneHome(db, row.id, row.member_count, cities[0]?.name ?? null, cities[0]?.count ?? 0);
+
   return {
     ...sceneSummary(db, row, now),
     roster: parseRoster(row.roster).map((artist) => ({
@@ -152,6 +223,7 @@ export function getSceneDetail(slug: string, now: number = Date.now()): SceneDet
     hubs: parseRoster(row.hubs),
     genres,
     cities,
+    home,
   };
 }
 

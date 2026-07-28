@@ -83,6 +83,21 @@ export interface SceneSummary {
   coverUrns: string[];
 }
 
+/**
+ * A circle's geographic character (ideas/0005). Circles sit on a spectrum:
+ * a few *are* a city (peripheral local scenes), most are placeless global
+ * sounds, some are a global sound with a hub center of gravity.
+ */
+export interface SceneHome {
+  /** "A São Paulo scene" | "Centered on Berlin (24% of located members)" | "Global — no single home". */
+  label: string;
+  /** Home city, when one holds the circle; null when placeless. */
+  city: string | null;
+  /** Top city's share of located members (0..1); null when placeless. */
+  share: number | null;
+  kind: "place" | "tinted" | "global";
+}
+
 export interface SceneDetail extends SceneSummary {
   /** Ranked by within-scene weighted in-degree. Hubs excluded. */
   roster: RosterArtist[];
@@ -92,6 +107,8 @@ export interface SceneDetail extends SceneSummary {
   genres: LinkedCount[];
   /** Cities this scene's members declare. */
   cities: LinkedCount[];
+  /** Geographic character line for the hero (ideas/0005). */
+  home: SceneHome;
 }
 
 export interface BrowseStatus {

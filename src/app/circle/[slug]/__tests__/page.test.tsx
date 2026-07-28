@@ -45,6 +45,7 @@ const detail: SceneDetail = {
   ],
   genres: [{ slug: "dub-techno", name: "Dub Techno", count: 5 }],
   cities: [{ slug: "berlin", name: "Berlin", count: 4 }],
+  home: { label: "A Berlin scene", city: "Berlin", share: 1, kind: "place" },
 };
 
 jest.mock("@/lib/browse/scene-store", () => ({
@@ -71,7 +72,8 @@ describe("ScenePage", () => {
     expect(screen.getByText("Circle / Berlin Dub Techno")).toBeInTheDocument();
     expect(screen.getByText("Artist One")).toBeInTheDocument();
     expect(screen.getByText(/5 artists \+ 1 label mapped/)).toBeInTheDocument();
-    expect(screen.getByText(/centered in Berlin/)).toBeInTheDocument();
+    // Geographic character line (ideas/0005): all 5 members are in Berlin.
+    expect(screen.getByText("A Berlin scene")).toBeInTheDocument();
     // Tags that exist as genre pages become links; others stay plain chips.
     expect(screen.getByRole("link", { name: "Dub Techno" })).toHaveAttribute(
       "href",
