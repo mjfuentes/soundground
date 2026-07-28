@@ -146,6 +146,37 @@ describe("computeScenes", () => {
     db.close();
   });
 
+  it("hides scenes below the crawled-member floor but keeps their rows and members", () => {
+    const db = buildAggregatedTwoSceneDb();
+    // Both fixture scenes have exactly 5 crawled artist members, so a floor of 6
+    // hides both — while the rows and memberships survive for stable IDs.
+    const report = computeScenes(db, { ...TEST_CONFIG, minSurfaceMembers: 6 }, () =>
+      "2026-07-22T12:00:00.000Z",
+    );
+
+    expect(report.named).toBe(0);
+    expect(report.hiddenBelowFloor).toBe(2);
+    expect(report.largest).toHaveLength(0);
+
+    const scenes = readScenes(db);
+    expect(scenes).toHaveLength(2);
+    expect(scenes.every((scene) => scene.name === null && scene.slug === null)).toBe(true);
+    const members = db.prepare(`SELECT COUNT(*) AS n FROM scene_members`).get() as { n: number };
+    expect(members.n).toBeGreaterThan(0);
+    db.close();
+  });
+
+  it("surfaces scenes that meet the floor exactly (inclusive)", () => {
+    const db = buildAggregatedTwoSceneDb();
+    const report = computeScenes(db, { ...TEST_CONFIG, minSurfaceMembers: 5 }, () =>
+      "2026-07-22T12:00:00.000Z",
+    );
+
+    expect(report.named).toBe(2);
+    expect(report.hiddenBelowFloor).toBe(0);
+    db.close();
+  });
+
   it("classifies hubs from cached profile text when a peek is provided", () => {
     const db = buildAggregatedTwoSceneDb();
     // Artist 4's cached profile declares label-ness.

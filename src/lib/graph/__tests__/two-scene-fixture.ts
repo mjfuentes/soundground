@@ -32,6 +32,7 @@ export const TEST_SCENE_CONFIG: SceneComputeConfig = {
     minLocatedMembers: 2,
   },
   rosterSize: 10,
+  minSurfaceMembers: 0, // the fixture's scenes are tiny; the floor is exercised in its own test
 };
 
 export function buildTwoSceneGraph(db: Database.Database): void {

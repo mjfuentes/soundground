@@ -6,6 +6,7 @@
  * Usage:
  *   npm run scenes
  *   npm run scenes -- --repost-hub-cap 40 --dust-threshold 20
+ *   npm run scenes -- --min-scene-members 75   # hide circles below N crawled members
  */
 
 import { parseArgs } from "util";
@@ -26,11 +27,15 @@ function main(): void {
       "repost-hub-cap": { type: "string" },
       "dust-threshold": { type: "string" },
       "min-doc-frequency": { type: "string" },
+      "min-scene-members": { type: "string" },
     },
   });
 
   const config = {
     ...DEFAULT_SCENE_COMPUTE_CONFIG,
+    ...(values["min-scene-members"]
+      ? { minSurfaceMembers: Number(values["min-scene-members"]) }
+      : {}),
     edgeWeights: {
       ...DEFAULT_SCENE_COMPUTE_CONFIG.edgeWeights,
       ...(values["repost-hub-cap"]
@@ -77,6 +82,10 @@ function main(): void {
       `${report.scenes} scenes (${report.named} named, ${report.unnamed} unnamed) · ` +
         `γ=${report.resolution} · ${report.unclusteredNodes} nodes unclustered · ` +
         `${report.subClustered} oversize communities split · ${seconds}s`,
+    );
+    log(
+      `surfacing floor: >=${config.minSurfaceMembers} crawled members ` +
+        `(${report.hiddenBelowFloor} named scenes hidden below it)`,
     );
     for (const stats of report.sweep) {
       log(

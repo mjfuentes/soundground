@@ -40,6 +40,13 @@ export interface SceneComputeConfig {
   naming: SceneNamingConfig;
   identity: IdentityConfig;
   rosterSize: number;
+  /**
+   * Crawled-member floor for surfacing. A community with fewer crawled artist
+   * members than this is confetti — usually a fragment shed when an oversize
+   * community is sub-clustered — so it is retained (stable ID + members) but
+   * hidden like an unnamed scene (name → NULL, which every read path gates on).
+   */
+  minSurfaceMembers: number;
 }
 
 /** Hubs ranked per scene ("Labels & hubs" roster). */
@@ -51,6 +58,7 @@ export const DEFAULT_SCENE_COMPUTE_CONFIG: SceneComputeConfig = {
   naming: DEFAULT_SCENE_NAMING_CONFIG,
   identity: DEFAULT_IDENTITY_CONFIG,
   rosterSize: 24, // deep enough for the card cover mosaics (20 cells)
+  minSurfaceMembers: 75, // hide sub-clustering confetti; tune via --min-scene-members
 };
 
 export interface ScenePreview {
@@ -69,6 +77,8 @@ export interface SceneComputeReport {
   scenes: number;
   named: number;
   unnamed: number;
+  /** Scenes that had a name but were hidden by the crawled-member floor. */
+  hiddenBelowFloor: number;
   unclusteredNodes: number;
   resolution: number;
   sweep: PartitionStats[];
@@ -426,29 +436,37 @@ export function computeScenes(
   hubNameFolds.delete("");
   const names = nameScenes(docs, display, config.naming, hubNameFolds);
 
+  // Crawled artist members per scene (hubs excluded) — the "measured" size,
+  // and the basis for the surfacing floor.
+  const crawledCounts = partition.scenes.map(
+    (cluster) =>
+      cluster.filter((urn) => artists.get(urn)?.crawled === 1 && !hubSet.has(urn)).length,
+  );
+  // A scene surfaces only if it clears the floor; below it, the name is
+  // withheld so every read path (all gate on name IS NOT NULL) hides it.
+  const vocabName = (index: number): string | null => names.get(index)?.name ?? null;
+  const surfacedName = (index: number): string | null =>
+    crawledCounts[index] >= config.minSurfaceMembers ? vocabName(index) : null;
+
   // 6. Stable identity, then persist.
   const previous = loadPreviousMembership(db);
   const ids = matchSceneIds(previous, partition.scenes, config.identity);
   const idAndName = partition.scenes.map((_, index) => ({
     id: ids[index],
-    name: names.get(index)?.name ?? null,
+    name: surfacedName(index),
   }));
   const slugs = assignSlugs(idAndName);
 
   const previews: ScenePreview[] = partition.scenes.map((cluster, index) => {
     const doc = docs[index];
-    // "N artists mapped" — crawled members that are actual artists, not hubs.
-    const crawledCount = cluster.filter(
-      (urn) => artists.get(urn)?.crawled === 1 && !hubSet.has(urn),
-    ).length;
     const crawledHubCount = cluster.filter(
       (urn) => artists.get(urn)?.crawled === 1 && hubSet.has(urn),
     ).length;
     return {
       id: ids[index],
-      name: names.get(index)?.name ?? null,
+      name: surfacedName(index),
       slug: slugs.get(ids[index]) ?? null,
-      memberCount: crawledCount,
+      memberCount: crawledCounts[index],
       hubCount: crawledHubCount,
       totalCount: cluster.length,
       cityName:
@@ -504,10 +522,14 @@ export function computeScenes(
   })();
 
   const named = previews.filter((preview) => preview.name !== null);
+  const hiddenBelowFloor = partition.scenes.filter(
+    (_, index) => vocabName(index) !== null && surfacedName(index) === null,
+  ).length;
   return {
     scenes: previews.length,
     named: named.length,
     unnamed: previews.length - named.length,
+    hiddenBelowFloor,
     unclusteredNodes: partition.unclustered.length,
     resolution: partition.resolution,
     sweep: partition.sweep,
