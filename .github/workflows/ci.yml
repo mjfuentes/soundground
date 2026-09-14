@@ -42,6 +42,12 @@ jobs:
       
       - name: Run tests with coverage
         run: npm run test:ci
+        env:
+          CACHE_DB_PATH: ":memory:"
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -72,10 +78,6 @@ jobs:
       
       - name: Build application
         run: npm run build
-        env:
-          # Dummy env vars for build
-          SOUNDCLOUD_CLIENT_ID: ${{ secrets.SOUNDCLOUD_CLIENT_ID || 'dummy_client_id' }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'dummy_jwt_secret' }}
       
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
