@@ -135,13 +135,6 @@ npm run build         # next build
 Husky runs lint-staged and a type-check on every commit. CI runs the full
 gate on push and pull request.
 
-Design and decision records live in the repo:
-
-- `ideas/` — numbered design notes with status blocks, from the original
-  social-graph spec to the current circles-vs-places investigation.
-- `attic/` — parked code (user OAuth, admin dashboard) with a README
-  explaining how to restore it.
-
 ## Deployment
 
 The app runs on Fly.io with a persistent volume mounted at `/app/data` for

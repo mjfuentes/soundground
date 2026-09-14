@@ -1,5 +1,5 @@
 {
-  "$comment": "City curation canon (ideas/0003 Phase 2, opened Jul 2026 when the data demanded it). Hand- or agent-maintained; the aggregation pipeline stays deterministic and only consumes this file. Keys are matched after mechanical folding, so spelling/case/punctuation variants of these entries are covered automatically.",
+  "$comment": "City curation canon (opened Jul 2026 when the data demanded it). Hand- or agent-maintained; the aggregation pipeline stays deterministic and only consumes this file. Keys are matched after mechanical folding, so spelling/case/punctuation variants of these entries are covered automatically.",
   "nonPlaces": [
     "worldwide",
     "world",

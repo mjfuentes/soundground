@@ -301,12 +301,9 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundground
 
 ### Available Documentation
 - **README**: `/README.md` - Project overview, pipeline, setup
-- **Design notes**: `/ideas/*.md` - numbered, each with a status block
-- **Parked code + pre-rebirth docs**: `/attic/README.md`, `/attic/docs/`
 
 ### When to Update Documentation
 - **User-facing feature or new script**: Update `/README.md`
-- **Design decision or scope change**: Update the relevant `/ideas/NNNN-*.md` status block
 
 ## Testing Strategy
 

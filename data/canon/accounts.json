@@ -1,5 +1,5 @@
 {
-  "$comment": "Account curation canon (ideas/0004 B4). `hubs` lists permalinks of institutional accounts — labels, radios, magazines, promo channels, venues — that belong in a scene's 'Hubs & labels' strip rather than its artist roster. Mechanical detection (track_count >= 1000) catches radios/blogs; this file carries the judgment cases (labels with small catalogs). `hubTerms` lists extra tag spellings of institutions (excluded from scene naming) where the tag differs from any permalink. Hand- or agent-maintained; seeded Jul 2026 from accounts verified during the Berlin-crawl investigation.",
+  "$comment": "Account curation canon. `hubs` lists permalinks of institutional accounts — labels, radios, magazines, promo channels, venues — that belong in a scene's 'Hubs & labels' strip rather than its artist roster. Mechanical detection (track_count >= 1000) catches radios/blogs; this file carries the judgment cases (labels with small catalogs). `hubTerms` lists extra tag spellings of institutions (excluded from scene naming) where the tag differs from any permalink. Hand- or agent-maintained; seeded Jul 2026 from accounts verified during the Berlin-crawl investigation.",
   "hubTerms": [
     "nts",
     "rinse",
