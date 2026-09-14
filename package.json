@@ -33,7 +33,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "better-sqlite3": "^11.8.1",
     "cheerio": "^1.1.2",
-    "got": "^14.4.9",
+    "got": "^16.0.0",
     "graphology": "^0.26.0",
     "graphology-communities-louvain": "^2.0.2",
     "hls.js": "^1.6.13",
