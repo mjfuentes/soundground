@@ -18,8 +18,6 @@ const nextConfig: NextConfig = {
   experimental: {
     // Optimize package imports
     optimizePackageImports: ['@/components', '@/lib', '@/contexts'],
-    // Enable view transitions
-    viewTransition: true,
   },
 };
 
