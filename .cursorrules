@@ -300,15 +300,15 @@ flyctl secrets set SOUNDCLOUD_CLIENT_ID=your_id -a soundground
 ## Documentation
 
 ### Available Documentation
-- **Quick Reference**: `/docs/REFERENCE.md` - Quick lookup guide
-- **API Reference**: `/docs/API.md` - Complete API endpoint documentation
-- **Architecture**: `/docs/ARCHITECTURE.md` - System architecture and design decisions
-- **README**: `/README.md` - Project overview and setup
+- **README**: `/README.md` - Project overview, pipeline, setup
+- **Project definition + roadmap**: `/REBIRTH.md`
+- **Design notes**: `/ideas/*.md` - numbered, each with a status block
+- **Parked code + pre-rebirth docs**: `/attic/README.md`, `/attic/docs/`
 
 ### When to Update Documentation
-- **New API endpoint**: Update `/docs/API.md`
-- **Architecture change**: Update `/docs/ARCHITECTURE.md`
-- **User-facing feature**: Update `/README.md`
+- **User-facing feature or new script**: Update `/README.md`
+- **Design decision or scope change**: Update the relevant `/ideas/NNNN-*.md` status block
+- **Roadmap step done**: Update the status line in `/REBIRTH.md` §5
 
 ## Testing Strategy
 

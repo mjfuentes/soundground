@@ -1,10 +1,33 @@
+# Docker
 Dockerfile
 .dockerignore
+
+# Dependencies and build output (rebuilt inside the image)
 node_modules
-npm-debug.log
-README.md
 .next
+.swc
+coverage
+*.tsbuildinfo
+npm-debug.log*
+
+# Secrets — never in the build context
+.env
+.env.*
+!.env.example
+
+# Local databases, crawl snapshots, logs (gigabytes; the volume provides data/ at runtime)
+data/
+!data/canon/
+!data/seeds.example.json
+
+# Repo metadata, editor config, parked code, docs
 .git
 .gitignore
-.env*.local
-
+.github
+.husky
+.cursor
+.cursorrules
+.cursorignore
+attic
+ideas
+*.md
