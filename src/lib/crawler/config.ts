@@ -2,7 +2,7 @@
 
 export interface CrawlerConfig {
   maxDepth: number;
-  /** Minimum ms between API requests (~1 req/s per REBIRTH). */
+  /** Minimum ms between API requests (~1 req/s). */
   minRequestIntervalMs: number;
   /** Pages of followings fetched per expanded artist (200/page). */
   maxFollowingPages: number;

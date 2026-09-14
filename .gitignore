@@ -46,3 +46,6 @@ next-env.d.ts
 !/data/seeds.example.json
 !/data/canon
 chrome/
+
+# private planning notes (local only)
+/REBIRTH.md

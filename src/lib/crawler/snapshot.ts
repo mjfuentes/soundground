@@ -1,6 +1,6 @@
 /**
  * Snapshot export: graph tables → ndjson.gz per run (the Every Noise
- * insurance policy — REBIRTH §3). ndjson.gz over parquet: zero native deps,
+ * insurance policy). ndjson.gz over parquet: zero native deps,
  * trivially convertible later (duckdb reads ndjson directly).
  */
 

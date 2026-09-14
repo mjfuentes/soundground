@@ -137,7 +137,6 @@ gate on push and pull request.
 
 Design and decision records live in the repo:
 
-- `REBIRTH.md` — what the project is, why, feasibility research, roadmap.
 - `ideas/` — numbered design notes with status blocks, from the original
   social-graph spec to the current circles-vs-places investigation.
 - `attic/` — parked code (user OAuth, admin dashboard) with a README
